@@ -57,7 +57,8 @@ const zipName = `${packageJson.packageName}-${packageKind}-${packageJson.version
  * Cleans the build directory.
  */
 async function cleanBuildDir(cb) {
-    await del('build/**');
+    await del('build');
+    await del('zip');
     
     const paths = outPath.split('/');
     for (let i = 1; i < paths.length; i++) {
