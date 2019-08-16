@@ -15,41 +15,49 @@ const request = require('request');
 const packageJson = require('./package.json');
 
 /**
+ * Files to remove from the build.
+ */
+const removeFiles = ["BMCollectionViewDelegate.js", "BMCollectionViewDataSet.js", "BMScrollView.js", "JSDoc.html"
+    , "DTS.html", "BMViewTesting.html", "TWWidget.d.ts", "Velocity.d.ts", "kiwi.min.js", "BMScroller.js", 
+    "BMDragController.js", "BMViewReadme.md", "BMView_sizeClass.js", "BMLayoutConstraint_sizeClass.js", "BMWindowDelegate.js",
+    "DTSGen.js", "DTSGenOutput.d.ts", "BMView.js", "BMLayoutConstraint.js", "BMCoreUITypes.d.ts", "BMInterpolator.js", 
+    "kiwi_v1.0.min.js", "velocity204.min.js", "ZVelocity.js", "velocity.min.js", "BMLayoutEditor_sizeClass.js", "BMLayoutVariableProvider.js", "velocity2.d.ts",
+    "BMCoreUI.d.ts", "BMCoreUITypes.ts", "velocity.js", "kiwi.js"];
+
+/**
+ * Files from which the typescript definitions are created.
+ */
+const DTSFiles = ['BMCoreUI.js', 'BMCell.js', 'BMCollectionViewLayout.js', 'BMCollectionView.js', 'BMCollectionViewDataSet.js', 'BMCollectionViewDelegate.js', 'BMWindowDelegate.js', 'BMCodeHostCore.js'
+, 'BMView_v2.5.js', 'BMLayoutConstraint_v2.5.js', 'BMLayoutEditor.js', 'BMAttributedLabelView.js', 'BMLayoutVariableProvider.js', 'BMMenu.js'];
+
+/**
  * Command line arguments; the following are supported:
  * * __--p__: Creates a production build that is combined and minified
- * * __--l__: Implies `--p`; builds a library version that can be used outside of thingworx. Incompatible with the upload task.
+ * * __--l__: Implies `--p`; builds a library version that can be used outside of thingworx. Incompatible with the upload task. Currently unsupported.
  */
 const args = (argList => {
-
     let arg = {}, a, opt, thisOpt, curOpt;
     for (a = 0; a < argList.length; a++) {
-  
-      thisOpt = argList[a].trim();
-      opt = thisOpt.replace(/^\-+/, '');
-  
-      if (opt === thisOpt) {
-  
-        // argument value
-        if (curOpt) arg[curOpt] = opt;
-        curOpt = null;
-  
-      }
-      else {
-  
-        // argument name
-        curOpt = opt;
-        arg[curOpt] = true;
-  
-      }
-  
+        thisOpt = argList[a].trim();
+        opt = thisOpt.replace(/^\-+/, '');
+        
+        if (opt === thisOpt) {
+            // argument value
+            if (curOpt) arg[curOpt] = opt;
+            curOpt = null;
+        }
+        else {
+            // argument name
+            curOpt = opt;
+            arg[curOpt] = true;
+        }
     }
-  
     return arg;
-  
-  })(process.argv);
+})(process.argv);
 
+if (args.l) throw new Error('Argument --l is currently unsupported.');
 
-const outPath = args.g ? 'build' : `build/ui/${packageJson.packageName}`;
+const outPath = args.l ? 'build' : `build/ui/${packageJson.packageName}`;
 const packageKind = args.p ? 'min' : 'dev';
 const zipName = `${packageJson.packageName}-${packageKind}-${packageJson.version}.zip`;
 
@@ -84,7 +92,7 @@ function copy(cb) {
         .pipe(dest(`${outPath}/`));
 
     // When building the extension, copy over the metadata file
-    if (!args.g) {
+    if (!args.l) {
         stream.on('end', () => {
             fs.copyFileSync('metadata.xml', 'build/metadata.xml');
             cb();
@@ -96,21 +104,6 @@ function copy(cb) {
 }
 
 async function prepareBuild(cb) {
-    /**
-     * Files to remove from the build.
-     */
-    const removeFiles = ["BMCollectionViewDelegate.js", "BMCollectionViewDataSet.js", "BMScrollView.js", "JSDoc.html"
-        , "DTS.html", "BMViewTesting.html", "TWWidget.d.ts", "Velocity.d.ts", "kiwi.min.js", "BMScroller.js", 
-        "BMDragController.js", "BMViewReadme.md", "BMView_sizeClass.js", "BMLayoutConstraint_sizeClass.js", "BMWindowDelegate.js",
-        "DTSGen.js", "DTSGenOutput.d.ts", "BMView.js", "BMLayoutConstraint.js", "BMCoreUITypes.d.ts", "BMInterpolator.js", 
-        "kiwi_v1.0.min.js", "velocity204.min.js", "ZVelocity.js", "velocity.min.js", "BMLayoutEditor_sizeClass.js", "BMLayoutVariableProvider.js", "velocity2.d.ts",
-        "BMCoreUI.d.ts", "BMCoreUITypes.ts"];
-
-    /**
-     * Files from which the typescript definitions are created.
-     */
-    const DTSFiles = ['BMCoreUI.js', 'BMCell.js', 'BMCollectionViewLayout.js', 'BMCollectionView.js', 'BMCollectionViewDataSet.js', 'BMCollectionViewDelegate.js', 'BMWindowDelegate.js', 'BMCodeHostCore.js'
-    , 'BMView_v2.5.js', 'BMLayoutConstraint_v2.5.js', 'BMLayoutEditor.js', 'BMAttributedLabelView.js', 'BMLayoutVariableProvider.js', 'BMMenu.js'];
 
     // Create the typescript definitions
     const DTSSource = DTSFiles.map(f => `${outPath}/${f}`).map(f => fs.readFileSync(f, {encoding: 'utf8'})).join('\n');
@@ -121,9 +114,15 @@ async function prepareBuild(cb) {
 
     fs.writeFileSync(`${outPath}/BMCoreUI.d.ts`, DTS, {encoding: 'utf8'});
 
+    // Copy required dependencies
+    for (const dependency in packageJson.dependencies) {
+        const dependencyPackageJson = require(`./node_modules/${dependency}/package.json`);
+        await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
+    }
+
     // In production mode, it is needed to minify the files, based on how they are defined in the metadata file
     if (args.p) {
-        if (args.g) {
+        if (args.l) {
 
         }
         else {
