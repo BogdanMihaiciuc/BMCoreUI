@@ -88,7 +88,7 @@ async function cleanBuildDir(cb) {
  * Copies files into the build directory.
  */
 function copy(cb) {
-    const stream = src('src/*')
+    const stream = src('src/**')
         .pipe(dest(`${outPath}/`));
 
     // When building the extension, copy over the metadata file
