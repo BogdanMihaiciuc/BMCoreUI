@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><Entities>
+  <ExtensionPackages>
+    <ExtensionPackage name="BMCoreUI" description="Contains reusable UI types." vendor="ThingWorx Labs" packageVersion="2.5.0" minimumThingWorxVersion="6.0.0" buildNumber="{&quot;giteaURL&quot;: &quot;http://roicentersvn.ptcnet.ptc.com/api/v1/repos/BogdanMihaiciuc/BMCoreUI/releases/latest&quot;}"/>
+  </ExtensionPackages>
+  <Widgets>
+    <Widget name="BMCoreUI">
+      <UIResources>
+        <FileResource type="JS" file="BMCoreUI.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="kiwi.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMLayoutConstraint_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMAttributedLabelView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCell.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionViewLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCodeHostCore.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMLayoutEditor.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMMenu.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="velocity.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="iscroll-probe.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="CSS" file="BMCoreUI.css" description="" isDevelopment="true" isRuntime="true"/>
+      </UIResources>
+    </Widget>
+  </Widgets>
+</Entities>

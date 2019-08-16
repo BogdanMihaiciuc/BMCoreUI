@@ -1,0 +1,2124 @@
+/* MARK: Collection view */
+
+.BMCollectionViewCellDragging {
+	opacity: .5 !important;
+}
+
+.BMDragShadow .BMRipple {
+	visibility: hidden !important;
+}
+
+.BMDragShadow {
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+}
+
+.BMDragIndicator {
+	background-color: rgba(0, 200, 60, 1);
+	color: white;
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 18px !important;
+	font-weight: bold !important;
+	
+	text-align: center !important;
+
+	padding-left: 16px;
+	padding-right: 16px;
+	height: 24px;
+	line-height: 24px;
+	vertical-align: middle;
+	border-radius: 12px;
+
+	position: fixed;
+
+	box-shadow: 0px 4px 12px rgba(0, 0, 0, .33);
+}
+
+.BMDragIndicatorRed {
+	background-color: rgba(220, 30, 0, 1);
+}
+
+.BMDragIndicatorRed::after {
+	content: '\00a0\00a0×';
+	font-weight: bolder;
+}
+
+.BMDragIndicatorBlue {
+	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMDragIndicatorBlue::after {
+	content: '\00a0\00a0⇩';
+	font-weight: bolder;
+}
+
+/* MARK: Layout Guide */
+
+.BMLayoutGuideMask {
+	position: fixed;
+	width: 100vw;
+	height: 100vh;
+	top: 0px;
+	left: 0px;
+
+	z-index: 999999;
+}
+
+/* MARK: Scrollbars */
+
+.BMScrollView .iScrollVerticalScrollbar {
+	width: 12px !important;
+	right: 3px !important;
+
+	transition: opacity .3s ease !important;
+	opacity: 0 !important;
+}
+.BMScrollView .iScrollHorizontalScrollbar {
+	height: 12px !important;
+	bottom: 3px !important;
+
+	transition: opacity .3s ease !important;
+	opacity: 0 !important;
+}
+
+.BMScrollView:hover .iScrollVerticalScrollbar, .BMScrollView:active .iScrollVerticalScrollbar,
+.BMScrollView:hover .iScrollHorizontalScrollbar, .BMScrollView:active .iScrollHorizontalScrollbar {
+	opacity: 1 !important;
+}
+
+.BMScrollView .iScrollIndicator {
+	border-radius: 6px !important;
+	border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* MARK: BMWindow */
+
+.BMWindowShowcaseWindow, .BMWindowShowcaseWindow *:not(.BMWindowShowcaseWindowSelector) {
+	pointer-events: none !important;
+}
+
+.BMWindowShowcaseWindowSelector {
+	pointer-events: all !important;
+}
+
+.BMWindowShowcaseWindowSelector {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+
+	transition: box-shadow .2s ease;
+}
+
+.BMWindowShowcaseWindowSelector:hover {
+	box-shadow: 0px 0px 0px 8px rgba(0, 128, 255, 1) inset;
+}
+
+.BMWindowBlocker {
+	position: fixed;
+	
+	width: 100vw;
+	height: 100vh;
+	
+	left: 0px;
+	top: 0px;
+	
+	background: rgba(0, 0, 0, .4);
+	
+	z-index: 2008;
+}
+
+.BMWindowBlockerNonModal {
+	background: none;
+	pointer-events: none;
+}
+
+.BMWindow {
+	position: fixed;
+	
+	border-radius: 4px;
+	overflow: hidden;
+	
+	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
+	
+	z-index: 2008;
+}
+
+.BMNonModalWindow {
+	z-index: 2006;
+	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 6px 32px;
+}
+
+.BMWindowInactive {
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	background: rgba(250, 250, 250, 1);
+}
+
+.BMWindowHidden {
+	z-index: -1 !important;
+}
+
+.BMToolWindow.BMWindowHidden {
+	display: none !important;
+}
+
+.BMWindowInactive .BMWindowTitle {
+	opacity: .5;
+}
+
+.BMKeyWindow {
+	z-index: 2007;
+	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
+	background: rgba(245, 245, 245, .8);
+}
+
+.BMModalWindow {
+	z-index: 2008;
+}
+
+.BMToolWindow {
+	z-index: 2008;
+}
+
+.BMWindowDragHandle {
+	color: rgba(0, 0, 0, .5);
+
+	width: 28px;
+	height: 28px;
+
+	position: absolute;
+	right: 0px;
+	bottom: 0px;
+
+	font-size: 16px !important;
+	line-height: 32px !important;
+	vertical-align: middle;
+	text-align: center;
+
+	transform: rotate(-45deg);
+	cursor: default;
+}
+
+.BMWindow > * {
+	-webkit-tap-highlight-color: transparent;
+}
+
+.BMWindowMinimized {
+	position: absolute;
+	left: 0px;
+	bottom: 2px;
+
+	width: 256px;
+	height: 32px;
+
+	background-color: white;
+	color: rgba(0, 0, 0, .8);
+	font-weight: 500;
+	line-height: 32px;
+	vertical-align: middle;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+
+	padding-left: 8px;
+
+	transition: left .3s ease;
+
+	z-index: 2008;
+
+	border-radius: 4px;
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .1), 0px 3px 8px rgba(0, 0, 0, .1);
+	cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindow {
+		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
+		background-color: rgba(255, 255, 255, .6);
+	}
+
+	.BMWindowInactive {
+		background: rgba(70, 70, 70, 1);
+	}
+
+	.BMNonModalWindow {
+		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 6px 32px;
+	}
+
+	.BMKeyWindow {
+		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
+	}
+
+	.BMWindow::after {
+		content: '';
+		position: absolute;
+		pointer-events: none;
+
+		border-radius: 4px;
+
+		left: 0px;
+		top: 0px;
+		right: 0px;
+		bottom: 0px;
+
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .25) inset;
+	}
+
+	.BMWindowDragHandle {
+		color: rgba(255, 255, 255, .33);
+	}
+}
+
+.BMFullScreenWindow {
+	left: 0px !important;
+	top: 0px !important;
+	
+	width: 100vw !important;
+	height: 100vh !important;
+}
+
+.BMWindowContent {
+	position: absolute;
+	
+	width: 100%;
+	height: 100%;
+	top: 0px;
+	left: 0px;
+}
+
+/* In theory, this would break browsers that support dark mode but not backdrop filter;
+   In practice, only Safari supports both. */
+@media (prefers-color-scheme: dark) {
+	.BMWindowContent {
+		background-color: rgba(0, 0, 0, .75) !important;
+	}
+}
+
+.BMWindowFullContent {
+	height: 100% !important;
+	top: 0px;
+}
+
+.BMWindowToolbar {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	height: 64px;
+
+    width: 100%;
+
+	color: rgba(0, 0, 0, .66);
+	text-shadow: 0px 1px 1px rgba(255, 255, 255, .5);
+
+    box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMToolWindow > .BMWindowToolbar {
+	height: 32px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowToolbar, .BMWindowToolbarButton {
+		color: rgba(255, 255, 255, .8);
+		text-shadow: 0px 1px 1px rgba(0, 0, 0, .33);
+	}
+}
+
+/* MARK: BMCollectionView */
+
+.BMCollectionViewCellHidden {
+	visibility: hidden !important;
+}
+
+/* MARK: BMWindow */
+
+.BMWindowLabel {
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 16px !important;
+	font-weight: normal !important;
+	
+	text-align: center !important;
+	
+	margin-left: 8px !important;
+	margin-right: 8px !important;
+	text-align: left !important;
+
+	color: rgba(0, 0, 0, .8);
+
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+/* BMWindowSublabel should be used together with BMWindowLabel */
+.BMWindowSublabel {
+	font-size: 14px;
+	color: rgba(0, 0, 0, .33);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowLabel {
+		color: rgba(255, 255, 255, .9);
+	}
+	
+	.BMWindowSublabel {
+		color: rgba(255, 255, 255, .5);
+	}
+}
+
+.BMWindowEllipsis {
+	flex-shrink: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.BMWindowTitle {
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 24px !important;
+	font-weight: bold !important;
+	
+	text-align: center !important;
+	
+	min-height: 64px !important;
+	
+	margin-left: 24px !important;
+	margin-right: 8px !important;
+	text-align: left !important;
+
+	color: rgba(0, 0, 0, .8);
+
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowTitle {
+		color: rgba(255, 255, 255, .9);
+	}
+}
+
+.BMWindowInput {
+	background: none !important;
+	-webkit-appearance: none !important;
+	border: none !important;
+	box-sizing: border-box !important;
+	
+	border-radius: 4px !important;
+	margin: 8px !important;
+	
+	height: calc(100% - 16px) !important;
+	min-width: 44px !important;
+	
+	transition: all .2s ease !important;
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+
+	width: auto !important;
+	padding-left: 8px !important;
+	padding-right: 8px !important;
+}
+
+.BMWindowInput:hover:not(:focus) {
+	background: rgba(255, 255, 255, .5) !important;
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+}
+
+.BMWindowInput:focus {
+	background: white !important;
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 10px rgba(0, 160, 255, 1) !important;
+}
+
+.BMWindowInput:disabled {
+	color: rgba(0, 0, 0, .5) !important;
+}
+
+.BMWindowInputInvalid {
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
+}
+
+.BMWindowInputInvalid:hover:not(:focus) {
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
+}
+
+.BMWindowInputInvalid:focus {
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 10px rgba(255, 80, 0, 1) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowInput {
+		color: rgba(255, 255, 255, .9) !important;
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0) inset, 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+	}
+
+	.BMWindowInput:hover:not(:focus) {
+		background: rgba(255, 255, 255, .05) !important;
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .1) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+	}
+
+	.BMWindowInput:focus {
+		background: rgba(0, 160, 255, .1) !important;
+		color: rgba(255, 255, 255, .9) !important;
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(0, 160, 255, .75) !important;
+	}
+
+	.BMWindowInput:disabled {
+		color: rgba(255, 255, 255, .5) !important;
+	}
+
+	.BMWindowInputInvalid:hover:not(:focus) {
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
+	}
+	
+	.BMWindowInputInvalid:focus {
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(255, 80, 0, 1) !important;
+	}
+}
+
+
+.BMWindowToolbarDark .BMWindowInput {
+	color: rgba(255, 255, 255, .9) !important;
+	box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0) inset, 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+}
+
+.BMWindowToolbarDark .BMWindowInput:hover:not(:focus) {
+	background: rgba(255, 255, 255, .05) !important;
+	box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .1) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
+}
+
+.BMWindowToolbarDark .BMWindowInput:focus {
+	background: rgba(0, 0, 0, .05) !important;
+	color: rgba(255, 255, 255, .9) !important;
+	box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .1) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(0, 160, 255, .75) !important;
+}
+
+.BMWindowToolbarDark .BMWindowInput:disabled {
+	color: rgba(255, 255, 255, .5) !important;
+}
+
+.BMWindowToolbarDark .BMWindowInputInvalid:hover:not(:focus) {
+	box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
+}
+
+.BMWindowToolbarDark .BMWindowInputInvalid:focus {
+	box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(255, 80, 0, 1) !important;
+}
+
+.BMWindowToolbarInput {
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 16px;
+	color: rgba(0, 0, 0, .8);
+	font-weight: 500;
+	height: 32px !important;
+
+	display: flex;
+	align-items: center;
+	line-height: 1em !important;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowToolbarInput {
+		color: rgba(255, 255, 255, .9);
+	}
+}
+
+.BMWindowToolbarDark .BMWindowToolbarInput {
+	color: rgba(255, 255, 255, .9);
+}
+
+.BMWindowToolbarLabel {
+	border: none !important;
+	box-sizing: border-box !important;
+	
+	border-radius: 4px !important;
+	margin: 8px !important;
+
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 16px;
+	color: rgba(0, 0, 0, .33);
+	font-weight: 500;
+
+	display: flex;
+	align-content: center;
+	align-items: center;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowToolbarLabel {
+		color: rgba(255, 255, 255, .5);
+	}
+}
+
+.BMWindowToolbarDark .BMWindowToolbarLabel {
+	color: rgba(255, 255, 255, .5);
+}
+
+.BMWindowButton {
+	-webkit-appearance: none;
+	outline: none;
+	
+	border-radius: 4px;
+	box-shadow: 0px 2px 4px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
+	
+	background: rgba(0, 128, 255, 1);
+	
+	color: white;
+	font-family: -apple-system, BinkMacSystemFont, 'Roboto', 'Helvetica', 'Segoe UI', sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	
+	padding: 8px;
+	
+	margin: 8px;
+	border: none;
+
+	align-self: center;
+	transition: background-color .2s ease;
+	min-height: 32px;
+}
+
+.BMWindowToolbarButton {
+	position: static !important;
+}
+
+.BMWindowToolbarButton > i {
+	display: block !important;
+}
+
+.BMWindowFlexibleSpace {
+	flex-grow: 1;
+}
+
+.BMWindowButton:active {
+	background: rgb(0, 108, 235);
+}
+
+/* NOTE: BMWindowButtonWeak is meant to be used together with BMWindowButton */
+.BMWindowButtonWeak {
+	background: transparent;
+	border: 1px solid rgba(0, 128, 255, 1);
+	color: rgba(0, 128, 255, 1);
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	box-shadow: none;
+}
+
+.BMWindowButtonWeak:active {
+	background: rgba(0, 0, 0, .05);
+}
+
+/* MARK: Switch */
+.BMWindowSwitch {
+	width: 128px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	
+	color: rgba(0, 0, 0, .25);
+	
+	padding-left: 8px;
+	padding-right: 8px;
+	
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	
+	margin-left: 32px;
+	margin-right: 32px;
+	
+	cursor: pointer;
+}
+
+.BMLayoutEditorViewDetails .BMWindowSwitch {
+	margin: 0;
+}
+
+
+.BMWindowSwitch > input {
+	display: none;
+}
+
+.BMWindowSwitchGutter {
+	border-radius: 5px;
+	
+	border: 1px solid rgba(0, 0, 0, .1);
+	background-color: rgba(0, 0, 0, .1);
+	
+	margin-left: 8px;
+	margin-right: 8px;
+	
+	flex-grow: 1;
+	height: 24px;
+	
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	overflow: hidden;
+}
+
+.BMWindowSwitchKnob {
+	width: 50%;
+	height: 100%;
+	background-color: #FFF;
+	
+	box-shadow: 0px 2px 8px rgba(0, 0, 0, .3), 0px -4px 8px rgba(0, 0, 0, .05) inset;
+	border-radius: 5px;
+
+	transform: translateX(calc(100% + 1px));
+	
+	transition: transform .2s ease, width .2s ease, opacity .2s ease;
+}
+
+input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwitchKnobOFF {
+	transform: none;
+}
+
+.BMWindowSwitch > input:indeterminate + .BMWindowSwitchGutter > .BMWindowSwitchKnob {
+	transform: none;
+	width: 100%;
+	opacity: .5;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowSwitch {
+		color: rgba(255, 255, 255, .33);
+	}
+
+	.BMWindowSwitchGutter {
+		border-color: rgba(255, 255, 255, .2);
+		background-color: rgba(0, 0, 0, .25);
+	}
+
+	.BMWindowSwitchKnob {
+		background-color: rgb(60, 60, 60);
+		box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .5) inset, 0px 2px 8px rgba(0, 0, 0, .3), 0px -4px 8px rgba(0, 0, 0, .25) inset;
+	}
+}
+
+.BMWindowOpaqueSidebar {
+	background-color: #F0F0F0;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowOpaqueSidebar {
+		background-color: rgb(44, 44, 44);
+	}
+}
+
+/* MARK: Tooltips */
+
+/* NOTE: An element with the BMHasTooltip class should be either positioned relatively, absolutely or fixed. */
+.BMHasTooltip::after {
+	content: attr(data-bm-tooltip);
+	padding: 8px;
+
+	display: block;
+	position: absolute;
+
+	left: 0px;
+	top: 50%;
+
+	color: white;
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 12px;
+
+	background-color: rgba(0, 0, 0, .8);
+	border: 1px solid rgba(0, 0, 0, .9);
+	border-radius: 4px;
+
+	box-shadow: 0px 2px 6px rgba(0, 0, 0, .1);
+
+	opacity: 0;
+	transform-origin: 0% 50%;
+	transform: scaleX(.8) scaleY(.8) translateX(-100%) translateY(-50%);
+
+	transition: opacity .2s ease, transform .2s ease;
+
+	pointer-events: none;
+
+	-webkit-backdrop-filter: blur(15px);
+	backdrop-filter: blur(15px);
+
+	min-width: 240px;
+}
+
+.BMHasTooltip:hover::after {
+	opacity: 1;
+	transform: scaleX(1) scaleY(1) translateX(-100%) translateY(-50%);
+}
+
+
+/* MARK: BMLayoutEditor */
+
+.BMScriptFont {
+	font-family: cursive !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	letter-spacing: 2px !important;
+
+	position: relative;
+	top: 2px;
+}
+
+.BMLayoutEditor {
+	box-shadow: none !important;
+	border-radius: 0px !important;
+	background-color: #C0C0C0;
+}
+
+.BMLayoutEditorBlocker {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+.BMLayoutEditorSizeClassSelector {
+	width: 240px !important;
+	cursor: default;
+}
+
+.BMLayoutEditorSizeClassImage {
+	margin-right: 8px;
+	display: inline-block;
+
+	pointer-events: none;
+
+	width: 32px;
+	height: 32px;
+
+	background-size: 32px 32px;
+	position: relative;
+	top: 10px;
+}
+
+.BMWindowInput > .BMLayoutEditorSizeClassImage {
+	position: static;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorSizeClassImage {
+		filter: invert(100%);
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
+}
+
+.BMWindowToolbarDark .BMLayoutEditorSizeClassImage {
+	filter: invert(100%);
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+}
+
+.BMLayoutEditorSizeClassPopupOption {
+	height: 48px !important;
+}
+
+.BMLayoutEditorSizeClassPopupOption:hover > .BMLayoutEditorSizeClassImage {
+	filter: invert(100%);
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+}
+
+.BMLayoutEditorSizeClassPopupOption:active > .BMLayoutEditorSizeClassImage {
+	filter: none;
+	transform: none;
+	-webkit-transform: none;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorSizeClassPopupOption:active > .BMLayoutEditorSizeClassImage {
+		filter: invert(100%);
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
+	
+}
+
+.BMWindowToolbarDark .BMLayoutEditorSizeClassPopupOption:active > .BMLayoutEditorSizeClassImage {
+	filter: invert(100%);
+	transform: translateZ(0);
+	-webkit-transform: translateZ(0);
+}
+
+
+.BMLayoutEditorDragSource::after, .BMLayoutEditorDragTarget::after {
+	content: '';
+
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+
+	background: linear-gradient(to bottom, rgba(0, 128, 255, .25) 0%, rgba(0, 128, 255, .33) 100%);
+
+	border-radius: 0px;
+	border: 2px solid rgb(0, 108, 235);
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMLayoutEditorTree {
+	width: 256px;
+	height: 100%;
+	overflow: auto;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+
+	padding-top: 64px;
+	padding-left: 8px;
+	padding-right: 8px;
+
+	border-right: 1px solid rgba(0, 0, 0, .15);
+
+	/*transition: width .3s ease, padding .3s ease;*/
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorTree {
+		border-right-color: black;
+	}
+}
+
+.BMLayoutEditorWorkspaceArea {
+	position: absolute;
+	left: 256px;
+	right: 344px;
+	height: 100%;
+	top: 0px;
+
+	background: white;
+
+	/*transition: left .3s ease, right .3s ease;*/
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorWorkspaceArea {
+		background: #1e1e1e;
+	}
+}
+
+.BMLayoutEditorWorkspaceToolbar {
+	position: absolute;
+	height: 63px;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+
+	border-bottom: 1px solid #C0C0C0;
+	display: flex;
+	align-items: center;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorWorkspaceToolbar {
+		border-bottom-color: black;
+	}
+}
+
+.BMLayoutEditorWorkspaceWrapper {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	top: 64px;
+
+	display: flex;
+
+	background: #E0E0E0;
+	overflow: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorWorkspaceWrapper {
+		background-color: rgb(40, 40, 40);
+	}
+}
+
+.BMLayoutEditorWorkspace {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	top: 0px;
+
+	background: white;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, .2);
+
+	overflow: hidden;
+
+	flex-shrink: 0;
+}
+
+.BMLayoutEditorWorkspaceToolbarSizeClass {
+	background-color: rgba(0, 128, 255, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorWorkspaceToolbarSizeClass {
+		background-color: rgba(0, 128, 255, .75);
+	}
+}
+
+
+/* MARK: Layout editor popup */
+
+.BMLayoutEditorConstraintPopupContainer, .BMMenuContainer {
+	position: absolute;
+
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+
+	/* Sadly needed for Thingworx environment */
+	z-index: 999999;
+}
+
+.BMLayoutEditorConstraintPopup, .BMMenu {
+	position: absolute;
+
+	display: flex;
+	flex-direction: column;
+
+	padding-top: 4px;
+	padding-bottom: 4px;
+
+	background-color: rgba(255, 255, 255, .8);
+	backdrop-filter: blur(25px);
+	-webkit-backdrop-filter: blur(25px);
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
+
+	border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorConstraintPopup, .BMMenu {
+		background-color: rgba(50, 50, 50, .8);
+		box-shadow: 0px 4px 8px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(255, 255, 255, .25) inset;
+	}
+}
+
+.BMLayoutEditorConstraintPopupOption, .BMMenuItem {
+	height: 24px;
+	line-height: 24px;
+	vertical-align: middle;
+
+	padding-left: 16px;
+	padding-right: 64px;
+
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 14px !important;
+	font-weight: 500;
+	color: rgba(0, 0, 0, .8);
+
+	cursor: default;
+}
+
+.BMLayoutEditorConstraintPopupOption:hover, .BMMenuItem:hover {
+	background: rgb(0, 128, 255);
+	color: white;
+}
+
+.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active {
+	background: transparent;
+	color: rgba(0, 0, 0, .8);
+}
+
+.BMLayoutEditorConstraintPopupOptionHighlighted, .BMMenuItemHighlighted {
+	background: rgba(0, 128, 255, .5);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorConstraintPopupOption, .BMMenuItem {
+		color: rgba(255, 255, 255, .9);
+	}
+
+	.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active {
+		background: transparent;
+		color: white;
+	}
+}
+
+.BMLayoutEditorWorkspaceToolbarSizeClass .BMLayoutEditorConstraintPopupOption {
+	color: rgba(255, 255, 255, .9);
+}
+
+.BMLayoutEditorWorkspaceToolbarSizeClass .BMLayoutEditorConstraintPopupOption:active {
+	background: transparent;
+	color: white;
+}
+
+.BMLayoutEditorEmptyVariableMessage {
+	display: flex;
+	flex-direction: column;
+
+	justify-content: center;
+	align-items: center;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	padding: 16px;
+}
+
+.BMLayoutEditorMessageTitle {
+	font-size: 18px !important;
+	font-weight: 800 !important;
+	margin-bottom: 16px;
+
+	opacity: .75;
+}
+
+.BMLayoutEditorMessageDescription {
+	font-size: 12px !important;
+	opacity: .5;
+	text-align: center !important;
+}
+
+/* MARK: Layout editor details */
+
+.BMLayoutEditorDetails {
+	width: 344px;
+	height: 100%;
+	overflow: auto;
+	position: absolute;
+	top: 0px;
+	right: 0px;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+
+	background-color: #F0F0F0;
+
+	border-left: 1px solid rgba(0, 0, 0, .2);
+
+	display: flex;
+	flex-direction: column;
+
+	/*transition: width .3s ease;*/
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetails {
+		background-color: rgb(50, 50, 50);
+		border-left-color: black;
+	}
+}
+
+.BMLayoutEditorDetailsContent {
+	left: 0px;
+	top: 56px;
+	right: 0px;
+
+	display: flex;
+	flex-direction: column;
+}
+
+.BMLayoutEditorDetailsDivider {
+	width: 100%;
+	height: 1px;
+
+	margin-top: 16px;
+	margin-bottom: 16px;
+
+	background: rgba(0, 0, 0, .05);
+
+	flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsDivider {
+		background: rgba(255, 255, 255, .15);
+	}
+}
+
+.BMLayoutEditorDetailsItem {
+	height: 32px;
+	width: 100%;
+
+	display: flex;
+	flex-direction: row;
+
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 12px !important;
+
+	flex-shrink: 0;
+}
+
+BMLayoutEditorDetailsItemBadge {
+	height: 16px;
+
+	border: 1px solid rgba(0, 0, 0, .1);
+	border-radius: 3px;
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+
+	font-size: 11px !important;
+	color: rgba(0, 0, 0, .33) !important;
+	line-height: 14px !important;
+	vertical-align: middle !important;
+
+	padding-left: 4px !important;
+	padding-right: 4px !important;
+
+	position: relative;
+	margin-right: 8px;
+	top: -1px;
+	display: inline-block;
+}
+
+.BMLayoutEditorDetailsItemBadgeIcon {
+	width: 16px;
+	height: 16px;
+
+	background-size: 16px 16px;
+
+	position: relative;
+	margin-right: 8px;
+	top: 4px;
+	display: inline-block;
+}
+
+@media (prefers-color-scheme: dark) {
+
+	.BMLayoutEditorDetailsItemBadgeIcon {
+		filter: invert(100%);
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
+	
+	.BMLayoutEditorDetailsItemBadge {
+		border-color: rgba(255, 255, 255, .1);
+		color: rgba(255, 255, 255, .33) !important;
+	}
+}
+
+.BMLayoutEditorDetailsItemTitle {
+	height: 32px;
+	width: 128px;
+
+	text-align: right;
+	color: rgba(0, 0, 0, .33);
+
+	line-height: 32px;
+	vertical-align: middle;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	padding-right: 8px;
+
+	cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsItemTitle {
+		color: rgba(255, 255, 255, .33);
+	}
+}
+
+.BMLayoutEditorViewDetails .BMLayoutEditorDetailsItemTitle {
+	width: 192px;
+	flex-shrink: 0;
+}
+
+.BMLayoutEditorSubviewDetailsCollapsed {
+	overflow: hidden;
+}
+
+.BMLayoutEditorSubviewDetails > .BMLayoutEditorDetailsConstraintItem, .BMLayoutEditorSubviewDetails > .BMLayoutEditorDetailsItem {
+	margin-left: 16px;
+}
+
+.BMLayoutEditorSubviewDetails > .BMLayoutEditorDetailsItem > .BMLayoutEditorDetailsItemTitle {
+	width: 300px !important;
+}
+
+.BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
+	height: 32px !important;
+	flex-grow: 1 !important;
+
+	text-align: left;
+	color: rgba(0, 0, 0, .8);
+
+	font-size: 12px !important;
+	line-height: 32px !important;
+	vertical-align: middle;
+
+	box-sizing: border-box !important;
+	padding-left: 8px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+
+	cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
+		color: rgba(255, 255, 255, .9);
+	}
+}
+
+.BMLayoutEditorDetailsItemReadonlyValue {
+	padding-left: 16px !important;
+}
+
+.BMLayoutEditorDetailsItemReadonlyValueClickable {
+	margin-right: 8px;
+	border-radius: 4px;
+
+	transition: background-color .2s ease;
+
+	height: 24px !important;
+	line-height: 24px !important;
+
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
+}
+
+.BMLayoutEditorDetailsItemReadonlyValueClickable:hover {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorDetailsItemReadonlyValueClickable:active {
+	background-color: rgba(0, 0, 0, .2);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsItemReadonlyValueClickable:hover {
+		background-color: rgba(255, 255, 255, .1);
+	}
+	
+	.BMLayoutEditorDetailsItemReadonlyValueClickable:active {
+		background-color: rgba(255, 255, 255, .2);
+	}
+}
+
+.BMLayoutEditorDetailsConstraintItem {
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-bottom: 8px;
+
+	padding: 8px;
+
+	border-radius: 4px;
+	border: 1px solid rgba(0, 0, 0, .25);
+
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 12px !important;
+	color: rgba(0, 0, 0, .8);
+
+	cursor: default;
+
+	transition: background-color .2s ease;
+}
+
+.BMLayoutEditorDetailsConstraintItem:hover {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorDetailsConstraintItem:active {
+	background-color: rgba(0, 0, 0, .2);
+}
+
+.BMLayoutEditorDetailsConstraintItemReadonly {
+	border-color: rgba(0, 0, 0, .1);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsConstraintItem {
+		border: 1px solid rgba(255, 255, 255, .25);
+		color: rgba(255, 255, 255, .9);
+	}
+
+	.BMLayoutEditorDetailsConstraintItem:hover {
+		background-color: rgba(255, 255, 255, .1);
+	}
+	
+	.BMLayoutEditorDetailsConstraintItem:active {
+		background-color: rgba(255, 255, 255, .2);
+	}
+	
+	.BMLayoutEditorDetailsConstraintItemReadonly {
+		border-color: rgba(255, 255, 255, .1);
+	}
+}
+
+.BMLayoutEditorDetailsConstraintItemReadonly:hover, .BMLayoutEditorDetailsConstraintItemReadonly:active {
+	background: transparent;
+}
+
+.BMLayoutEditorDetailsConstraintItemStrong {
+	border-style: dashed;
+}
+
+.BMLayoutEditorDetailsConstraintItemWeak {
+	border-style: dotted;
+}
+
+.BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
+	height: 24px !important;
+	line-height: 24px !important;
+
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
+}
+
+/* MARK: Layout editor tree */
+
+.BMLayoutTreeView {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	font-size: 11px;
+}
+
+.BMLayoutTreeViewEntity {
+	padding-left: 8px;
+	padding-right: 8px;
+
+	padding-top: 4px;
+	padding-bottom: 4px;
+
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: default;
+
+	transition: background-color .2s ease, color .2s ease;
+
+	position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutTreeViewEntity {
+		color: rgba(255, 255, 255, .8);
+	}
+}
+
+.BMLayoutTreeViewTitle {
+	font-weight: 600;
+}
+
+.BMLayoutTreeViewConstraintsTitle {
+	color: rgba(0, 0, 0, .75);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutTreeViewConstraintsTitle {
+		color: rgba(255, 255, 255, .8);
+	}
+}
+
+.BMLayoutTreeViewEntitySelected {
+	border-radius: 4px;
+	background-color: rgba(0, 128, 255, 1);
+	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .1) inset;
+	color: white;
+
+	border-radius: 4px;
+}
+
+.BMLayoutTreeViewContainer {
+	padding-left: 8px;
+	max-height: 0px;
+	opacity: 0;
+	overflow-y: hidden;
+
+	transition: all .3s ease;
+
+	position: relative;
+}
+
+.BMLayoutTreeViewConstraintsContainer {
+	padding-left: 24px;
+}
+
+.BMLayoutTreeViewConstraintsContainer::before {
+	content: '';
+	position: absolute;
+
+	width: 1px;
+	height: 100%;
+	top: 0px;
+	left: 15px;
+
+	background-color: rgba(0, 0, 0, .1);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutTreeViewConstraintsContainer::before {
+		background-color: rgba(255, 255, 255, .15);
+	}
+}
+
+.BMLayoutTreeViewContainerExpanded {
+	max-height: 800px;
+	opacity: 1;
+}
+
+.BMDisclosureTriangle {
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 4px 0 4px 6px;
+	border-color: transparent transparent transparent rgba(0, 0, 0, .33);
+	transition: transform .2s ease;
+	display: inline-block;
+	margin-left: 4px;
+	margin-right: 4px;
+}
+
+.BMLayoutEditorViewDetails > .BMLayoutEditorDetailsItem > .BMDisclosureTriangle,
+.BMLayoutEditorViewTabDetails > .BMLayoutEditorDetailsItem > .BMDisclosureTriangle {
+	border-width: 6px 0 6px 9px;
+
+	position: relative;
+	top: 6px;
+	left: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMDisclosureTriangle {
+		border-color: transparent transparent transparent rgba(255, 255, 255, 0.33);
+	}
+}
+
+.BMDisclosureTriangleExpanded {
+	transform: rotate(90deg);
+}
+
+.BMLayoutEditorManagedView {
+	pointer-events: none !important;
+}
+
+.BMLayoutEditorInvisibleView {
+	opacity: .5 !important;
+}
+
+.BMLayoutEditorInvisibleView::after {
+	content: '';
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	background: 
+  /* On "top" */
+  repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    rgba(0, 128, 255, .5) 8px,
+    rgba(0, 128, 255, .5) 10px
+  );
+}
+
+/* MARK: View selectors */
+
+.BMLayoutEditorViewSelector {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0px;
+	top: 0px;
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+
+	pointer-events: all !important;
+
+	/* Sadly needed for Thingworx environment */
+	z-index: 10;
+}
+
+.BMLayoutEditorViewSelectorSelected {
+	border: 2px solid rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorViewSelectorSelected {
+	border-color: red;
+}
+
+.BMLayoutEditorViewSelectorConstrained {
+	border: 1px solid rgb(255, 251, 0);
+}
+
+.BMLayoutEditorNoShadow .BMLayoutEditorViewSelector {
+	display: none !important;
+}
+
+.BMLayoutEditorNoShadow .BMLayoutEditorConstraint {
+	display: none !important;
+}
+
+/* MARK: Constraints */
+
+.BMLayoutEditorHorizontalConstraintLine {
+	position: absolute;
+	left: 0px;
+	height: 1px;
+	width: 100%;
+	top: 1px;
+
+	border-bottom: 1px solid rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorHorizontalConstraintLine {
+	border-bottom-color: red;
+}
+
+.BMLayoutEditorConstraintLineOptional.BMLayoutEditorHorizontalConstraintLine {
+	border-bottom-style: dotted;
+}
+
+.BMLayoutEditorVerticalConstraintLine {
+	position: absolute;
+	left: 1px;
+	height: 100%;
+	width: 1px;
+	top: 0px;
+
+	border-right: 1px solid rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorVerticalConstraintLine {
+	border-right-color: red;
+}
+
+.BMLayoutEditorConstraintLineOptional.BMLayoutEditorVerticalConstraintLine {
+	border-right-style: dotted;
+}
+
+.BMLayoutEditorVerticalLeadLine {
+	border-left: 1px dashed rgba(0, 128, 255, 1);
+	position: absolute;
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorVerticalLeadLine {
+	border-left-color: red;
+}
+
+.BMLayoutEditorHorizontalLeadLine {
+	border-top: 1px dashed rgba(0, 128, 255, 1);
+	position: absolute;
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorHorizontalLeadLine {
+	border-top-color: red;
+}
+
+.BMLayoutEditorSubviewConstraint {
+	visibility: hidden;
+}
+
+.BMLayoutEditorConstraint {
+	position: absolute;
+	pointer-events: all !important;
+
+	/* Needed for Thingworx environment */
+	z-index: 999998;
+}
+
+.BMLayoutEditorHorizontalConstraint::after {
+	content: '';
+	position: absolute;
+	left: 0px;
+	height: 100%;
+	width: 1px;
+	top: 0px;
+
+	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorHorizontalConstraint::before {
+	content: '';
+	position: absolute;
+	left: calc(100% - 1px);
+	height: 100%;
+	width: 1px;
+	top: 0px;
+
+	background-color: rgba(0, 128, 255, 1);
+}
+
+
+.BMLayoutEditorVerticalConstraint::after {
+	content: '';
+	position: absolute;
+	left: 0px;
+	height: 1px;
+	width: 100%;
+	top: 0px;
+
+	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorVerticalConstraint::before {
+	content: '';
+	position: absolute;
+	top: calc(100% - 1px);
+	height: 1px;
+	width: 100%;
+	left: 0px;
+
+	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorConstraint::after, .BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorConstraint::before {
+	background-color: red;
+}
+
+.BMLayoutEditorImageButton {
+	width: 32px;
+	height: 32px;
+	margin: 8px;
+
+	transition: opacity .2s ease;
+	opacity: 1;
+
+	background-size: 32px 32px;
+}
+
+.BMLayoutEditorTouchHandler {
+	position: absolute;
+	left: 16px;
+	bottom: 16px;
+	outline: 4px solid transparent !important;
+	line-height: 32px;
+	padding-left: 16px;
+	padding-right: 16px;
+	line-height: 32px;
+
+	z-index: 999999999999;
+}
+
+.BMLayoutEditorTouchHandlerActive {
+	outline: 4px solid rgba(160, 230, 255, 1) !important;
+}
+
+.BMLayoutEditorImageButton:active {
+	opacity: .75;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorImageButton {
+		filter: invert(100%);
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
+}
+
+/* MARK: Popover windows */
+
+.BMPopoverOverlay {
+	position: absolute;
+	
+	width: 100%;
+	height: 100%;
+	
+	left: 0px;
+	top: 0px;
+	
+	z-index: 9999999; /* :( */
+}
+
+.BMPopoverContainer {
+	position: absolute;
+
+	z-index: 9999999; /* :( */
+
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	width: 100%;
+
+	padding-top: 8px;
+
+	overflow: auto;
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMPopoverContainerLayer {
+	position: absolute;
+	
+	z-index: 9999999; /* :( */
+	pointer-events: none;
+}
+/*
+The drop shadow layer contains the drop shadow effect only.
+*/
+.BMPopoverDropShadowContainer {
+
+	/* 
+	Filter drop-shadow is extremely expensive, but in practice, 
+	no page should have more than one popover open at any time, which should mitigate this 
+	*/
+	filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, .25)) drop-shadow(0px 4px 8px rgba(0, 0, 0, .1));
+	mix-blend-mode: multiply;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMPopoverDropShadowContainer {
+		filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 1)) drop-shadow(0px 4px 8px rgba(0, 0, 0, .66));
+	}
+}
+
+.BMPopoverDropShadowContent::after {
+	/* This essentially turns the background transparent, but it will still be used by filter drop-shadows */
+	content: '';
+	background: white;
+	background-blend-mode: multiply;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+
+	width: 100%;
+	height: 100%;
+}
+
+/*
+The background layer contains the background.
+*/
+.BMPopoverBackground {
+	position: absolute;
+	
+	z-index: 9999999; /* :( */
+	
+	background: rgba(255, 255, 255, .8);
+	-webkit-backdrop-filter: blur(25px);
+	pointer-events: none;
+}
+
+.BMPopoverBackgroundDarkModeContainer {
+	display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMPopoverBackground {
+		background: transparent;
+	}
+
+	.BMPopoverBackgroundDarkModeContainer {
+		display: block;
+
+		position: absolute;
+		width: 100%;
+		height: 100%;
+
+		left: 0px;
+		top: 0px;
+
+		opacity: .8;
+	}
+
+	.BMPopoverBackgroundDarkModeOutline {
+		background-color: rgb(100, 100, 100);
+
+		position: absolute;
+		width: 100%;
+		height: 100%;
+
+		left: 0px;
+		top: 0px;
+	}
+
+	.BMPopoverBackgroundDarkModeFill {
+		background-color: rgb(50, 50, 50);
+
+		position: absolute;
+		width: 100%;
+		height: 100%;
+
+		left: 0px;
+		top: 0px;
+	}
+}
+
+/* MARK: Layout variables */
+
+.BMLayoutEditorVariable {
+	display: flex;
+	align-items: center;
+}
+
+.BMLayoutEditorVariable > .BMWindowInput {
+	margin-top: 4px;
+	margin-bottom: 4px;
+	height: auto !important;
+}
+
+.BMLayoutEditorVariableMain {
+	padding-top: 16px;
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMLayoutEditorVariableMain::after {
+	content: '';
+	position: absolute;
+	top: 8px;
+	left: 0px;
+	height: 1px;
+	width: 100%;
+	border-top: 1px solid rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorLastVariable {
+	padding-bottom: 16px;
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMLayoutEditorLastVariable::after {
+	content: '';
+	position: absolute;
+	bottom: 8px;
+	left: 0px;
+	height: 1px;
+	width: 100%;
+	border-top: 1px solid rgba(0, 0, 0, .1);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorVariableMain::after {
+		border-top-color: rgba(255, 255, 255, .1);
+	}
+
+	.BMLayoutEditorLastVariable::after {
+		border-top-color: rgba(255, 255, 255, .1);
+	}
+}
+
+.BMLayoutEditorVariable > .BMLayoutEditorDetailsItemBadgeIcon {
+	position: static;
+	flex-grow: 1;
+	background-repeat: no-repeat;
+	background-position-x: 100%;
+}
+
+.BMLayoutEditorVariableName {
+	font-weight: 600;
+}
+
+.BMLayoutEditorVariableValue {
+	width: 48px !important;
+	flex-shrink: 0;
+    -moz-appearance: textfield;
+}
+
+.BMLayoutEditorVariableValue::-webkit-outer-spin-button, .BMLayoutEditorVariableValue::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.BMLayoutEditorAddVariationButton {
+	margin-left: 0;
+	flex-shrink: 0;
+	margin-right: 0;
+	opacity: 0;
+	transition: opacity .2s ease;
+}
+
+.BMLayoutEditorRemoveVariationButton {
+	margin-right: 0;
+	flex-shrink: 0;
+	margin-left: 0;
+	opacity: 0;
+	transition: opacity .2s ease;
+}
+
+.BMLayoutEditorVariable:hover > .BMWindowToolbarButton {
+	opacity: .5;
+}
+
+/* MARK: Layout Variables suggestions */
+
+.BMLayoutEditorConstantSuggestions {
+	pointer-events: all;
+	max-height: 420px;
+}
+
+.BMLayoutEditorConstantSuggestionsOverlay {
+	pointer-events: none !important;
+}
+
+/* MARK: Editor Tabs */
+
+.BMLayoutEditorViewTabDetails {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	width: 100%;
+
+	padding-top: 8px;
+
+	overflow: auto;
+}
+
+.BMLayoutEditorDetailsTabStrip {
+	height: 32px;
+	width: 100%;
+
+	display: flex;
+	flex-direction: row;
+	align-content: center;
+	align-items: center;
+	justify-content: center;
+
+	padding-bottom: 1px;
+	border-bottom: 1px solid rgba(0, 0, 0, .1);
+
+	flex-shrink: 0;
+}
+
+.BMLayoutEditorDetailsTab {
+	width: 32px;
+	height: 32px;
+
+	background-size: 16px 16px;
+	background-position: center;
+	background-repeat: no-repeat;
+
+	transition: background-color .2s ease;
+
+	border-radius: 4px;
+
+	margin-left: 4px;
+	margin-right: 4px;
+}
+
+.BMLayoutEditorDetailsTabLayoutVariables {
+	background-image: url(images/LayoutVariables.png);
+}
+
+.BMLayoutEditorDetailsTabLayout {
+	background-image: url(images/Layout.png);
+}
+
+.BMLayoutEditorDetailsTabProperties {
+	background-image: url(images/Properties.png);
+}
+
+.BMLayoutEditorDetailsTabSelected {
+	background-color: rgba(0, 0, 0, .2);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsTab {
+		filter: invert(100%);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+}
+
+/* MARK: Editor layout variables */
+
+.BMLayoutEditorVariablesContainer {
+	flex-grow: 1;
+	width: 100%;
+
+	position: relative;
+}
+
+
+
+/* MARK: Images */
+
+.BMLayoutEditorImageButtonAlignBottom {
+	background-image: url(images/AlignBottom.png);
+}
+
+.BMLayoutEditorImageButtonAlignCenterX {
+	background-image: url(images/AlignCenterX.png);
+}
+
+.BMLayoutEditorImageButtonAlignCenterY {
+	background-image: url(images/AlignCenterY.png);
+}
+
+.BMLayoutEditorImageButtonAlignLeading {
+	background-image: url(images/AlignLeading.png);
+}
+
+.BMLayoutEditorImageButtonAlignAlignTop {
+	background-image: url(images/AlignTop.png);
+}
+
+.BMLayoutEditorImageButtonAlignTrailing {
+	background-image: url(images/AlignTrailing.png);
+}
+
+.BMLayoutEditorImageButtonEqualHeight {
+	background-image: url(images/EqualHeight.png);
+}
+
+.BMLayoutEditorImageButtonEqualHorizontalSpacing {
+	background-image: url(images/EqualHorizontalSpacing.png);
+}
+
+.BMLayoutEditorImageButtonEqualHorizontalSpacingInSuperview {
+	background-image: url(images/EqualHorizontalSpacingInSuperview.png);
+}
+
+.BMLayoutEditorImageButtonEqualVerticalSpacing {
+	background-image: url(images/EqualVerticalSpacing.png);
+}
+
+.BMLayoutEditorImageButtonEqualVerticalSpacingInSuperview {
+	background-image: url(images/EqualVerticalSpacingInSuperview.png);
+}
+
+.BMLayoutEditorImageButtonEqualWidth {
+	background-image: url(images/EqualWidth.png);
+}
+
+.BMLayoutEditorImagePhone {
+	background-image: url(images/Phone.png);
+}
+
+.BMLayoutEditorImagePhoneLandscape {
+	background-image: url(images/PhoneLandscape.png);
+}
+
+.BMLayoutEditorImagePhonePortrait {
+	background-image: url(images/PhonePortrait.png);
+}
+
+.BMLayoutEditorImageTablet {
+	background-image: url(images/Tablet.png);
+}
+
+.BMLayoutEditorImageTabletLandscape {
+	background-image: url(images/TabletLandscape.png);
+}
+
+.BMLayoutEditorImageTabletPortrait {
+	background-image: url(images/TabletPortrait.png);
+}
+
+.BMLayoutEditorImageDesktop {
+	background-image: url(images/Desktop.png);
+}
+
+.BMLayoutEditorImagePhoneMini {
+	background-image: url(images/PhoneMini.png);
+}
+
+.BMLayoutEditorImagePhoneLandscapeMini {
+	background-image: url(images/PhoneLandscapeMini.png);
+}
+
+.BMLayoutEditorImagePhonePortraitMini {
+	background-image: url(images/PhonePortraitMini.png);
+}
+
+.BMLayoutEditorImageTabletMini {
+	background-image: url(images/TabletMini.png);
+}
+
+.BMLayoutEditorImageTabletLandscapeMini {
+	background-image: url(images/TabletLandscapeMini.png);
+}
+
+.BMLayoutEditorImageTabletPortraitMini {
+	background-image: url(images/TabletPortraitMini.png);
+}
+
+.BMLayoutEditorImageDesktopMini {
+	background-image: url(images/DesktopMini.png);
+}

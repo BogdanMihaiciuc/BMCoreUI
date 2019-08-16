@@ -1,0 +1,24 @@
+.gradle
+.vscode
+Backup
+build
+gradle
+zip
+Gradle Buildscript.zip
+.DS_Store
+BMViewReadme.md
+BMViewTesting.html
+DTS.html
+DTSGenOutput.d.ts
+kiwi*.js
+*velocity*.js
+*iscroll*js
+JSDoc.html
+BMView.js
+BMView_sizeClass.js
+BMLayoutConstraint.js
+BMLayoutConstraint_sizeClass.js
+BMLayoutEditor_sizeClass.js
+BMDragController.js
+BMInterpolator.js
+node_modules
