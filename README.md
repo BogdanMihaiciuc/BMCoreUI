@@ -1,128 +1,129 @@
-# BMCoreUI
+# Introduction
+- Add your project logo.
+- Write a short introduction to the project.
+- If you are using badges, add them here.
 
-The *BMCoreUI* package contains various reusable types and functions that may be used either as building blocks forming the basis of UI elements or as helpers for various UI-related tasks.
+# Index
 
-On its own, as a Thingworx extension, CoreUI doesn't do anything, but it provides functionality required by other extensions such as collection view and code host. It also includes the Velocity.js library for animations and iScroll-probe.js for implementing custom scroll behaviors. Both of these libraries use an MIT license.
+- [About](#about)
+- [Usage](#usage)
+  - [Installation](#installation)
+  - [Commands](#commands)
+- [Development](#development)
+  - [Pre-Requisites](#pre-requisites)
+  - [Developmen Environment](#development-environment)
+  - [File Structure](#file-structure)
+  - [Build](#build)  
+  - [Deployment](#deployment)  
+- [Community](#community)
+  - [Contribution](#contribution)
+  - [Branches](#branches)
+  - [Guideline](guideline)  
+- [FAQ](#faq)
+- [Resources](#resources)
+- [Gallery](#gallery)
+- [Credit/Acknowledgment](#creditacknowledgment)
+- [License](#license)
 
-A full developer reference of the types and their properties is coming soon.
+# About
+Add a detailed introduction about the project here, everything you want the reader to know.
 
-While the Thingworx extension includes everything, CoreUI is built as several modules:
-* BMCoreUI
-* BMCell
-* BMCollectionViewLayout
-* BMCollectionView
-* BMCollectionViewDataSet
-* BMCollectionViewDelegate
-* BMCodeHostCore
+# Usage
+Write about how to use this project.
 
-## BMCoreUI
+### Installation
+- Steps on how to install this project, to use it.
+- Be very detailed here, For example, if you have tools which run on different operating systems, write installation steps for all of them.
 
-The *BMCoreUI* module contains several basic types and standalone utility functions. Some of these functions relate to property copying, shadow and ripple generation and number processing. It also contains several types, all of which support copying.
+```
+$ add installations steps if you have to.
+```
 
-### BMInset
+### Commands
+- Commands to start the project.
 
-*BMInset* is a basic structure with four components: left, top, right and bottom. These components describe the insets that may be applied to a rectangle such as an element's bounding box.
+# Development
+If you want other people to contribute to this project, this is the section, make sure you always add this.
 
-### BMPoint
+### Pre-Requisites
+List all the pre-requisites the system needs to develop this project.
+- A tool
+- B tool
 
-The *BMPoint* type describes a point in two dimensions. It has two components: x and y. Points also have various helper methods such as computing distances and slopes between two points.
+### Development Environment
+Write about setting up the working environment for your project.
+- How to download the project...
+- How to install dependencies...
 
-### BMSize
 
-*BMSize* describes a size in two dimensions. It has two components: width and height.
+### File Structure
+Add a file structure here with the basic details about files, below is an example.
 
-### BMRect
+| No | File Name | Details 
+|----|------------|-------|
+| 1  | index | Entry point
 
-The *BMRect* type describes a rectangle. It is made up of two components: the origin point and the rect's size. Rects expose several methods to test for intersections between rects or between rects and points or to modify the rectangle through insets, outsets, offsets and displacements. Rects may also be interpolated as part of an animation.
+### Build
+Write the build Instruction here.
 
-### BMIndexPath
+### Deployment
+Write the deployment instruction here.
 
-Index paths describe the sequence of indexes that have to be traversed through nested arrays to reach an object. Index paths are used primarily by collection views to allow grouping items in sections.
+# Community
 
-### BMKeyPath
+If it's open-source, talk about the community here, ask social media links and other links.
 
-Key paths are similar to index paths, except that they deal with object keys instead of array indexes.
+### Contribution
 
-### BMColor
+ Your contributions are always welcome and appreciated. Following are the things you can do to contribute to this project.
 
-Color objects make working with CSS color easier by parsing the various CSS color strings and handling the conversion between RGB and HSL, while exposing the color components as regular javascript properties. Colors may also be interpolated as part of an animation.
+ 1. **Report a bug** <br>
+ If you think you have encountered a bug, and I should know about it, feel free to report it [here]() and I will take care of it.
 
+ 2. **Request a feature** <br>
+ You can also request for a feature [here](), and if it will viable, it will be picked for development.  
 
+ 3. **Create a pull request** <br>
+ It can't get better then this, your pull request will be appreciated by the community. You can get started by picking up any open issues from [here]() and make a pull request.
 
-## BMCell
+ > If you are new to open-source, make sure to check read more about it [here](https://www.digitalocean.com/community/tutorial_series/an-introduction-to-open-source) and learn more about creating a pull request [here](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github).
 
-The *BMCell* module contains the type definitions for BMCellAttributes and BMCell, which are the building blocks of the collection view's contents.
 
-### BMCellAttributes
+### Branches
 
-Cell attribute objects describe the position and style of a collection view cell. They are generated by the collection view layout objects and applied to cells when they are rendered. Cell attributes may be interpolated as part of an animation using a *BMCollectionViewTransitionCellAttributes* object.
+ I use an agile continuous integration methodology, so the version is frequently updated and development is really fast.
 
-### BMCell
+1. **`Master`** is the development branch.
 
-Cells are wrappers around HTML elements that represent an item in a collection view. They are generated by the collection view and manage the lifecycle of the associated HTML element.
+2. **`Production`** is the production branch.
 
+3. No further branches should be created in the main repository.
 
+**Steps to create a pull request**
 
-## BMCollectionViewLayout
+1. Make a PR to `master` branch.
+2. Comply with the best practices and guidelines e.g. where the PR concerns visual elements it should have an image showing the effect.
+3. It must pass all continuous integration checks and get positive reviews.
 
-The * BMCollectionViewLayout* module contains the type definitions for the various collection view layout objects. The collection view requires a layout object that determines where each cell should appear and generates the appropriate cell attributes object for each cell.
+After this, changes will be merged.
 
-### BMCollectionViewLayout
 
-The collection view layout type is an abstract that all other layout objects inherit from. This type may not be used as it is, instead it must be extended by a custom type.
+### Guideline
+coding guidelines or other things you want people to follow should follow.
 
-### BMCollectionViewTransitionLayout
 
-The transition layout manages the interpolation between two layout objects as part of an animated layout change. Transition layouts are automatically created and destroyed by a collection view as needed.
+# FAQ
+You can optionally add a FAQ section about the project.
 
-### BMCollectionViewTableLayout
+#  Resources
+Add important resources here
 
-The type implementation for the table layout.
+#  Gallery
+Pictures of your project.
 
-### BMCollectionViewFlowLayout
+# Credit/Acknowledgment
+Credit the authors here.
 
-The type implementation for the flow layout.
+#  License
 
-### BMCollectionViewMasonryLayout
-
-The type implementation for the masonry layout.
-
-
-
-## BMCollectionView
-
-The * BMCollectionView* module contains the type definition for collection view objects.
-
-
-
-## BMCollectionViewDataSet
-
-The * BMCollectionViewDataSet* module contains the prototype definition for collection view data set objects. This module is only included for documentation and is not part of the final CoreUI package.
-
-
-
-## BMCollectionViewDelegate
-
-The * BMCollectionViewDelegate* module contains the prototype definition for collection view delegate objects. This module is only included for documentation and is not part of the final CoreUI package.
-
-
-
-## BMCodeHostCore
-
-The * BMCodeHostCore* module contains various types developed primarily for use with the code host extension.
-
-### BMWindow
-
-This type implements a modal popup window that may display arbitrary content and manages its lifecycle.
-
-### BMCodeEditor
-
-This is an abstract type that defines the methods that a code host compatible code editor must implement. This type may not be used directly, but instead, one of the concrete subtypes must be used.
-
-### BMCodeMirrorCodeEditor
-
-This type implements the basic code mirror code editor and may be used by extensions in Thingworx without any other dependencies.
-
-### BMMonacoCodeEditor
-
-This type implements the more advanced monaco code editor. Using it in a Thingworx extension requires also having the monaco code editor extension.
+[MIT License](LICENSE)
