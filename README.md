@@ -1,128 +1,111 @@
 # Introduction
-- Add your project logo.
-- Write a short introduction to the project.
-- If you are using badges, add them here.
+
+CoreUI is a javascript library that contains various reusable types and functions that may be used either as building blocks forming the basis of UI elements or as helpers for various UI-related tasks.
+
+As a Thingworx extension, on its own, Core UI doesn't do anything, but it provides the functionality required by other extensions such as `BMCollectionView`, `BMCodeHost`, `BMUpdater` or `BMView`.
 
 # Index
 
 - [About](#about)
 - [Usage](#usage)
-  - [Installation](#installation)
-  - [Commands](#commands)
 - [Development](#development)
   - [Pre-Requisites](#pre-requisites)
-  - [Developmen Environment](#development-environment)
+  - [Development Environment](#development-environment)
   - [File Structure](#file-structure)
   - [Build](#build)  
   - [Deployment](#deployment)  
-- [Community](#community)
-  - [Contribution](#contribution)
-  - [Branches](#branches)
-  - [Guideline](guideline)  
-- [FAQ](#faq)
-- [Resources](#resources)
-- [Gallery](#gallery)
 - [Credit/Acknowledgment](#creditacknowledgment)
 - [License](#license)
 
 # About
-Add a detailed introduction about the project here, everything you want the reader to know.
+
+CoreUI includes the following main "packages":
+ - `BMCoreUI` contains types that are extensively used by all other components. These include:
+    - `BMPoint` - Represents a 2D point.
+    - `BMSize`  - Represents a 2D size.
+    - `BMRect`  - Represents a 2D rectangle.
+    - `BMInset` - Represents a set of insets that can be applied to each edge of a rectangle.
+    - `BMIndexPath` - Represents sequence of indexes that can be followed to reach an object in a series of nested arrays.
+    - `BMKeyPath` - Represents a sequence of key names that can be followed to reach an object in a series of nested objects.
+    - `BMColor` - Enables working with CSS colors from javascript.
+    - `BMAnimationContext` and related classes - The CoreUI animation engine.
+ - `BMView` is a CoreUI extension to a DOM node through which additional functionality is added. This contains, among others the following important classes:
+    - `BMView` - Primarily used for building constraint-based layouts
+        - `BMLayoutConstraint` - Represents a constraint that should be satisfied between two views or a single view and a constant value
+        - `BMLayoutEditor` - A visual editor for layout constraints.
+        - `BMViewport` and `BMLayoutSizeClass` - Used for responsive layouts.
+    - `BMWindow` is a subclass of `BMView` that creates a floating view that can be dragged and resized.
+    - `BMCollectionView` is a sublcass of `BMView` that is a scrolling container that can display an arbitrary number of items whose position and size are controlled by a separate layout manager. It uses the following classes:
+        - `BMCollectionViewCell` - A subclass of `BMView` that represents a single item displayed by a collection view. Its use typically involves creating and registering a subclass.
+        - `BMCollectionViewLayout` - An object that manages the position and size of cells. It uses `BMCollectionViewLayoutAttributes` objects to declare those attributes.
+        - `BMCollectionViewDataSet` - An interface that communicates the contents that a collection view should display.
 
 # Usage
-Write about how to use this project.
+To install CoreUI on Thingworx, you can download one of the release packages and directly import it as an extension.
 
-### Installation
-- Steps on how to install this project, to use it.
-- Be very detailed here, For example, if you have tools which run on different operating systems, write installation steps for all of them.
-
-```
-$ add installations steps if you have to.
-```
-
-### Commands
-- Commands to start the project.
+Alternatively, you can clone this repo and build the extension from it.
 
 # Development
-If you want other people to contribute to this project, this is the section, make sure you always add this.
 
 ### Pre-Requisites
-List all the pre-requisites the system needs to develop this project.
-- A tool
-- B tool
+
+The following software is required:
+
+* [NodeJS](https://nodejs.org/en/): needs to be installed and added to the `PATH`. You should use the LTS version.
+* [gulp command line utility](https://gulpjs.com/docs/en/getting-started/quick-start): is needed to run the build script.
+
+The following software is recommended:
+
+* [Visual Studio Code](https://code.visualstudio.com/): An integrated developer enviroment with great javascript and typescript support. You can also use any IDE of your liking, it just that most of the testing was done using VSCode.
 
 ### Development Environment
-Write about setting up the working environment for your project.
-- How to download the project...
-- How to install dependencies...
+In order to develop CoreUI you need to do the following:
+1. Clone this repository
+2. Open `package.json` and configure the `thingworxServer`, `thingworxUser` and `thingworxPassword` as needed.
+3. Run `npm install`. This will install the development dependencies for the project.
+4. Start working on the extension.
 
+Note that whenever you add a new file to the extension, you should also declare it in `metadata.xml` in order for it to be included in the Thingworx extension. Additionally, if the files include comments from which additional definitions should be added to the Typescript definition file, they should be added in the build script in the `DTSFiles` array at the beginning of the script.
+
+If the order of files is important, they will be combined in the order specified in `metadata.xml`.
 
 ### File Structure
-Add a file structure here with the basic details about files, below is an example.
-
-| No | File Name | Details 
-|----|------------|-------|
-| 1  | index | Entry point
+```
+BMCoreUI
+│   README.md         // this file
+│   package.json      // here you specify Thingworx connection details
+│   metadata.xml      // thingworx metadata file for this widget. This is automatically updated based on your package.json and build settings
+│   LICENSE           // license file
+│   Gulpfile.js       // build script
+│   DTSGen.js         // a script that generates a Typescript definition file from the comments in CoreUI files
+└───src               // main folder where your developement will take place
+│   │   file1.js            // CoreUI javascript file
+|   |   ...
+│   └───images              // folder for image resources you are included in the widget
+└───build             // temporary folder used during compilation
+└───zip               // location of the built extension
+```
 
 ### Build
-Write the build Instruction here.
+To build the extension, run `gulp` in the root of the project. This will generate an extension .zip file in the zip folder in the root of the project.
+
+To build the extension and upload it to Thingworx, run `gulp upload` in the root of the project. The details of the Thingworx server to which the script will upload the extension are declared in the project's `package.json` file. These are:
+ * `thingworxServer` - The server to which the extension will be uploaded.
+ * `thingworxUser` and `thingworxPassword` - The credentials used for uploading. This should be a user that has permission to install extensions.
+
+Both of the build tasks can optionally take the `--p` parameter. When this is specified, the build script will generate a production build. Unlike development builds, files in the production build will be combined and minified.
 
 ### Deployment
-Write the deployment instruction here.
 
-# Community
-
-If it's open-source, talk about the community here, ask social media links and other links.
-
-### Contribution
-
- Your contributions are always welcome and appreciated. Following are the things you can do to contribute to this project.
-
- 1. **Report a bug** <br>
- If you think you have encountered a bug, and I should know about it, feel free to report it [here]() and I will take care of it.
-
- 2. **Request a feature** <br>
- You can also request for a feature [here](), and if it will viable, it will be picked for development.  
-
- 3. **Create a pull request** <br>
- It can't get better then this, your pull request will be appreciated by the community. You can get started by picking up any open issues from [here]() and make a pull request.
-
- > If you are new to open-source, make sure to check read more about it [here](https://www.digitalocean.com/community/tutorial_series/an-introduction-to-open-source) and learn more about creating a pull request [here](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github).
-
-
-### Branches
-
- I use an agile continuous integration methodology, so the version is frequently updated and development is really fast.
-
-1. **`Master`** is the development branch.
-
-2. **`Production`** is the production branch.
-
-3. No further branches should be created in the main repository.
-
-**Steps to create a pull request**
-
-1. Make a PR to `master` branch.
-2. Comply with the best practices and guidelines e.g. where the PR concerns visual elements it should have an image showing the effect.
-3. It must pass all continuous integration checks and get positive reviews.
-
-After this, changes will be merged.
-
-
-### Guideline
-coding guidelines or other things you want people to follow should follow.
-
-
-# FAQ
-You can optionally add a FAQ section about the project.
-
-#  Resources
-Add important resources here
-
-#  Gallery
-Pictures of your project.
+Deployment to Thingworx is part of the build process as explained above. Alternatively, you can manually install the extension that is generated in the zip folder in the root of the project.
 
 # Credit/Acknowledgment
-Credit the authors here.
+CoreUI uses the following the libraries:
+* [Velocity.js](http://velocityjs.org): Used as the animation engine powering `BMAnimationContext` and as a fallback for when web animations are not support or can't fully model requested animations.
+* [kiwi.js](https://github.com/IjzerenHein/kiwi.js/): Used to solve the layout constraint equations for `BMView` layouts.
+* [iScroll](https://github.com/cubiq/iscroll): Used in `BMScrollView` and `BMCollectionView` to handle scrolling in cases where it is required to map element positions to scroll offsets in ways that cannot be expressed purely in CSS. CoreUI uses a slightly modified version that is compatible with recent versions of Android.
+
+Additionally, CoreUI currently requires `jQuery` to be loaded, but it is not part of the built package. This dependency will be removed soon.
 
 #  License
 
