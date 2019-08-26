@@ -4,11 +4,13 @@ const path = require('path');
 const fs = require('fs');
 const xml2js = require('xml2js');
 const del = require('del');
+const deleteEmpty = require('delete-empty');
 
 const { series, src, dest } = require('gulp');
 const zip = require('gulp-zip');
 const concat = require('gulp-concat');
 const terser = require('gulp-terser');
+const babel = require('gulp-babel')
 
 const request = require('request');
 
@@ -17,18 +19,92 @@ const packageJson = require('./package.json');
 /**
  * Files to remove from the build.
  */
-const removeFiles = ["BMCollectionViewDelegate.js", "BMCollectionViewDataSet.js", "BMScrollView.js", "JSDoc.html"
-    , "DTS.html", "BMViewTesting.html", "TWWidget.d.ts", "Velocity.d.ts", "kiwi.min.js", "BMScroller.js", 
-    "BMDragController.js", "BMViewReadme.md", "BMView_sizeClass.js", "BMLayoutConstraint_sizeClass.js", "BMWindowDelegate.js",
-    "DTSGen.js", "DTSGenOutput.d.ts", "BMView.js", "BMLayoutConstraint.js", "BMCoreUITypes.d.ts", "BMInterpolator.js", 
-    "kiwi_v1.0.min.js", "velocity204.min.js", "ZVelocity.js", "velocity.min.js", "BMLayoutEditor_sizeClass.js", "BMLayoutVariableProvider.js", "velocity2.d.ts",
-    "BMCoreUI.d.ts", "BMCoreUITypes.ts", "velocity.js", "kiwi.js"];
+const removeFiles = [
+
+    // These files represent interface definitions and are not meant to be included in the final package
+    'BMCollectionView/BMCollectionViewDelegate.js',
+    'BMCollectionView/BMCollectionViewDataSet.js',
+    'BMWindow/BMWindowDelegate.js',
+    'BMView/BMLayoutVariableProvider.js',
+
+    // These files are in early development
+    'BMScrollView.js',
+    'Core/BMDragController.js',
+    'BMScroller.js',
+    'Core/BMInterpolator.js',
+
+    // These files were included for documentation and are not needed at runtimea
+    'JSDoc.html',
+    'DTS.html',
+    'BMViewTesting.html',
+    'BMViewReadme.md',
+
+    // These files are either unused at runtime or generated automatically
+    'TWWidget.d.ts',
+    'Velocity.d.ts',
+    'velocity2.d.ts',
+    'BMCoreUI.d.ts',
+    'BMCoreUITypes.ts',
+    'BMCoreUITypes.d.ts',
+    'DTSGen.js',
+    'DTSGenOutput.d.ts',
+
+    // These files now have newer versions
+    'BMView_sizeClass.js',
+    'BMLayoutConstraint_sizeClass.js',
+    'BMView.js',
+    'BMLayoutConstraint.js',
+    'BMLayoutEditor_sizeClass.js',
+
+    // These files are now taken from npm
+    'kiwi.min.js',
+    'kiwi_v1.0.min.js',
+    'velocity204.min.js',
+    'ZVelocity.js',
+    'velocity.min.js',
+    'velocity.js',
+    'kiwi.js'
+];
 
 /**
  * Files from which the typescript definitions are created.
  */
-const DTSFiles = ['BMCoreUI.js', 'BMCell.js', 'BMCollectionViewLayout.js', 'BMCollectionView.js', 'BMCollectionViewDataSet.js', 'BMCollectionViewDelegate.js', 'BMWindowDelegate.js', 'BMCodeHostCore.js'
-, 'BMView_v2.5.js', 'BMLayoutConstraint_v2.5.js', 'BMLayoutEditor.js', 'BMAttributedLabelView.js', 'BMLayoutVariableProvider.js', 'BMMenu.js'];
+const DTSFiles = [
+    'Core/BMCoreUI.js', 
+    'Core/BMInset.js',
+    'Core/BMPoint.js',
+    'Core/BMSize.js',
+    'Core/BMRect.js',
+    'Core/BMFunctionCollection.js',
+    'Core/BMAnimationContext.js',
+    'Core/BMIndexPath.js',
+    'Core/BMKeyPath.js',
+    'Core/BMColor.js',
+    'BMView/BMLayoutSizeClass.js',
+    'BMView/BMViewport.js',
+    'BMView/BMLayoutConstraint_v2.5.js', 
+    'BMView/BMView_v2.5.js', 
+    'BMView/BMScrollView.js', 
+    'BMView/BMLayoutGuide.js', 
+    'BMView/BMAttributedLabelView.js', 
+    'BMView/BMLayoutEditor.js', 
+    'BMView/BMLayoutVariableProvider.js', 
+    'BMView/BMMenu.js',
+    'BMCollectionView/BMCollectionViewLayoutAttributes.js', 
+    'BMCollectionView/BMCollectionViewCell.js', 
+    'BMCollectionView/BMCollectionViewLayout.js', 
+    'BMCollectionView/BMCollectionViewFlowLayout.js', 
+    'BMCollectionView/BMCollectionViewMasonryLayout.js', 
+    'BMCollectionView/BMCollectionViewTileLayout.js', 
+    'BMCollectionView/BMCollectionViewStackLayout.js', 
+    'BMCollectionView/BMCollectionView.js', 
+    'BMCollectionView/BMCollectionViewDataSet.js', 
+    'BMCollectionView/BMCollectionViewDelegate.js', 
+    'BMWindow/BMWindow.js', 
+    'BMWindow/BMToolWindow.js', 
+    'BMWindow/BMWindowDelegate.js', 
+    'BMCodeEditor/BMCodeEditor.js', 
+];
 
 /**
  * Command line arguments; the following are supported:
@@ -55,9 +131,8 @@ const args = (argList => {
     return arg;
 })(process.argv);
 
-if (args.l) throw new Error('Argument --l is currently unsupported.');
-
 const outPath = args.l ? 'build' : `build/ui/${packageJson.packageName}`;
+const libPath = 'lib';
 const packageKind = args.p ? 'min' : 'dev';
 const zipName = `${packageJson.packageName}-${packageKind}-${packageJson.version}.zip`;
 
@@ -67,6 +142,7 @@ const zipName = `${packageJson.packageName}-${packageKind}-${packageJson.version
 async function cleanBuildDir(cb) {
     await del('build');
     await del('zip');
+    await del('lib');
     
     const paths = outPath.split('/');
     for (let i = 1; i < paths.length; i++) {
@@ -77,9 +153,13 @@ async function cleanBuildDir(cb) {
         fs.mkdirSync(path);
     }
 
-    // When building the extension, delete the zip folder
+    if (args.l) {
+        fs.mkdirSync('lib');
+    }
+
+    // When building the extension, recreate the zip folder
     await del('zip/**');
-    fs.mkdirSync('zip');
+    if (!args.l) fs.mkdirSync('zip');
 
     cb();
 }
@@ -88,19 +168,12 @@ async function cleanBuildDir(cb) {
  * Copies files into the build directory.
  */
 function copy(cb) {
-    const stream = src('src/**')
-        .pipe(dest(`${outPath}/`));
-
-    // When building the extension, copy over the metadata file
-    if (!args.l) {
-        stream.on('end', () => {
+    src('src/**')
+        .pipe(dest(`${outPath}/`))
+        .on('end', () => {
             fs.copyFileSync('metadata.xml', 'build/metadata.xml');
             cb();
         });
-    }
-    else {
-        return stream;
-    }
 }
 
 async function prepareBuild(cb) {
@@ -112,91 +185,134 @@ async function prepareBuild(cb) {
     // Remove unneeded files
     await del(removeFiles.map(f => `${outPath}/${f}`));
 
-    fs.writeFileSync(`${outPath}/BMCoreUI.d.ts`, DTS, {encoding: 'utf8'});
+    // When building for Thingworx, modules are not supported, so imports and exports are stripped
+    if (!args.l) {
+        fs.writeFileSync(`${outPath}/BMCoreUI.d.ts`, DTS, {encoding: 'utf8'});
 
-    // Copy required dependencies
-    for (const dependency in packageJson.dependencies) {
-        const dependencyPackageJson = require(`./node_modules/${dependency}/package.json`);
-        await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
+        // Copy required dependencies
+        for (const dependency in packageJson.dependencies) {
+            const dependencyPackageJson = require(`./node_modules/${dependency}/package.json`);
+            await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
+        }
+
+        await new Promise(resolve => {
+            src(`${outPath}/**/*.js`)
+                .pipe(babel({plugins: ['remove-import-export']}))
+                .pipe(dest(`${outPath}`))
+                .on('end', resolve);
+        })
+    }
+    else {
+        fs.mkdirSync(`${outPath}/@types`);
+        fs.mkdirSync(`${libPath}/@types`);
+
+        fs.writeFileSync(`${libPath}/@types/BMCoreUI.min.d.ts`, DTS, {encoding: 'utf8'});
+
+        // Create a second definitions file with the module
+        const moduleDTS = createTypeScriptDefinitionsWithContent(DTSSource, {modules: true});
+        fs.writeFileSync(`${outPath}/@types/index.d.ts`, moduleDTS, {encoding: 'utf8'});
     }
 
     // In production mode, it is needed to minify the files, based on how they are defined in the metadata file
-    if (args.p) {
-        if (args.l) {
+    if (args.p || args.l) {
+        // When building the extensions, files are to be minimized based on their declaration in the metadata xml
+        const metadataFile = await new Promise(resolve => fs.readFile('build/metadata.xml', 'utf8', (err, data) => resolve(data)));
 
-        }
-        else {
-            // When building the extensions, files are to be minimized based on their declaration in the metadata xml
-            const metadataFile = await new Promise(resolve => fs.readFile('build/metadata.xml', 'utf8', (err, data) => resolve(data)));
+        const metadataXML = await new Promise(resolve => xml2js.parseString(metadataFile, (err, result) => resolve(result)));
 
-            const metadataXML = await new Promise(resolve => xml2js.parseString(metadataFile, (err, result) => resolve(result)));
+        const fileResources = metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource;
 
-            const fileResources = metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource;
+        // Separate the files into groups depending on how they are to be minified
+        const fileGroups = [
+            {isDevelopment: true, isRuntime: true, extension: 'min'},
+            {isDevelopment: false, isRuntime: true, extension: 'runtime'},
+            {isDevelopment: true, isRuntime: false, extension: 'ide'}
+        ];
+        for (const group of fileGroups) {
+            group.files = fileResources.filter(resource => {
+                const include = (group.isDevelopment ? resource.$.isDevelopment == 'true' : resource.$.isDevelopment != 'true') &&
+                    (group.isRuntime ? resource.$.isRuntime == 'true' : resource.$.isRuntime != 'true') && resource.$.type == 'JS' && !!resource.$.file;
 
-            // Separate the files into groups depending on how they are to be minified
-            const fileGroups = [
-                {isDevelopment: true, isRuntime: true, extension: 'min'},
-                {isDevelopment: false, isRuntime: true, extension: 'runtime'},
-                {isDevelopment: true, isRuntime: false, extension: 'ide'}
-            ];
-            for (const group of fileGroups) {
-                group.files = fileResources.filter(resource => {
-                    return (group.isDevelopment ? resource.$.isDevelopment == 'true' : resource.$.isDevelopment != 'true') &&
-                        (group.isRuntime ? resource.$.isRuntime == 'true' : resource.$.isRuntime != 'true') && resource.$.type == 'JS' && !!resource.$.file;
-                }).map(r => r.$.file);
-            }
-
-            // Rebuild the metadata file with the correct file structure, adding back all URL references and non-JS files
-            metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource = fileResources.filter(resource => {
-                return resource.$.type != 'JS' || !resource.$.file;
-            });
-
-            // Combine each of the file groups
-            for (const group of fileGroups) {
-                if (group.files.length) {
-                    const name = `${packageJson.packageName}.${group.extension}`;
-                    // If any files belong to this group, combine them
-                    await new Promise(resolve => src(group.files.map(f => `${outPath}/${f}`))
-                        .pipe(concat(`${name}.js`))
-                        .pipe(dest(`${outPath}`))
-                        .on('end', resolve));
-
-                    // Destroy the oncombined files
-                    await del(group.files.map(f => `${outPath}/${f}`));
-                    
-                    // Minify the combined file
-                    await new Promise(resolve => src(`${outPath}/${name}.js`)
-                        .pipe(terser({compress: true, mangle: true}))
-                        .pipe(dest(`${outPath}`))
-                        .on('end', resolve));
-
-                    // Reference the file in metadata
-                    metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource.push({
-                        $: {
-                            type: 'JS',
-                            file: `${name}.js`,
-                            description: '',
-                            isDevelopment: group.isDevelopment.toString(),
-                            isRuntime: group.isRuntime.toString()
-                        }
-                    });
+                // Ensure that the file exists
+                if (include && !fs.existsSync(`${outPath}/${resource.$.file}`)) {
+                    console.warn(`Skipping file ${outPath}/${resource.$.file} which does not exist.`);
+                    return false;
                 }
-            }
 
-            // Write out the updated metadata
-            const builder = new xml2js.Builder();
-            const outXML = builder.buildObject(metadataXML);
-
-            await new Promise(resolve => fs.writeFile('build/metadata.xml', outXML, resolve));
+                return include;
+            }).map(r => r.$.file);
         }
+
+        // Rebuild the metadata file with the correct file structure, adding back all URL references and non-JS files
+        metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource = fileResources.filter(resource => {
+            return resource.$.type != 'JS' || !resource.$.file;
+        });
+
+        // Combine each of the file groups
+        for (const group of fileGroups) {
+            if (group.files.length) {
+                const name = `${packageJson.packageName}.${group.extension}`;
+                // If any files belong to this group, combine them
+                await new Promise(async resolve => {
+                    let stream = src(group.files.map(f => `${outPath}/${f}`));
+
+                    // When building the library, strip imports and exports for the minified file
+                    if (args.l) {
+                        stream = stream.pipe(babel({
+                            plugins: [['remove-import-export', {
+                                removeImport: true,
+                                removeExport: true,
+                                removeExportDefault: true,
+                                preseveNamedDeclaration: true
+                            }]]
+                        }));
+                    }
+                    else {
+                    }
+
+                    stream.pipe(concat(`${name}.js`))
+                        .pipe(terser({compress: true, mangle: true}))
+                        .pipe(dest(`${args.l ? libPath : outPath}`))
+                        .on('end', resolve);
+                });
+
+                // Destroy the individual files when building the widget
+                await del(group.files.map(f => `${args.l ? libPath : outPath}/${f}`));
+
+                // Reference the file in metadata
+                metadataXML.Entities.Widgets[0].Widget[0].UIResources[0].FileResource.push({
+                    $: {
+                        type: 'JS',
+                        file: `${name}.js`,
+                        description: '',
+                        isDevelopment: group.isDevelopment.toString(),
+                        isRuntime: group.isRuntime.toString()
+                    }
+                });
+            }
+        }
+
+        // Write out the updated metadata
+        const builder = new xml2js.Builder();
+        const outXML = builder.buildObject(metadataXML);
+
+        await new Promise(resolve => fs.writeFile('build/metadata.xml', outXML, resolve));
+
+        // Clean out the empty folder structure
+        await deleteEmpty(`${outPath}/`);
     }
 
-    // Create a zip of the build directory
-    const zipStream = src('build/**')
-        .pipe(zip(zipName))
-        .pipe(dest('zip'));
-
-    await new Promise(resolve => zipStream.on('end', resolve));
+    if (!args.l) {
+        // Create a zip of the build directory
+        const zipStream = src('build/**')
+            .pipe(zip(zipName))
+            .pipe(dest('zip'));
+    
+        await new Promise(resolve => zipStream.on('end', resolve));
+    }
+    else {
+        await del(`${outPath}/metadata.xml`);
+    }
 
     cb();
 }

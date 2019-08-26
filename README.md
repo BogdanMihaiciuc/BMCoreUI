@@ -41,9 +41,36 @@ CoreUI includes the following main "packages":
         - `BMCollectionViewDataSet` - An interface that communicates the contents that a collection view should display.
 
 # Usage
+
+## With Thingworx
+
 To install CoreUI on Thingworx, you can download one of the release packages and directly import it as an extension.
 
 Alternatively, you can clone this repo and build the extension from it.
+
+## In other projects
+
+CoreUI can be included as a javascript dependency with npm. Run `npm install bm-core-ui` in the root of your javascript project.
+
+Alternatively, you can clone this repo and build the library from it. 
+
+Both approaches will contain two versions of the library in these folders:
+ * `build` - Contains an unminified version of CoreUI that preserves the individual modules and can be used with a bundler like webpack e.g.:
+```ts
+// index.ts
+import {BMRectMakeWithX} from 'bm-core-ui'
+
+let myRect: BMRect = BMRectMakeWithX(50, {y: 50, width: 100, height: 100});
+```
+ * `lib` - Contains a minified version of CoreUI where symbols are exported globally. This can be included directly as a script tag and symbols can be used directly e.g.:
+ ```html
+ <!-- index.html -->
+ <script type="text/javascript" src="BMCoreUI.min.js">
+ <script type="text/javascript">
+    let myRect = BMRectMakeWithX(50, {y: 50, width: 100, height: 100});
+ </script>
+ ```
+
 
 # Development
 
@@ -95,17 +122,19 @@ To build the extension and upload it to Thingworx, run `gulp upload` in the root
 
 Both of the build tasks can optionally take the `--p` parameter. When this is specified, the build script will generate a production build. Unlike development builds, files in the production build will be combined and minified.
 
+To build CoreUI as a library run `gulp --l`. This will create the following directories:
+ * `build` - Contains an un-minified version of CoreUI that preserves the individual modules and can be used with a bundler like webpack.
+ * `lib` - Contains a minified version of CoreUI where symbols are exported globally. This can be included as a script tag.
+
 ### Deployment
 
 Deployment to Thingworx is part of the build process as explained above. Alternatively, you can manually install the extension that is generated in the zip folder in the root of the project.
 
 # Credit/Acknowledgment
 CoreUI uses the following the libraries:
-* [Velocity.js](http://velocityjs.org): Used as the animation engine powering `BMAnimationContext` and as a fallback for when web animations are not support or can't fully model requested animations.
+* [Velocity.js](http://velocityjs.org): Used as the animation engine powering `BMAnimationContext` and as a fallback for when web animations are not supported or can't fully model requested animations.
 * [kiwi.js](https://github.com/IjzerenHein/kiwi.js/): Used to solve the layout constraint equations for `BMView` layouts.
 * [iScroll](https://github.com/cubiq/iscroll): Used in `BMScrollView` and `BMCollectionView` to handle scrolling in cases where it is required to map element positions to scroll offsets in ways that cannot be expressed purely in CSS. CoreUI uses a slightly modified version that is compatible with recent versions of Android.
-
-Additionally, CoreUI currently requires `jQuery` to be loaded, but it is not part of the built package. This dependency will be removed soon.
 
 #  License
 

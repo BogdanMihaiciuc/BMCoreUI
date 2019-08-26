@@ -1,5 +1,16 @@
-///<reference path="_0BMCoreUI.js"/>
-///<reference path="BMLayoutConstraint_v2.5.js"/>
+// @ts-check
+
+import {YES, NO, BMCopyProperties, BMExtend, BMAddSmoothMousewheelInteractionToNode, BMUUIDMake, BMIsTouchDevice} from '../Core/BMCoreUI'
+import {BMInsetMake} from '../Core/BMInset'
+import {BMPointMake} from '../Core/BMPoint'
+import {BMSizeMake} from '../Core/BMSize'
+import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
+import {BMAnimationContextGetCurrent, BMHook} from '../Core/BMAnimationContext'
+import {BMLayoutSizeClass, BMLayoutOrientation} from './BMLayoutSizeClass'
+import {BMViewport} from './BMViewport'
+import {BMLayoutAttribute, BMLayoutConstraintRelation, BMLayoutConstraint, BMLayoutConstraintPriorityRequired, BMLayoutConstraintKind} from './BMLayoutConstraint_v2.5'
+import * as kiwi from 'kiwi.js'
+
 
 // When set to YES, this will cause view to use transforms instead of left/right for positioning
 const BM_VIEW_USE_TRANSFORM = NO;
@@ -30,7 +41,7 @@ let constraint = sourceView.left.lessThanOrEqualTo(targetView.left, {times: 2, p
  * 
  * View constraint attributes cannot be instantiated manually; they are automatically created for each view during initialization.
  */
-function BMViewConstraintAttribute() {} // <constructor>
+export function BMViewConstraintAttribute() {} // <constructor>
 
 BMViewConstraintAttribute.prototype = {
 
@@ -186,7 +197,7 @@ BMViewConstraintAttribute.prototype = {
  * 
  * To create a layout queue, use the static `layoutQueue()` factory method.
  */
-function BMViewLayoutQueue() {} // <constructor>
+export function BMViewLayoutQueue() {} // <constructor>
 
 BMViewLayoutQueue.prototype = {
     /**
@@ -247,11 +258,11 @@ const BMViewDebug = NO;
 
 // An array holding views that have pending layout passes so that they can be processed together in a single event,
 // batching together the various DOM reads and writes that the views perform
-_BMViewLayoutQueue = BMViewLayoutQueue.layoutQueue();
+const _BMViewLayoutQueue = BMViewLayoutQueue.layoutQueue();
 
 // Invoked by CoreUI to dequeue and layout views which have pending layout passes
 // @param queue <BMViewLayoutQueue, nullable>           Defaults to the global queue. The queue to dequeue.
-_BMViewDequeueLayoutQueue = function (layoutQueue) {
+const _BMViewDequeueLayoutQueue = function (layoutQueue) {
     // Create a separate layout queue which will process future layout passes, in case any view invalidates its layout
     // during the layout pass (e.g. through overriden methods invoked on subclasses), which would cause the process to desynchronize
     let queue;
@@ -260,8 +271,8 @@ _BMViewDequeueLayoutQueue = function (layoutQueue) {
         layoutQueue._views = new Set;
     }
     else {
-        queue = [..._BMViewLayoutQueue];
-        _BMViewLayoutQueue = new Set;
+        queue = [..._BMViewLayoutQueue._views];
+        _BMViewLayoutQueue._views = new Set;
     }
 
     // Transform the queue from an array of views into an array of associated layout iterators
@@ -292,7 +303,7 @@ _BMViewDequeueLayoutQueue = function (layoutQueue) {
  * For view subclasses that create and manage their own DOM content, it is sufficient to invoke <code>BMView</code>'s
  * designated initializer after construction.
  */
-function BMView() {} // <constructor>
+export function BMView() {} // <constructor>
 
 (function () {
     // A private map maintaining the link between DOM nodes and their associated view objects.
@@ -784,8 +795,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
      */
     _layoutAnimator: undefined, // <Promise<Void>, nullable>
 
-    __debug__lockFrame: NO,
-
     /**
      * Animatable.
      * A rectangle describing this view's size and position relative to its superview.
@@ -807,8 +816,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
     },
 
     set frame(frame) {
-
-        if (this.__debug__lockFrame) debugger;
 
         // When the frame is assigned for the first time, make the node have an absolute positioning
         if (!this._frame) {
@@ -1236,7 +1243,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * }
 	 */
     setContentInsets(contentInsets, args) {
-        return this._setVariation(contentInsets || BMSizeMake(), {forProperty: 'contentInsets', inSizeClass: args.forSizeClass});
+        return this._setVariation(contentInsets || BMInsetMake(), {forProperty: 'contentInsets', inSizeClass: args.forSizeClass});
     },
 
 	/**
@@ -1546,16 +1553,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
     LTRLayout: YES, // <Boolean>
 
     /**
-     * Controls whether or not this view acts as a layout manager or not.
-     * In a view hierarchy, typically only the root view will act as the layout manager for all of its descendants,
-     * however subviews may be allowed to become layout managers for their own subviews in
-     * certain configurations.
-     * The value of this property is managed by CoreUI.
-     */
-    _isManagingLayout: NO, // <Boolean>
-    get isManagingLayout() { return this._isManagingLayout; },
-
-    /**
      * Used by CoreUI to determine if this view's intrinsic size should match the intrinsic size reported by its node element.
      * When this getter returns <code>YES</code>, CoreUI will measure the view's node to determine its intrinsic size.
      * Subclasses that can make use of automatic intrinsic size do not need to override the getter for <code>intrinsicSize</code>
@@ -1634,7 +1631,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
         this._preferredIntrinsicSize = undefined;
         this._needsIntrinsicSizeMeasurement = YES;
 
-        this.rootView._scheduleImmediateLayout();
+        const rootView = this.rootView;
+        rootView._needsLayout = YES;
+        rootView._scheduleImmediateLayout();
     },
 
     /**
@@ -2591,6 +2590,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
      */
     async _scheduleImmediateLayout() {
         if (this != this.rootView) return this.rootView._scheduleImmediateLayout();
+
         if (this._layoutAnimator) {
             await this._layoutAnimator;
         }
@@ -2643,13 +2643,21 @@ BMView.prototype = BMExtend(BMView.prototype, {
         */
     },
 
+    layout: function() {
+        return this.layoutIfNeeded();
+    },
+
     /**
      * Should be invoked to perform an immediate layout pass on the view hierarchy to
-     * which this view belongs.
+     * which this view belongs, if this hierarchy's layout had been invalidated.
+     * 
+     * If this view's layout has not been invalidated, this method does nothing.
      */
-    layout: async function() {
+    layoutIfNeeded: async function() {
         // Only the root view will handle the layout
         if (this != this.rootView) return this.rootView.layout();
+
+        if (!this._needsLayout) return;
 
         if (this._layoutAnimator) {
             await this._layoutAnimator;
@@ -2663,6 +2671,16 @@ BMView.prototype = BMExtend(BMView.prototype, {
     },
 
     /**
+     * @deprecated - Use `layoutIfNeeded()`
+     * 
+     * Should be invoked to perform an immediate layout pass on the view hierarchy to
+     * which this view belongs.
+     */
+//  layout: undefined, // <Object>
+
+    /**
+     * @deprecated - Superseeded by `_layoutSubviewsGenerator`
+     * 
      * Invoked by the layout engine to cause this view to layout its subviews.
      * This method should not be invoked manually to cause a layout pass, instead set the
      * <code>needsLayout</code> property to <code>YES</code> which will schedule a layout pass on the next run loop.
@@ -2670,9 +2688,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
      * CoreUI will then invoke this method as needed.
      * 
      * The default implementation lays out subviews based on the constraints that have been added to the view hierarchy.
-     * 
-     * Subtypes can override this method to perform their own custom layout operations, directly setting
-     * the frames of their subviews.
      */
     layoutSubviews() {
         // When run synchronously, the entire generator is run in one step
@@ -3043,6 +3058,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
     set needsLayout(needs) {
         this._needsLayout = needs;
         if (needs) {
+            this.rootView._needsLayout = YES;
             this.rootView._scheduleLayout();
         }
     },
@@ -3315,460 +3331,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
         this.node.id = this._BMOriginalID;
     }
 
-});
-
-// @endtype
-
-// @type BMScrollView extends BMView
-
-/**
- * The scroll view manages a DOM node whose content may overflow beyond its bounds.
- * Unlike regular scrolling DOM nodes, constraints may be attached to a scroll view's content area.
- * When views are constrained to its content areas, whenever the scroll view scrolls, those views' layouts
- * will update accordingly.
- */
-function BMScrollView() {} // <constructor>
-
-/**
- * Constructs and returns a scroll view.
- * @return <BMScrollView>   A scroll view.
- */
-BMScrollView.scrollView = function () {
-    return BMView.view.call(this);
-}
-
-
-/**
- * Constructs and returns a scroll view for the given node.
- * @param node <DOMNode>            The scroll view node.
- * {
- *  @param contentNode <DOMNode>     The scroll view content node.
- * }
- * @return <BMScrollView>           A scroll view.
- */
-BMScrollView.scrollViewForNode = function (node, args) {
-    return Object.create(BMScrollView.prototype).initWithWrapperDOMNode(node, args);
-}
-
-BMScrollView.prototype = BMExtend({}, BMView.prototype, {
-
-    get contentNode() { return this._node },
-    set contentNode(node) {},
-
-    /**
-     * The content view having all of the views managed by this view.
-     */
-    _contentView: undefined, // <BMView>
-    get contentView() {
-        return this._contentView;
-    },
-
-    /**
-     * The iScroll instance used for scrolling.
-     */
-    _iScroll: undefined, // <iScroll>
-
-    /**
-     * A point representing this scroll view's current scroll offset.
-     */
-    _scrollOffset: undefined, // <BMPoint>
-
-    // @override - BMView
-    get supportsAutomaticIntrinsicSize() {
-        return NO;
-    },
-
-    // @override - BMView
-    initWithDOMNode(node) {
-        let contentNode = document.createElement('div');
-        return this.initWithWrapperDOMNode(node, {contentNode: contentNode});
-    },
-
-    /**
-     * Initializes this scroll view with the given wrapper DOM node and the given content DOM node.
-     * @param node <DxOMNode>            The wrapper DOM node.
-     * {
-     *  @param contentNode <DOMNode>    The content view DOM node.
-     * }
-     */
-    initWithWrapperDOMNode(node, args) {
-        BMView.prototype.initWithDOMNode.call(this, node);
-
-        this._contentView = BMView.viewForNode.call(BMScrollContentView, args.contentNode);
-        BMView.prototype.addSubview.call(this, this._contentView);
-
-        node.style.overflow = 'hidden';
-        node.className = 'BMScrollView';
-
-        BMAddSmoothMousewheelInteractionToNode(node);
-
-        this._iScroll = new IScroll(node, {
-            mouseWheel: YES, scrollbars: YES, probeType: 3, click: NO, deceleration: 0.001, resizePolling: 999999999999, scrollX: YES, freeScroll: YES, interactiveScrollbars: !BMIsTouchDevice,
-            disableMouse: YES, disablePointer: YES, fadeScrollbars: BMIsTouchDevice
-        });
-
-        this._iScroll.on('scroll', () => this._iScrollDidScroll());
-        this._scrollOffset = BMPointMake();
-
-        return this;
-    },
-
-    /**
-     * Invoked whenever the iScroll instance managing this scroll view's scrolling scrolls.
-     */
-    _iScrollDidScroll() {
-        this._scrollOffset = BMPointMake(this._iScroll.x, this._iScroll.y);
-
-        this.layout();
-    },
-
-    // @override - BMView
-    get bounds() { // <BMRect>
-        let bounds = this._frame.copy();
-        bounds.origin = this._scrollOffset;
-
-        return bounds;
-    },
-
-
-    /**
-     * Should be invoked to add a subview to the content view's <code>contentNode</code>. If that subview
-     * already has a superview, it will first be removed from its current superview.
-     * Note that the view will not be added as a direct descendant of this scroll view
-     * @param subview <BMView>                  The subview to add.
-     * {
-     *  @param toPosition <Number, nullable>    Defaults to the last available position within this view. The position
-     *                                          in which to add the given subview. If this is specified
-     *                                          CoreUI will add the subview's node before the node of the
-     *                                          view currently occupying that position.
-     * }
-     */
-    addSubview(subview, args) {
-        this._contentView.addSubview(subview, args);
-    },
-
-    // @override - BMView
-    release() {
-        this._contentView.release();
-        if (this._iScroll) this._iScroll.destroy();
-
-        BMView.prototype.release.call(this);
-    }
-
-});
-
-// @endtype
-
-// @type BMScrollContentView extends BMView
-
-/**
- * The scroll content view manages the content of a scroll view.
- */
-function BMScrollContentView () {} // <constructor>
-
-BMScrollContentView.prototype = BMExtend({}, BMView.prototype, {
-
-    get contentNode() { return this._node },
-    set contentNode(node) {},
-
-    // Scroll content view always has deterministic constraints.
-    _hasDeterministicConstraints: YES, // <Boolean>
-
-    /**
-     * Is set to `"Scroll View Content"` by default for scroll content views.
-     */
-    debuggingName: 'Scroll View Content', // <String>
-
-    // @override - BMView
-    get supportsAutomaticIntrinsicSize() {
-        return NO;
-    },
-
-    // @override - BMView
-    // Scroll content views are always fixed to the top-left of their parents, regardless of the positioning
-    // reported by its constraint variables
-    _frame: undefined, // <BMRect>
-    get frame() {
-        return this._frame || BMRectMakeWithNodeFrame(this._node);
-    },
-
-    set frame(frame) {
-
-        frame.origin = BMPointMake();
-
-        // When the frame is assigned for the first time, make the node have an absolute positioning
-        if (!this._frame) {
-            this._node.style.position = 'absolute';
-            this._node.style.right = 'auto';
-            this._node.style.bottom = 'auto';
-        }
-
-        if (this.isRootView) {
-            // Root view has static positioning and size regardless of the frame
-            this._node.style.left = '0px';
-            this._node.style.top = '0px';
-            this._node.style.width = '100%';
-            this._node.style.height = '100%';
-        }
-        // Make this change animated if there is an animation currently running
-        else if (BMAnimationContextGetCurrent()) {
-            let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this._node});
-            controller.registerAnimatableProperty('frame', {targetValue: frame.copy(), startingValue: this._frame});
-            controller._options = {complete: _ => this.superview._iScroll.refresh()};
-
-            // Assign back the coordinates of the previous frame
-            this._node.style.left = this._frame.origin.x + 'px';
-            this._node.style.top = this._frame.origin.y + 'px';
-            this._node.style.width = this._frame.size.width + 'px';
-            this._node.style.height = this._frame.size.height + 'px';
-
-            this._frame = frame.copy();
-        }
-        else {
-            // Assign the frame's coordinates to the node's positioning styles
-            this._frame = frame.copy();
-            this._node.style.left = frame.origin.x + 'px';
-            this._node.style.top = frame.origin.y + 'px';
-            this._node.style.width = frame.size.width + 'px';
-            this._node.style.height = frame.size.height + 'px';
-
-            (this.superview._iScroll) && this.superview._iScroll.refresh();
-        }
-
-        this.didSetFrame(frame);
-
-    },
-
-    // @override - BMView
-    internalConstraints() {
-        let constraints = BMView.prototype.internalConstraints.call(this);
-
-        if (this._superviewLeftConstraint) {
-            this._superviewLeftConstraint.constant = this.superview._scrollOffset.x;
-            this._superviewTopConstraint.constant = this.superview._scrollOffset.y;
-
-            constraints.push(this._superviewWidthConstraint, this._superviewHeightConstraint, this._superviewLeftConstraint, this._superviewTopConstraint);
-        }
-        else {
-            // Scroll content views are always constrained to have their size at least equal to that of their containing scroll view
-            constraints.push(this._superviewWidthConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: BMLayoutAttribute.Width,
-                relatedBy: BMLayoutConstraintRelation.GreaterThanOrEquals,
-                toView: this.superview,
-                secondAttribute: BMLayoutAttribute.Width
-            }));
-            constraints.push(this._superviewHeightConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: BMLayoutAttribute.Height,
-                relatedBy: BMLayoutConstraintRelation.GreaterThanOrEquals,
-                toView: this.superview,
-                secondAttribute: BMLayoutAttribute.Height
-            }));
-    
-            // Their reported positioning is always the parent scroll view's scroll offset
-            constraints.push(this._superviewLeftConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: BMLayoutAttribute.Leading,
-                relatedBy: BMLayoutConstraintRelation.Equals,
-                toView: this.superview,
-                secondAttribute: BMLayoutAttribute.Leading,
-                constant: this.superview._scrollOffset.x
-            }));
-            constraints.push(this._superviewTopConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: BMLayoutAttribute.Top,
-                relatedBy: BMLayoutConstraintRelation.Equals,
-                toView: this.superview,
-                secondAttribute: BMLayoutAttribute.Top,
-                constant: this.superview._scrollOffset.y
-            }));
-        }
-
-        return constraints;
-    }
-});
-
-// @endtype
-
-// @type BMLayoutGuide extends BMView
-
-/**
- * The layout guide view is a view that can be dragged and translates its dragged position into constraints related to its superview.
- * This makes it possible to use it to implement behaviours such as resizable or movable panels.
- */
-function BMLayoutGuide () {} // <constructor>
-
-BMLayoutGuide.prototype = BMExtend({}, BMView.prototype, {
-    // @override - BMView
-    get supportsAutomaticIntrinsicSize() {
-        return NO;
-    },
-
-    /**
-     * This layout guide's position.
-     */
-    _position: BMPointMake(), // <BMPoint>
-
-    /**
-     * Set to `YES` after this layout guide has been dragged once.
-     */
-    _dragged: NO, // <Boolean>
-
-    /**
-     * The horizontal layout attribute that will be used when building this layout guide's horizontal constraint.
-     */
-    _horizontalConstraintAnchor: BMLayoutAttribute.Leading, // <BMLayoutAttribute>
-
-    /**
-     * The vertical layout attribute that will be used when building this layout guide's vertical constraint.
-     */
-    _verticalConstraintAnchor: BMLayoutAttribute.Top, // <BMLayoutAttribute>
-
-    // @override - BMView
-    initWithDOMNode(node) {
-        BMView.prototype.initWithDOMNode.call(this, node);
-
-        node.addEventListener('mousedown', event => {
-            this._dragged = YES;
-
-            let lastPosition;
-            if (this._horizontalConstraintAnchor == BMLayoutAttribute.Trailing) {
-                this._position = BMPointMake(this.node.offsetLeft + this.node.offsetWidth - this.node.parentNode.offsetWidth, this.node.offsetTop + this.node.offsetHeight - this.node.parentNode.offsetHeight);
-                lastPosition = BMPointMake(event.clientX, event.clientY);
-            }
-            else {
-                this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
-                lastPosition = BMPointMake(event.clientX, event.clientY);
-            }
-
-            let mouseMoveEventListener = event => {
-                let position = BMPointMake(event.clientX, event.clientY);
-                this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-                lastPosition = position;
-                if (this.superview) this.layout();
-                event.preventDefault();
-            };
-
-            // Upon starting a drag event, add a mask over the entire viewport that uses the layout guide's cursor
-            let cursor = window.getComputedStyle(this.node).cursor;
-
-            let mask = document.createElement('div');
-            mask.className = 'BMLayoutGuideMask';
-            mask.style.cursor = cursor;
-            document.body.appendChild(mask);
-
-            let mouseUpEventListener = event => {
-                window.removeEventListener('mousemove', mouseMoveEventListener, YES);
-                window.removeEventListener('mouseup', mouseUpEventListener, YES);
-                mask.remove();
-            }
-
-            window.addEventListener('mousemove', mouseMoveEventListener, YES);
-            window.addEventListener('mouseup', mouseUpEventListener, YES);
-
-            event.preventDefault();
-        });
-
-        let touchDragPoint;
-
-        node.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
-            // If there is already a drag in progress, don't process this new event
-            if (typeof touchDragPoint !== 'undefined') {
-                return;
-            }
-
-            // Only use the first touch point
-            touchDragPoint = event.changedTouches[0].identifier;
-            this._dragged = YES;
-
-            let lastPosition;
-            if (this._horizontalConstraintAnchor == BMLayoutAttribute.Trailing) {
-                this._position = BMPointMake(this.node.offsetLeft + this.node.offsetWidth - this.node.parentNode.offsetWidth, this.node.offsetTop + this.node.offsetHeight - this.node.parentNode.offsetHeight);
-                lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
-            }
-            else {
-                this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
-                lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
-            }
-
-            let mouseMoveEventListener = event => {
-                // Look for the actively tracked touch point
-                let touch;
-                for (let changedTouch of event.changedTouches) {
-                    if (changedTouch.identifier == touchDragPoint) {
-                        touch = changedTouch;
-                        break;
-                    }
-                }
-
-                // If the actively tracked touch point did not move, do not process this event
-                if (!touch) return;
-
-                let position = BMPointMake(touch.clientX, touch.clientY);
-                this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-                lastPosition = position;
-                if (this.superview) this.layout();
-                event.preventDefault();
-            };
-
-            let mouseUpEventListener = event => {
-                touchDragPoint = undefined;
-                window.removeEventListener('touchmove', mouseMoveEventListener);
-                window.removeEventListener('touchend', mouseUpEventListener);
-                window.removeEventListener('touchcancel', mouseUpEventListener);
-            }
-
-            window.addEventListener('touchmove', mouseMoveEventListener);
-            window.addEventListener('touchend', mouseUpEventListener);
-            window.removeEventListener('touchcancel', mouseUpEventListener);
-
-            event.preventDefault();
-        });
-
-        return this;
-
-    },
-
-    /**
-     * Sets this layout guide's position. If this guide has been
-     * dragged, setting this values does nothing.
-     */
-    set initialPosition(position) { // <BMPoint>
-        if (!this._dragged) {
-            this._position = position.copy();
-            if (this.superview) this.layout();
-        }
-    },
-
-    // @override - BMView
-    internalConstraints() {
-        let constraints = BMView.prototype.internalConstraints.call(this);
-
-        if (this._superviewLeftConstraint) {
-            this._superviewLeftConstraint.constant = this._position.x;
-            this._superviewTopConstraint.constant = this._position.y;
-
-            constraints.push(this._superviewLeftConstraint, this._superviewTopConstraint);
-        }
-        else {
-            // Their reported positioning is always the parent scroll view's scroll offset
-            constraints.push(this._superviewLeftConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: this._horizontalConstraintAnchor,
-                relatedBy: BMLayoutConstraintRelation.Equals,
-                toView: this.superview,
-                secondAttribute: this._horizontalConstraintAnchor,
-                constant: this._position.x,
-                priority: 500
-            }));
-            constraints.push(this._superviewTopConstraint = BMLayoutConstraint.internalConstraintWithView(this, {
-                attribute: this._verticalConstraintAnchor,
-                relatedBy: BMLayoutConstraintRelation.Equals,
-                toView: this.superview,
-                secondAttribute: this._verticalConstraintAnchor,
-                constant: this._position.y,
-                priority: 500
-            }));
-        }
-
-        return constraints;
-    }
 });
 
 // @endtype

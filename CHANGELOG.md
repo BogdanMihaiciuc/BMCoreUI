@@ -1,3 +1,43 @@
+# 2.5 Beta 3
+
+## General Changes
+
+The various parts of CoreUI can now be imported as modules in Javascript or TypeScript projects.
+
+## BMPoint
+
+The new `BMPointMakeWithRadius(_, {angle})` function and the static `pointWithRadius(_, {angle})` method can be used to construct points from polar coordinates.
+
+## BMJQueryShim
+
+A new `BMJQueryShim` class is now available. Its purpose is to allow CoreUI to work without jQuery.
+
+Initially, CoreUI assumed jQuery was always available because it was only meant to run with Thingworx. Because of that, jQuery wrappers were used in a few places instead of regular DOM nodes, however, only a few methods of jQuery were actually used (such as `css`, `width` and `height`) but those methods could easily map directly to standard DOM methods with no change in functionality. 
+
+In essence, CoreUI used jQuery without actually taking advantage of it and this lead to a requirement of including jQuery in order to use CoreUI for no benefit.
+
+Now, the `BMJQueryShim` class is used in place of jQuery wrappers wherever they existed previously and simply map the jQuery calls to standard DOM calls. **This change is breaking** for implementations that previously relied on the jQuery objects used by CoreUI as the shim object is not compatible with jQuery wrappers beyond the few methods used by CoreUI.
+
+## BMAnimationContext
+
+When using the `@BMAnimatable` and `@BMAnimatableNumber` decorators on a class that doesn't have the `node` property, the animation will be registered on the body element as a fallback.
+
+When using `@BMAnimatableNumber` to animate a numeric property whose initial value is `undefined` or `NaN`, the animation will use `0` as an initial value.
+
+Resolved an issue with `@BMAnimatableNumber` that would incorrectly attempt to use the `copy()` method on the initial value, leading to a crash.
+
+## BMCollectionViewLayout
+
+Collection view layouts are no longer callable.
+
+## BMView
+
+The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout updated had been registered.
+
+The unused `isManagingLayout` property has been removed.
+
+The unused `layoutSubviews()` method has been deprecated.
+
 # 2.5 Beta 2
 
 ## General Changes
@@ -11,6 +51,7 @@ Core UI is now built using a gulp script instead of the previous gradle build sc
 ## BMPoint
 
 Two new `r` and `t` number properties allow working with points in polar coordinates. Note that internally, points are still represented in cartesian coordinates and accessing or setting the polar coordinates will always trigger a calculation based on the point's cartesian coordinates.
+
 
 ## BMCollectionView
 

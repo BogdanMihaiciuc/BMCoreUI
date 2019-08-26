@@ -1,696 +1,15 @@
-///<reference path="_0BMCoreUI.js"/>
-///<reference path="BMView_v2.5.js"/>
-
-
-// @type BMViewport
-
-/**
- * A `BMViewport` is an object that describes the characteristics of a viewport, screen or portion of the viewport.
- * They are used by CoreUI to apply specific variations to constraints and view properties based on the current device and
- * browser configuration.
- * 
- * Typically you don't create viewport objects manually; instead, the root of the view hierarchy will provide an appropriate
- * viewport specification via its `viewport` property. It is also typically not required to actually access the `viewport` property
- * directly; view will automatically check the viewport dimensions against the active size classes and activate or deactivate them as needed.
- * 
- * The current viewport specification can be obtained by invoking the static `currentVewport()` method.
- */
-function BMViewport() {} // <constructor>
-
-BMViewport.prototype = {
-
-	/**
-	 * The width of the viewport.
-	 */
-	_width: undefined, // <Number>
-	get width() {
-		return this._width;
-	},
-
-	/**
-	 * The width of the viewport.
-	 */
-	_height: undefined, // <Number>
-	get height() {
-		return this._height;
-	},
-
-	/**
-	 * The orientation of the viewport.
-	 */
-	_orientation: undefined, // <BMLayoutOrientation>
-	get orientation() {
-		return this._orientation;
-	},
-
-	/**
-	 * The width of the viewport.
-	 */
-	_diagonal: undefined, // <Number>
-	get diagonal() {
-		return this._diagonal;
-	},
-
-	/**
-	 * The minimum between the width and the height.
-	 */
-	_smallestDimension: undefined, // <Number>
-	get smallestDimension() {
-		return this._smallestDimension;
-	},
-
-	/**
-	 * The surface area, in square pixels.
-	 */
-	_surfaceArea: undefined, // <Number>
-	get surfaceArea() {
-		return this._surfaceArea;
-	},
-
-	_measurements: undefined, // <Dictionary<AnyObject>>
-
-	/**
-	 * Designated initializer, invoked immediately after any viewport
-	 * is constructed.
-	 */
-	init() {
-		this._measurements = {};
-	},
-
-	/**
-	 * This method is automatically invoked by CoreUI when this viewport is tested against a
-	 * size class and there is no cached result.
-	 * Tests whether this viewport matches the given size class and computes its match
-	 * priority, then caches the result for easier retrieval in subsequent comparations.
-	 * @param sizeClass <BMLayoutSizeClass>		The size class to test against.
-	 */
-	_measureCompatibilityWithSizeClass(sizeClass) {
-		let measurement = {};
-
-		let matches = YES;
-		
-		// Check that the width matches
-		if (sizeClass._maximumWidth && this._width > sizeClass._maximumWidth) {
-			matches = NO;
-		}
-		
-		// The height
-		if (sizeClass._maximumHeight && this._height > sizeClass._maximumHeight) {
-			matches = NO;
-		}
-		
-		// The diagonal
-		if (sizeClass._maximumDiagonal && this._diagonal > sizeClass._maximumDiagonal) {
-			matches = NO;
-		}
-
-		if (sizeClass._maximumSurfaceArea && this._surfaceArea > sizeClass._maximumSurfaceArea) {
-			matches = NO;
-		}
-		
-		// And the orientation
-		if (sizeClass._orientation != BMLayoutOrientation.Any && this._orientation != sizeClass._orientation) {
-			matches = NO;
-		}
-
-		measurement.matches = matches;
-
-		if (!matches) {
-			measurement.matchPriority = 0;
-		}
-		else {
-
-			let priorities = [];
-			
-			
-			// Compute the individual priorities of width, height and diagonal
-			if (sizeClass._maximumWidth) {
-				priorities.push(sizeClass._maximumWidth / this._width);
-			}
-			
-			if (sizeClass._maximumHeight) {
-				priorities.push(sizeClass._maximumHeight / this._height);
-			}
-			
-			if (sizeClass._maximumDiagonal) {
-				priorities.push(sizeClass._maximumDiagonal / this._diagonal);
-			}
-			
-			if (sizeClass._maximumSurfaceArea) {
-				priorities.push(sizeClass._maximumSurfaceArea / this._surfaceArea);
-			}
-	
-			// If no numeric priorities have been computed, the size class is an orientation constraint
-			// which currently defaults to a priority of 2
-			if (!priorities.length) {
-				measurement.matchPriority = 2;
-			}
-			else {
-				// The final priority is the average of the individual priorities
-				measurement.matchPriority = priorities.reduce((sum, value) => sum + value) / priorities.length;
-			}
-		}
-
-		this._measurements[sizeClass._hashString] = measurement;
-
-	},
-
-	/**
-	 * Tests whether this viewport matches the given size class.
-	 * @param sizeClass <BMLayoutSizeClass>		The size class to check against.
-	 * @return <Boolean>						`YES` if the viewport matches the given size class, `NO` otherwise.
-	 */
-	matchesSizeClass(sizeClass) {
-		// Retrieve the cached comparation if it exists, otherwise perform and cache
-		// the comparation then return its result
-		if (!this._measurements[sizeClass._hashString]) {
-			this._measureCompatibilityWithSizeClass(sizeClass);
-		}
-
-		return this._measurements[sizeClass._hashString].matches;
-	},
-
-	/**
-	 * Returns a number that represents how closely this viewport matches the given size class.
-	 * Lower numbers indicate a greater priority, with `1` being an exact match, 
-	 * while `0` indicates that this viewport does not match the size class.
-	 * 
-	 * This value is used by CoreUI to determine the order in which to apply constraint variations
-	 * when multiple size classes match the current viewport. If several size classes have the same
-	 * priority, the order in which the variations are applied is not defined.
-	 * @param sizeClass <BMLayoutSizeClass>		The size class to check against.
-	 * @return <Number>							The matching priority.
-	 */
-	matchPriorityForSizeClass(sizeClass) {
-		// Retrieve the cached priority if it exists, otherwise compute and cache
-		// the priority then return its result
-		if (!this._measurements[sizeClass._hashString]) {
-			this._measureCompatibilityWithSizeClass(sizeClass);
-		}
-
-		return this._measurements[sizeClass._hashString].matchPriority;
-	},
-
-	/**
-	 * Tests whether this viewport is identical to the given viewport.
-	 * @param viewport <BMViewport>			The viewport to check against.
-	 * @return <Boolean>					`YES` if the viewports are identical, `NO` otherwise.
-	 */
-	isEqualToViewport(viewport) {
-		// It is sufficient to just check the width and height; the other properties are derived from these two values.
-		return (this._width == viewport._width) && (this._height == viewport._height);
-	}
-
-}
-
-/**
- * Returns a viewport object that matches the current viewport.
- */
-BMViewport.currentViewport = function () {
-	let viewport = new BMViewport;
-	viewport.init();
-	viewport._width = window.innerWidth;
-	viewport._height = window.innerHeight;
-	viewport._diagonal = Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2));
-	viewport._orientation = viewport._width >= viewport._height ? BMLayoutOrientation.Landscape : BMLayoutOrientation.Portrait;
-	viewport._surfaceArea = window.innerWidth * window.innerHeight;
-	return viewport;
-}
-
-// @endtype
-
-// @type BMLayoutDimensionClass
-
-/**
- * Constants that describe the size class of a dimension of the screen or an area of the screen.
- * The exact relationship between these constants and the size breakpoints to which they apply
- * is managed internally by CoreUI and is not exposed within this enum.
- */
-var BMLayoutDimensionClass = Object.freeze({ // <enum>
-
-	/**
-	 * Indicates that this dimension is compact, best suited for phone layouts.
-	 */
-	Compact: 'C', // <enum>
-
-	/**
-	 * Indicates that this dimension is regular, best suited for tablets and small laptops.
-	 */
-	Regular: 'R', // <enum>
-
-	/**
-	 * Indicates that this dimension is extended, best suited for desktop monitors, laptops and larger tablets.
-	 */
-	Extended: 'E', // <enum>
-
-	/**
-	 * Indicates that this dimension is unspecified. For configurations that depend upon a specific size class, this specifies
-	 * that the configuration will apply to all dimensions.
-	 */
-	Any: '_', // <enum>
-
-});
-
-/**
- * Returns the appropriate layout dimension class for the given size.
- * @param size <Number>					The size.
- * @return <BMLayoutDimensionClass>		The dimension class.
- */
-function BMLayoutDimensionClassForSize(size) {
-	if (!size) {
-		return BMLayoutDimensionClass.Extended;
-	}
-	else if (size < 600) {
-		return BMLayoutDimensionClass.Compact;
-	}
-	else if (size <= 1024) {
-		return BMLayoutDimensionClass.Regular;
-	}
-	else {
-		return BMLayoutDimensionClass.Extended;
-	}
-}
-
-/**
- * Returns the appropriate maximal size for the given layout dimension class.
- * @param dimensionClass <BMLayoutDimensionClass>		The layout dimension class.
- * @return <Number>										The size.
- */
-function BMSizeForLayoutDimensionClass(dimensionClass) {
-	if (dimensionClass == BMLayoutDimensionClass.Compact) {
-		return 600;
-	}
-	else if (dimensionClass == BMLayoutDimensionClass.Regular) {
-		return 1024;
-	}
-	else {
-		return 0;
-	}
-}
-
-// @endtype
-
-// @type BMLayoutSizeClassDeviceKind
-
-/**
- * Constants that describe the simplified device kind based on the screen's diagonal.
- */
-var BMLayoutSizeClassDeviceKind = Object.freeze({ // <enum>
-
-	/**
-	 * Indicates that the device is a phone based on the size of its screen.
-	 */
-	Phone: 'S', // <enum>
-
-	/**
-	 * Indicates that the device is a tablet based on the size of its screen.
-	 */
-	Tablet: 'T', // <enum>
-
-	/**
-	 * Indicates that the device is larger than a tablet based on the size of its screen.
-	 */
-	Extended: '_', // <enum>
-
-});
-
-// @endtype
-
-// @type BMLayoutOrientation
-
-/**
- * Constants that describe the orientation of the screen or an area of the screen.
- */
-var BMLayoutOrientation = Object.freeze({ // <enum>
-
-	/**
-	 * Indicates a portrait orientation, where the width is smaller than the height.
-	 */
-	Portrait: 'P', // <enum>
-
-	/**
-	 * Indicates a landscape orientation, where the width is greater than or equal to the height.
-	 */
-	Landscape: 'L', // <enum>
-
-	/**
-	 * Indicates that this orientation is unspecified. For configurations that depend upon a specific orientation, this specifies
-	 * that the configuration will apply to all orientations.
-	 */
-	Any: '_', // <enum>
-
-});
-
-// @endtype
-
-// @type BMLayoutSizeClass
-
-/**
- * A layout size class describes the approximate size of the viewport or a portion of the viewport.
- * It is used to vary view and layout attributes to ensure an appropriate display on various
- * types of displays.
- *
- * In a view hierarchy, the size class refers to the entire hierarchy's size class - individual views
- * cannot declare their own specific size class - however the root of the view hierarchy may decide whether the
- * size class it uses depends on the size of the view hierarchy or the entire viewport.
- *
- * Layout classes are created by invoking the `layoutSizeClassWithWidthClass(_, {heightClass, orientation})` static method
- * and not through the constructor.
- * Some common size classes are available via specialized static methods:
- * * `phoneSizeClass()`
- * * `phoneSizeClassWithOrientation(_)`
- * * `tabletSizeClass()`
- * * `tabletSizeClassWithOrientation(_)`
- */
-function BMLayoutSizeClass() {} // <constructor>
-
-BMLayoutSizeClass.prototype = {
-
-	/**
-	 * The simplified width dimension size class.
-	 */
-	_widthSizeClass: BMLayoutSizeClass.Extended, // <BMLayoutSizeClass>
-
-	get widthSizeClass() {
-		return this._widthSizeClass;
-	},
-
-	/**
-	 * The maximum width to which this size class applies.
-	 */
-	_maximumWidth: 0, // <Number>
-
-	get maximumWidth() {
-		return this._maximumWidth;
-	},
-
-	/**
-	 * The simplified height dimension size class.
-	 */
-	_heightSizeClass: BMLayoutSizeClass.Extended, // <BMLayoutSizeClass>
-
-	get heightSizeClass() {
-		return this._heightSizeClass;
-	},
-
-	/**
-	 * The maximum height to which this size class applies.
-	 */
-	_maximumHeight: 0, // <Number>
-
-	get maximumHeight() {
-		return this._maximumHeight;
-	},
-
-	/**
-	 * The orientation.
-	 */
-	_orientation: BMLayoutOrientation.Any, // <BMLayoutOrientation>
-
-	get orientation() {
-		return this._orientation;
-	},
-
-	/**
-	 * The simplified device type.
-	 */
-	_deviceKind: BMLayoutSizeClassDeviceKind.Extended, // <BMLayoutSizeClassDeviceKind>
-
-	get deviceType() {
-		return this._deviceKind;
-	},
-
-	/**
-	 * The maximum diagonal to which this size class applies.
-	 */
-	_maximumDiagonal: 0, // <Number>
-
-	get maximumDiagonal() {
-		return this._maximumDiagonal;
-	},
-
-	/**
-	 * A number specifying the priority this size class has over other compatible size classes.
-	 */
-	_priority: 0, // <Number>
-
-	get priority() {
-		return this._priority;
-	},
-
-	/**
-	 * Used internally by CoreUI for storage and identification.
-	 */
-	_hashString: undefined, // <String>
-
-	/**
-	 * Invoked by CoreUI during creation to create the hash string associated
-	 * with this size class.
-	 */
-	_createHashString() {
-		let hashTokens = [];
-	
-		// Compute the hash string to be able to store this size class efficiently
-		if (this._maximumWidth) {
-			hashTokens.push('w' + this._maximumWidth.toFixed());
-		}
-	
-		if (this._maximumHeight) {
-			hashTokens.push('h' + this._maximumWidth.toFixed());
-		}
-	
-		if (this._maximumDiagonal) {
-			hashTokens.push('d' + this._maximumDiagonal.toFixed());
-		}
-	
-		if (this._orientation != BMLayoutOrientation.Any) {
-			hashTokens.push(this._orientation);
-		}
-	
-		this._hashString = hashTokens.join(' ');
-	},
-
-	/**
-	 * Compares this size class to the given size class, returning `YES` if they are identical and
-	 * `NO` otherwise. Note that in most cases, size class objects are reused across CoreUI, so identical
-	 * size classes should have identical references as well.
-	 * @param sizeClass <BMLayoutSizeClass, nullable>		The size class against which to compare this size class.
-	 * @return <Boolean>									`YES` if the size classes are identical or `NO` otherwise. 
-	 */
-	isEqualToSizeClass(sizeClass) {
-		if (!sizeClass) return NO;
-
-		return this._hashString == sizeClass._hashString;
-	},
-
-	/**
-	 * Returns a string representation of this size class.
-	 * @return <String>			A string.
-	 */
-	toString() {
-		return this._hashString;
-	}
-}
-
-// A map that is used internally by CoreUI and contains all of the layout size classes that are currently active.
-var _BMActiveLayoutSizeClasses = new Map;
-
-/**
- * Constructs and returns a layout size class initialized with the given requirements.
- * @param maximumWidth <Number, nullable>				An optional maximum width that a viewport may have to match this size class.
- * {
- * 	@param maximumHeight <Number, nullable>				An optional maximum height that a viewport may have to match this size class.
- * 	@param maximumDiagonal <Number, nullable>			An optional maximum diagonal that a viewport may have to match this size class.
- * 	@param orientation <BMLayoutOrientation, nullable>	Defaults to .Any. An optional orientation that a viewport is required to have in
- * 														order to match this size class.
- * }
- */
-BMLayoutSizeClass.layoutSizeClassWithMaximumWidth = function (width, args) {
-	let sizeClass = new BMLayoutSizeClass();
-
-	sizeClass._widthSizeClass = BMLayoutDimensionClassForSize(width);
-	sizeClass._maximumWidth = width;
-	sizeClass._heightSizeClass = BMLayoutDimensionClassForSize(args.maximumHeight);
-	sizeClass._maximumHeight = args.maximumHeight;
-	sizeClass._orientation = args.orientation || BMLayoutOrientation.Any;
-	sizeClass._maximumDiagonal = args.maximumDiagonal || 0;
-
-	// TODO: Assign a priority, exact semantics TBD
-	let priority = 0;
-	if (sizeClass._maximumWidth) priority += 10;
-	if (sizeClass._maximumHeight) priority += 10;
-	if (args.orientation !== BMLayoutOrientation.Any) priority += 1;
-
-	sizeClass._priority = priority;
-
-	sizeClass._createHashString();
-
-	// If there is already a global reference to this size class, return it
-	if (_BMActiveLayoutSizeClasses[sizeClass._hashString]) {
-		return _BMActiveLayoutSizeClasses[sizeClass._hashString];
-	}
-
-	// Otherwise store a global reference and return the newly created size class
-	_BMActiveLayoutSizeClasses[sizeClass._hashString] = sizeClass;
-	return sizeClass;
-}
-
-/**
- * Constructs and returns a layout size class object initialized with the given requirements.
- * @param widthSizeClass <BMLayoutDimensionClass>		The simplified width size class.
- * {
- * 	@param heightSizeClass <BMLayoutDimensionClass>		The simplified height size class.
- * 	@param orientation <BMLayoutOrientation, nullable>		Defaults to .Any. The orientation.
- * }
- * @return <BMLayoutSizeClass>								A size class.
- */
-BMLayoutSizeClass.layoutSizeClassWithWidthClass = function (widthSizeClass, args) {
-	let sizeClass = new BMLayoutSizeClass();
-
-	sizeClass._widthSizeClass = widthSizeClass;
-	sizeClass._maximumWidth = BMSizeForLayoutDimensionClass(widthSizeClass);
-	sizeClass._heightSizeClass = args.heightSizeClass;
-	sizeClass._maximumHeight = BMSizeForLayoutDimensionClass(args.heightSizeClass);
-	sizeClass._orientation = args.orientation || BMLayoutOrientation.Any;
-	sizeClass._maximumDiagonal = 0;
-
-	// TODO: Assign a priority, exact semantics TBD
-	let priority = 0;
-	if (sizeClass._maximumWidth) priority += 10;
-	if (sizeClass._maximumHeight) priority += 10;
-	if (args.orientation !== BMLayoutOrientation.Any) priority += 1;
-
-	sizeClass._priority = priority;
-
-	sizeClass._createHashString();
-
-	// If there is already a global reference to this size class, return it
-	if (_BMActiveLayoutSizeClasses[sizeClass._hashString]) {
-		return _BMActiveLayoutSizeClasses[sizeClass._hashString];
-	}
-
-	// Otherwise store a global reference and return the newly created size class
-	_BMActiveLayoutSizeClasses[sizeClass._hashString] = sizeClass;
-	return sizeClass;
-}
-
-/**
- * Returns a size class that matches phones.
- * @return <BMLayoutSizeClass>				A size class.
- */
-BMLayoutSizeClass.phoneSizeClass = function () {
-	return this.phoneSizeClassWithOrientation(BMLayoutOrientation.Any);
-}
-
-/**
- * Returns a size class that matches phones whose screen is in the given orientation.
- * @param orientation <BMLayoutOrientation, nullable>		Defaults to .Any. The orientation.
- * @return <BMLayoutSizeClass>								A size class.
- */
-BMLayoutSizeClass.phoneSizeClassWithOrientation = function (orientation) {
-	let sizeClass = new BMLayoutSizeClass();
-	
-	sizeClass._maximumDiagonal = 1000;
-	sizeClass._orientation = orientation || BMLayoutOrientation.Any;
-
-	sizeClass._createHashString();
-
-	// If there is already a global reference to this size class, return it
-	if (_BMActiveLayoutSizeClasses[sizeClass._hashString]) {
-		return _BMActiveLayoutSizeClasses[sizeClass._hashString];
-	}
-
-	// Otherwise store a global reference and return the newly created size class
-	_BMActiveLayoutSizeClasses[sizeClass._hashString] = sizeClass;
-	return sizeClass;
-}
-
-/**
- * Returns a size class that matches tablets.
- * @return <BMLayoutSizeClass>				A size class.
- */
-BMLayoutSizeClass.tabletSizeClass = function () {
-	return this.tabletSizeClassWithOrientation(BMLayoutOrientation.Any);
-}
-
-/**
- * Returns a size class that matches tablets whose screen is in the given orientation.
- * @param orientation <BMLayoutOrientation, nullable>		Defaults to .Any. The orientation.
- * @return <BMLayoutSizeClass>								A size class.
- */
-BMLayoutSizeClass.tabletSizeClassWithOrientation = function (orientation) {
-	let sizeClass = new BMLayoutSizeClass();
-	
-	sizeClass._maximumDiagonal = 1450;
-	sizeClass._orientation = orientation || BMLayoutOrientation.Any;
-
-	sizeClass._createHashString();
-
-	// If there is already a global reference to this size class, return it
-	if (_BMActiveLayoutSizeClasses[sizeClass._hashString]) {
-		return _BMActiveLayoutSizeClasses[sizeClass._hashString];
-	}
-
-	// Otherwise store a global reference and return the newly created size class
-	_BMActiveLayoutSizeClasses[sizeClass._hashString] = sizeClass;
-	return sizeClass;
-}
-
-/**
- * Used internally to create a size class from a hash string.
- * @param hashString <String>			The hash string.
- * @return <BMLayoutSizeClass>			A size class.
- */
-BMLayoutSizeClass._layoutSizeClassForHashString = function (hashString) {
-	// If there is already a global reference to this size class, return it
-	if (_BMActiveLayoutSizeClasses[hashString]) {
-		return _BMActiveLayoutSizeClasses[hashString];
-	}
-
-	// Otherwise parse the hash string and store the newly created reference for future use
-	let tokens = hashString.split(' ');
-	let sizeClass = new BMLayoutSizeClass();
-	sizeClass._hashString = hashString;
-
-	for (let token of tokens) {
-		let type = token.charAt(0);
-		switch (type) {
-			case 'w':
-				sizeClass._maximumWidth = parseInt(token.substring(1, token.length));
-				sizeClass._widthSizeClass = BMLayoutDimensionClassForSize(sizeClass._maximumWidth);
-				break;
-			case 'h':
-				sizeClass._maximumHeight = parseInt(token.substring(1, token.length));
-				sizeClass._heightSizeClass = BMLayoutDimensionClassForSize(sizeClass._maximumHeight);
-				break;
-			case 'd':
-				sizeClass._maximumDiagonal = parseInt(token.substring(1, token.length));
-				break;
-			case 'P':
-				sizeClass._orientation = BMLayoutOrientation.Portrait;
-				break;
-			case 'L':
-				sizeClass._orientation = BMLayoutOrientation.Landscape;
-				break;
-			case 'p':
-				sizeClass._priority = parseInt(token.substring(1, token.length));
-				break;
-		}
-	}
-
-	_BMActiveLayoutSizeClasses[sizeClass._hashString] = sizeClass;
-	return sizeClass;
-}
-
-// @endtype
-
+// @ts-check
+
+import {YES, NO, BMExtend, BMCopyProperties, BMUUIDMake} from '../Core/BMCoreUI'
+import {BMLayoutSizeClass} from './BMLayoutSizeClass'
+import * as kiwi from 'kiwi.js'
 
 // @type BMLayoutAttribute
 
 /**
  * Constants representing the layout attributes used by the CoreUI layout engine.
  */
-var BMLayoutAttribute = Object.freeze({ // <enum>
+export var BMLayoutAttribute = Object.freeze({ // <enum>
 	
 	/**
 	 * The attribute corresponding to a view's leading edge.
@@ -770,7 +89,7 @@ var BMLayoutAttribute = Object.freeze({ // <enum>
 /**
  * Constants that describe the equality or inequality relation between the two sides of a constraint.
  */
-var BMLayoutConstraintRelation = Object.freeze({ // <enum>
+export var BMLayoutConstraintRelation = Object.freeze({ // <enum>
 	
 	
 	/**
@@ -799,7 +118,7 @@ var BMLayoutConstraintRelation = Object.freeze({ // <enum>
 /**
  * Constants that describe what type of view attribute a layout constraint affects.
  */
-var BMLayoutConstraintKind = Object.freeze({ // <enum>
+export var BMLayoutConstraintKind = Object.freeze({ // <enum>
 	
 	
 	/**
@@ -822,6 +141,8 @@ var BMLayoutConstraintKind = Object.freeze({ // <enum>
 });
 
 // @endtype
+
+const _BMLayoutConstraintClasses = {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint}
 
 // @type BMLayoutConstraint
 
@@ -853,12 +174,12 @@ view1.attribute1 = multiplier * view2.attribute2 + constant
  * the required constraints. When an optional constraint cannot be fulfilled, the layout system may nevertheless attempt to change the values of the attributes so that they are
  * as close as possible to fulfill the optional constraint without breaking the required constraints.
  */
-function BMLayoutConstraint() {} // <constructor>
+export function BMLayoutConstraint() {} // <constructor>
 
 /**
  * The priority value indicating that the constraint is required to be fulfilled.
  */
-var BMLayoutConstraintPriorityRequired = 1000; // <Number>
+export var BMLayoutConstraintPriorityRequired = 1000; // <Number>
 
 /**
  * Constructs and returns an internal layout constraint initialized with the given values.
@@ -967,7 +288,7 @@ BMLayoutConstraint.constraintWithView = function (view, args) {
  * @return <BMLayoutConstraint, nullable>		The constraint, or `undefined` if the constraint could not be deserialized.
  */
 BMLayoutConstraint.constraintWithSerializedConstraint = function (constraint, args) {
-	return Object.create(window[constraint._class || 'BMLayoutConstraint'].prototype).initWithSerializedConstraint(constraint, args);
+	return Object.create(_BMLayoutConstraintClasses[constraint._class || 'BMLayoutConstraint'].prototype).initWithSerializedConstraint(constraint, args);
 }
 
 BMLayoutConstraint.prototype = {
@@ -1859,7 +1180,7 @@ BMLayoutConstraint.prototype = {
  * An equal attribute layout constraint is a constraint collection that makes a given attribute
  * of a set of views have the same value.
  */
-function BMEqualAttributeLayoutConstraint() {} // <constructor>
+export function BMEqualAttributeLayoutConstraint() {} // <constructor>
 
 /**
  * Constructs and returns a constraint that makes all of the views given to it have the same value
@@ -2097,7 +1418,7 @@ BMEqualAttributeLayoutConstraint.prototype = BMExtend({}, BMLayoutConstraint.pro
  * An equal attribute layout constraint is a constraint collection that makes a set of views
  * have the same spacing between them, and optionally between the first and last view and the superview.
  */
-function BMEqualSpacingLayoutConstraint () {} // <constructor>
+export function BMEqualSpacingLayoutConstraint () {} // <constructor>
 
 
 /**

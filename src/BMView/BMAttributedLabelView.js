@@ -1,3 +1,6 @@
+import {YES, NO, BMExtend, BMCopyProperties} from '../Core/BMCoreUI'
+import {BMView} from './BMView_v2.5'
+
 // @type BMAttributedLabelView extends BMView
 
 /**
@@ -24,7 +27,7 @@ myLabelView.arguments.firstPlaceholder.value = 3;
  * Finally, the underlying DOM nodes themselves are accessible via the `node` property of these arguments objects. Note that there is no guarantee of the lifetime of
  * these DOM nodes. The attribute label can remove and re-create these nodes at any time as needed.
  */
-function BMAttributedLabelView() {} // <constructor>
+export function BMAttributedLabelView() {} // <constructor>
 
 /**
  * The regex used by the attributed label view to extract arguments
@@ -201,7 +204,7 @@ BMAttributedLabelView.labelViewForNode = function (node, args) {
  * 
  * Label view arguments cannot be created directly. They are always created and managed by an attributed label view.
  */
-function BMAttributedLabelViewArgument() {} // <constructor>
+export function BMAttributedLabelViewArgument() {} // <constructor>
 
 BMAttributedLabelViewArgument.prototype = {
 

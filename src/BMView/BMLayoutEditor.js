@@ -1,23 +1,25 @@
+// @ts-check
 
-///<reference path="_7BMCodeHostCore.js"/>
+import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
+import {BMInsetMakeWithEqualInsets} from '../Core/BMInset'
+import {BMPointMake} from '../Core/BMPoint'
+import {BMSizeMake} from '../Core/BMSize'
+import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
+import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
+import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2} from '../Core/BMAnimationContext'
+import {BMLayoutOrientation, BMLayoutSizeClass} from './BMLayoutSizeClass'
+import {BMViewport} from './BMViewport'
+import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from './BMLayoutConstraint_v2.5'
+import {BMView} from './BMView_v2.5'
+import {BMMenuKind} from './BMMenu'
+import {BMWindow} from '../BMWindow/BMWindow'
+import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
+import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
+import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 
-// @type BMMenuKind
 
-var BMMenuKind = Object.freeze({ // <enum>
-
-    /**
-     * Indicates that the menu should be a context menu.
-     */
-    Menu: {}, // <enum>
-
-    /**
-     * Indicates that the menu should be a pull down menu.
-     */
-    PullDownMenu: {} // <enum>
-
-});
-
-// @endtype
+var _BMWindowAnimationDurationDefault = 400;
+var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
 
 // @type BMLayoutEditorVariableCell extends BMCollectionViewCell
 
@@ -470,7 +472,7 @@ class BMLayoutEditorVariablesDataSet {
  * Layout editor should be initialized with the root of the view hierarchy that should be edited.
  * The layout editor will automatically extract and update the constraints from the view hierarchy.
  */
-function BMLayoutEditor() {} // <constructor>
+export function BMLayoutEditor() {} // <constructor>
 
 BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
@@ -1723,7 +1725,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             let mouseupEventListener = event => {
                 if (event.type == 'touchend' || event.type == 'touchstart') {
-                    hasTouch = NO;
+                    var hasTouch = NO;
                     for (let touch of event.changedTouches) {
                         if (touch.identifier == touchIdentifier) {
                             hasTouch = YES;

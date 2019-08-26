@@ -9,13 +9,16 @@
     "thingworxPassword": "admin",
     "author": "Thingworx RoIcenter",
     "minimumThingWorxVersion": "6.0.0",
-    "homepage": "http://roicentersvn/BogdanMihaiciuc/BMCollectionView",
+    "homepage": "https://github.com/ptc-iot-sharing/BMCoreUI",
+    "main": "lib/BMCoreUI.js",
+    "module": "build/index.js",
+    "sideEffects": false,
     "autoUpdate": {
-        "giteaURL": "http://roicentersvn/api/v1/repos/BogdanMihaiciuc/BMCollectionView/releases/latest"
+        "giteaURL": "//api.github.com/repos/ptc-iot-sharing/BMCoreUI/releases/latest"
     },
     "repository": {
         "type": "git",
-        "url": "http://roicentersvn.ptcnet.ptc.com/BogdanMihaiciuc/BMCollectionView.git"
+        "url": "https://github.com/ptc-iot-sharing/BMCoreUI.git"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,6 +28,12 @@
         "uploadProduction": "gulp upload --p"
     },
     "license": "MIT",
+    "files": [
+        "lib",
+        "build",
+        "LICENSE"
+    ],
+    "types": "build/@types/index.d.ts",
     "devDependencies": {
         "@babel/core": "^7.0.0-beta.46",
         "@babel/preset-env": "^7.0.0-beta.46",
@@ -34,6 +43,9 @@
         "gulp-concat": "^2.6.1",
         "gulp-terser": "^1.2.0",
         "gulp-zip": "^5.0.0",
+        "gulp-babel": "^8.0.0",
+        "babel-plugin-remove-import-export": "^1.1.0",
+        "delete-empty": "^3.0.0",
         "del": "^5.0.0",
         "request": "^2.85.0",
         "xml2js": "^0.4.19"

@@ -2,6 +2,7 @@
 .vscode
 Backup
 build
+lib
 gradle
 zip
 Gradle Buildscript.zip
@@ -12,7 +13,6 @@ DTS.html
 DTSGenOutput.d.ts
 kiwi*.js
 *velocity*.js
-*iscroll*js
 JSDoc.html
 BMView.js
 BMView_sizeClass.js

@@ -1,9 +1,34 @@
+// @ts-check
+
+import {YES, NO} from '../Core/BMCoreUI'
+import {BMPoint} from '../Core/BMPoint'
+import {BMHook} from '../Core/BMAnimationContext'
+import 'velocity-animate'
+
+// @type BMMenuKind
+
+export var BMMenuKind = Object.freeze({ // <enum>
+
+    /**
+     * Indicates that the menu should be a context menu.
+     */
+    Menu: {}, // <enum>
+
+    /**
+     * Indicates that the menu should be a pull down menu.
+     */
+    PullDownMenu: {} // <enum>
+
+});
+
+// @endtype
+
 // @type BMMenuItem
 
 /**
  * A menu item is an object that represents an entry in a menu.
  */
-function BMMenuItem() {} // <constructor>
+export function BMMenuItem() {} // <constructor>
 
 BMMenuItem.prototype = {
 
@@ -82,7 +107,7 @@ BMMenuItem.menuItemWithName = function (name, args) {
 /**
  * A menu object manages the display and lifecycle of a popup menu.
  */
-function BMMenu() {} // <constructor>
+export function BMMenu() {} // <constructor>
 
 BMMenu.prototype = {
 

@@ -49,8 +49,15 @@ function BMIndexOfClosingScopeInString(string, args) {
 }
 
 
-
-function allFilesLoaded(contents, {returnOutput} = {returnOutput: false}) {
+/**
+ * @param contents					    The file contents.
+ * @param {Object} args
+ * {
+ *	@param {boolean=} args.returnOutput     True if the output will be returned, otherwise it will be directly written to a file.
+ *	@param {boolean=} args.modules          Whether the definitions file will be a module.
+ * }
+ */
+function allFilesLoaded(contents, {returnOutput = false, modules = false} = {returnOutput: false, modules: false}) {
 
     let documentation;
     //let contents = xhr.responseText;
@@ -985,7 +992,7 @@ function allFilesLoaded(contents, {returnOutput} = {returnOutput: false}) {
     pageHTML += '<div class="OutlineDragHandle"></div>';
 
     if (returnOutput) {
-        return DTSWithContents(globals);
+        return DTSWithContents(globals, {modules});
     }
 
     return fs.writeFileSync('BMCoreUI.d.ts', DTSWithContents(globals), 'utf8');
@@ -1150,25 +1157,24 @@ function typeScriptDocumentationWithDocumentation(documentation) {
     return documentation;
 }
 
-function DTSWithContents(globals) {
+/**
+ * @param globals					    The file contents.
+ * @param {Object} args
+ * {
+ *	@param {boolean=} args.modules          Whether the definitions file will be a module.
+ * }
+ */
+function DTSWithContents(globals, {modules = false} = {modules: false}) {
     let dts = '';
 
-    dts += '\
-type Int = number;\n\
-type Integer = number;\n\
-type Float = number;\n\
-type Short = number;\n\
-type DOMNode = HTMLElement;\n\
-declare interface JQuery {}\n\
-type $ = JQuery;\n\
-const YES = true;\n\
-const NO = false;\n\
-                \n\
-            ';
-
     dts += `
-type BMCollectionViewUpdate = never;
-type TimeoutToken = number;
+type Int = number;
+type Integer = number;
+type Float = number;
+type Short = number;
+type DOMNode = HTMLElement;
+declare interface JQuery {}
+type $ = JQuery;
 
 declare interface JQueryEventObject {}
 type $event = JQueryEventObject;
@@ -1185,10 +1191,20 @@ declare namespace kiwi {
     interface Constraint {}
 }
 
+type BMCollectionViewUpdate = never;
+type TimeoutToken = number;
+
+${modules ? 'export ' : ''}const YES = true;
+${modules ? 'export ' : ''}const NO = false;
+                
+            `;
+
+    dts += `
+
 /**
  * An interface representing an object whose key values are constrained to a generic type.
  */
-declare interface Dictionary<V> {
+${modules ? 'export' : 'declare'} interface Dictionary<V> {
     [key: string]: V;
 }
 
@@ -1197,7 +1213,7 @@ declare interface Dictionary<V> {
  * An interface implemented by classes that support copying.
  * Most CoreUI primitives implement this interface.
  */
-declare interface BMCopying {
+${modules ? 'export' : 'declare'} interface BMCopying {
     /**
      * Returns a copy of this object. Only the properties
      * defined in the prototype will be present in the returned object,
@@ -1213,7 +1229,7 @@ declare interface BMCopying {
  * Most CoreUI primitives implement this interface.
  * Animatable types must also support copying.
  */
-declare interface BMAnimating extends BMCopying {
+${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
     /**
      * Invoked by the CoreUI animation engine to obtain an interpolated
      * value between this object and the target object.
@@ -1225,6 +1241,8 @@ declare interface BMAnimating extends BMCopying {
 }
 
     `;
+
+    const declarePrefix = modules ? 'export ' : 'declare ';
 
     for (let key in globals) {
 
@@ -1238,11 +1256,11 @@ declare interface BMAnimating extends BMCopying {
 
         if (entity.type == 'symbol') {
             dts += entity.doc + '\n';
-            dts += (entity.isReadonly ? 'declare const ' : 'declare var ') + entity.name + ': ' + typeScriptTypeOfEntity(entity).replace(/\?/g, ' | null | undefined') + ';\n\n';
+            dts += declarePrefix + (entity.isReadonly ? 'const ' : 'var ') + entity.name + ': ' + typeScriptTypeOfEntity(entity).replace(/\?/g, ' | null | undefined') + ';\n\n';
         }
         else if (entity.type == 'function') {
             dts += typeScriptDocumentationWithDocumentation(entity.doc) + '\n';
-            dts += 'declare function ' + entity.name + '(';
+            dts += declarePrefix + 'function ' + entity.name + '(';
 
             // Some methods have the first parameter "optional" but the rest required of which TypeScript complains;
             // In CoreUI this means that the "optional" parameter may be given a value of undefined which may have
@@ -1284,7 +1302,7 @@ declare interface BMAnimating extends BMCopying {
         else if (entity.type == 'enum') {
             if (entity.fields && entity.fields.length) dts += typeScriptDocumentationWithDocumentation(entity.fields[0].doc) + '\n';
 
-            dts += 'declare class ' + entity.name + ' {\n';
+            dts += declarePrefix + 'class ' + entity.name + ' {\n';
 
             dts += entity.components.map((component) => {
                 return '\t' + component.doc.split('\n').join('\n\t') + '\n\t' + 'static ' + component.name + ': ' + entity.name + ';\n';
@@ -1307,7 +1325,7 @@ declare interface BMAnimating extends BMCopying {
                 entity.name = entity.name.substring('interface '.length, entity.name.length).trim();
             }
             
-            dts += 'declare ' + type + ' ' + entity.name + ' {\n';
+            dts += declarePrefix + type + ' ' + entity.name + ' {\n';
 
             for (let component of entity.components || []) {
                 // Interface declaration are often commented out as they don't generate any javascript; strip out the leading comments
@@ -1377,9 +1395,9 @@ declare interface BMAnimating extends BMCopying {
     return dts;
 }
 
-exports.createTypeScriptDefinitionsWithContent = function createTypeScriptDefinitionsWithContent(content) {
+exports.createTypeScriptDefinitionsWithContent = function createTypeScriptDefinitionsWithContent(content, {modules = false} = {modules: false}) {
     console.log("Starting dts generation...");
-    const result = allFilesLoaded(content, {returnOutput: true});
+    const result = allFilesLoaded(content, {returnOutput: true, modules});
     console.log('Dts generation finished.');
     return result;
 }

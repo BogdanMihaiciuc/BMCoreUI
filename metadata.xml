@@ -5,19 +5,39 @@
   <Widgets>
     <Widget name="BMCoreUI">
       <UIResources>
-        <FileResource type="JS" file="BMCoreUI.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMCoreUI.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMInset.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMPoint.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMSize.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMRect.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMFunctionCollection.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMAnimationContext.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMIndexPath.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMKeyPath.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="Core/BMColor.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="kiwi.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMLayoutConstraint_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMView_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMAttributedLabelView.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMCell.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMCollectionViewLayout.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMCollectionView.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMCodeHostCore.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMLayoutEditor.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="BMMenu.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMLayoutSizeClass.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMViewport.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMLayoutConstraint_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMView_v2.5.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMScrollView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMLayoutGuide.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMAttributedLabelView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewLayoutAttributes.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewCell.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewFlowLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewMasonryLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewStackLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionViewTileLayout.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCollectionView/BMCollectionView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMWindow/BMWindow.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMWindow/BMToolWindow.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMCodeEditor/BMCodeEditor.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMLayoutEditor.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMMenu.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="velocity.js" description="" isDevelopment="true" isRuntime="true"/>
-        <FileResource type="JS" file="iscroll-probe.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="iScroll/iscroll-probe.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="CSS" file="BMCoreUI.css" description="" isDevelopment="true" isRuntime="true"/>
       </UIResources>
     </Widget>

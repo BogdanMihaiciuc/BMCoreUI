@@ -1,3 +1,19 @@
+// @ts-check
+
+import {YES, NO, BMExtend, BMScrollBarGetSize, BMAddSmoothMousewheelInteractionToNode, BMIsTouchDevice, BMNumberByInterpolatingNumbersWithFraction, BMUUIDMake} from '../Core/BMCoreUI'
+import {BMInset} from '../Core/BMInset'
+import {BMPointMake} from '../Core/BMPoint'
+import {BMSizeMake} from '../Core/BMSize'
+import {BMRect, BMRectMake, BMRectMakeWithNodeFrame, BMRectByInterpolatingRect} from '../Core/BMRect'
+import {BMIndexPathNone} from '../Core/BMIndexPath'
+import {BMAnimateWithBlock, BMAnimationContextBeginStatic, BMAnimationContextGetCurrent, BMAnimationContextAddCompletionHandler, BMAnimationApply, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
+import {BMView, BMViewLayoutQueue} from '../BMView/BMView_v2.5'
+import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesType, BMCollectionViewLayoutAttributesStyleDefaults, _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes} from './BMCollectionViewLayoutAttributes'
+import {BMJQueryShim, BMCollectionViewCell} from './BMCollectionViewCell'
+import {BMCollectionViewFlowLayout} from './BMCollectionViewFlowLayout'
+import {_BMCollectionViewTransitionLayout} from './BMCollectionViewLayout'
+import {IScroll} from '../iScroll/iscroll-probe'
+
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
 // When set to YES, this will cause collection view to extend view
@@ -8,6 +24,10 @@ const BM_COLLECTION_VIEW_DEBUG_MEASURE = NO;
 const BM_COLLECTION_VIEW_DEBUG_MEASURE_CELL = NO;
 // When set to YES, this will cause collection view to never use iScroll
 const BM_COLLECTION_VIEW_DISABLE_ISCROLL = NO;
+// When set to YES, this will cause certain deprecated properties or methods to trigger warning messages in the console.
+const BM_DEPRECATION_WARN = NO;
+// When set to YES, this will cause deprecation warnings to also incude the call stack.
+const BM_DEPRECATION_TRACE = YES;
 
 // @type BMCollectionViewTransferPolicy
 
@@ -15,7 +35,7 @@ const BM_COLLECTION_VIEW_DISABLE_ISCROLL = NO;
  * An list of constants describing what happens to source objects when they are transferred
  * from a source collection view.
  */
-var BMCollectionViewTransferPolicy = Object.freeze({ // <enum>
+export var BMCollectionViewTransferPolicy = Object.freeze({ // <enum>
 	/**
 	 * Indicates that the source collection view will allow the target collection view
 	 * to move the items. The move only happens if the target collection view also
@@ -38,7 +58,7 @@ var BMCollectionViewTransferPolicy = Object.freeze({ // <enum>
  * An list of constants describing what happens to source objects when they are transferred
  * to a destination collection view.
  */
-var BMCollectionViewAcceptPolicy = Object.freeze({ // <enum>
+export var BMCollectionViewAcceptPolicy = Object.freeze({ // <enum>
 	/**
 	 * Indicates that the target collection view would like the transferred items to be
 	 * removed from the source collection view.
@@ -110,7 +130,7 @@ var _BMCollectionViewIdentityComparator = function (o1, o2) { return o1 == o2; }
 /**
  * The type of scrolling that the collection view supports.
  */
-var BMCollectionViewScrollingDirection = Object.freeze({
+export var BMCollectionViewScrollingDirection = Object.freeze({ // <enum>
     /**
      * Indicates that the collection view will only scroll vertically.
      */
@@ -134,7 +154,7 @@ var BMCollectionViewScrollingDirection = Object.freeze({
 /**
  * Controls the final horizontal scrolling position of a programatic scroll.
  */
-var BMCollectionViewScrollingGravityHorizontal = Object.freeze({
+export var BMCollectionViewScrollingGravityHorizontal = Object.freeze({ // <enum>
 	/**
 	 * Indicates that the target view will appear on the left edge of the collection view after the scroll.
 	 */
@@ -158,7 +178,7 @@ var BMCollectionViewScrollingGravityHorizontal = Object.freeze({
 /**
  * Controls the final vertical scrolling position of a programatic scroll.
  */
-var BMCollectionViewScrollingGravityVertical = Object.freeze({
+export var BMCollectionViewScrollingGravityVertical = Object.freeze({ // <enum>
 	/**
 	 * Indicates that the target view will appear on the top edge of the collection view after the scroll.
 	 */
@@ -207,7 +227,7 @@ var _BMCollectionViews = new Map;
  * of collection views.
  *
  */
-function BMCollectionView() { // <constructor>
+export function BMCollectionView() { // <constructor>
 	
 }
 
@@ -263,7 +283,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
     /**
 	 * The collection view's container element.
 	 */
-    _container: undefined, // <$>
+    _container: undefined, // <BMJQueryShim>
     get container() { return this._container; },
     
     /**
@@ -448,14 +468,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		return this._contentNode;
 	},
 
-	__contentWrapper: undefined, // <$>
+	__contentWrapper: undefined, // <BMJQueryShim>
 	
 	/**
 	 * @deprecated Use `contentNode` instead.
 	 * A jQuery wrapper around the container that contains all the collection view cells.
 	 * Attempting to access this property will cause a warning message to appear in the console.
 	 */
-	get _contentWrapper() { // <$>
+	get _contentWrapper() { // <BMJQueryShim>
 		if (BM_DEPRECATION_WARN) {
 			console.warn('Attempting to acess the _contentWrapper property which was deprecated. Consider using _contentNode instead and wrapping it using jQuery');
 			if (BM_DEPRECATION_TRACE) console.trace();
@@ -1081,7 +1101,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		// TODO: jQuery...
 		if (needsContentWrapper) {
-	    	this._contentWrapper = $('<div style="width: 900px; height: 900px; overflow: hidden; position: absolute; left: 0px; top: 0px;"></div>');
+			const contentWrapperNode = document.createElement('div');
+			contentWrapperNode.style.cssText = "width: 900px; height: 900px; overflow: hidden; position: absolute; left: 0px; top: 0px;";
+	    	this._contentWrapper = BMJQueryShim.shimWithDOMNode(contentWrapperNode);
 			this._container.append(this._contentWrapper);
 		}
 	    
@@ -2015,7 +2037,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    if (cache && cache.length) {
 		    var cell = cache.pop();
 		    
-		    cell.element[0].style.opacity = cell._backingOpacity;
+		    cell.node.style.opacity = cell._backingOpacity;
 		    
 		    return cell;
 	    }
@@ -2024,7 +2046,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var cellClass = this._cellClasses[identifier] || this._cellClass;
 
 		var node = document.createElement('div');
-		node.style = "position: absolute; left: 0px; top: 0px; visibility: hidden; overflow: visible;";
+		node.style.cssText = "position: absolute; left: 0px; top: 0px; visibility: hidden; overflow: visible;";
 
 		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node});
 		cell._layoutQueue = this._cellLayoutQueue;
@@ -2069,15 +2091,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    cell.mousedownHandler = function (event) {
 			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
 			event.originalEvent = event;
-			event.which = event.which || event.button;
+			const which = event.which || event.button;
 
 		    // Don't handle non-left clicks here
-		    if (!BMIsTouchDevice && event.which != 1) return;
+		    if (!BMIsTouchDevice && which != 1) return;
 		    
 		    // Don't handle events originating from buttons and input elements or their direct descendants
 		    if (event.target.nodeName == 'BUTTON' || event.target.nodeName == 'INPUT' || event.target.nodeName == 'LABEL' || event.target.nodeName == 'A' ||
 				event.target.parentNode.nodeName == 'BUTTON' || event.target.parentNode.nodeName == 'INPUT' || event.target.parentNode.nodeName == 'LABEL' ||
-				$(event.target).parents('.widget-dhxdropdown').length) {
+				// This a specific Thingworx workaround that depends on jQuery
+				(window.$ ? window.$(event.target).parents('.widget-dhxdropdown').length : false)) {
 			    return;
 			}
 		    
@@ -2157,7 +2180,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
 			if (canDrag) event.preventDefault();
 			event.originalEvent = event;
-			event.which = event.which || event.button;
+			const which = event.which || event.button;
 
 		    // Only handle move events here while the mouse is pressed
 		    if (!cellEventIsMouseDown) return;
@@ -2225,7 +2248,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (_BMCoreUIIsDragging) return;
 
 			event.originalEvent = event;
-			event.which = event.which || event.button;
+			const which = event.which || event.button;
 
 		    // Don't handle other touches than the tracked touch
 		    // If there is no tracked touch, ignore this touchcancel event
@@ -2258,10 +2281,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (_BMCoreUIIsDragging) return;
 
 			event.originalEvent = event;
-			event.which = event.which || event.button;
+			const which = event.which || event.button;
 
 		    // Don't handle non-left clicks here
-		    if (!BMIsTouchDevice && event.which != 1) return;
+		    if (!BMIsTouchDevice && which != 1) return;
 		    
 		    if (event.originalEvent.type == 'touchend') {
 			    // Don't handle other touches than the tracked touch
@@ -2319,15 +2342,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    };
 		cell.element[0].addEventListener('mouseup', cell.mouseupHandler, useCapture);
 		cell.element[0].addEventListener('touchend', cell.mouseupHandler, useCapture);
-	    
-	    // Right click handler
-	    cell.element.on('contextmenu.BMCollectionView', function (event) {
+		
+		cell.contextMenuHandler = function (event) {
 		    var handled = self.cellWasRightClicked(cell, {withEvent: event});
 		    if (handled) {
 			    event.preventDefault();
 			    event.stopPropagation();
 		    }
-	    });
+	    };
+	    // Right click handler
+	    cell.element[0].addEventListener('contextmenu', cell.contextMenuHandler);
 	    
 	    return cell;
 	    
@@ -3278,7 +3302,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		cell._previousFrame = undefined;
 	    
 	    // Move the cell back to the top to prevent it from generating additional scrollbars
-	    BMHook(cell.element, {translateX: '0px', translateY: '0px'});
+	    BMHook(cell.element[0], {translateX: '0px', translateY: '0px'});
 	    
 	    var allCellsLength = this.allCells.length;
 	    for (var i = 0; i < allCellsLength; i++) {
@@ -3336,7 +3360,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		cell.element[0].removeEventListener('mouseup', cell.mouseupHandler);
 		cell.element[0].removeEventListener('touchend', cell.mouseupHandler);
 		cell.element[0].removeEventListener('touchcancel', cell.touchcancelHandler);
-		cell.element.off('contextmenu.BMCollectionView');
+		cell.element[0].removeEventListener('contextmenu', cell.contextMenuHandler);
 		
 		// Remove the cell from the document
 		cell.rendered = NO;
@@ -3872,7 +3896,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    }
 			    
 			    // Create the transition attributes for this cell
-			    var transitionAttribute = _BMCollectionViewTransitionCellAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
+			    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
 			    transitionAttributes.push(transitionAttribute);
 		    }
 		    else {
@@ -3901,12 +3925,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				    
 				    if (isNaN(attribute.style.opacity)) attribute.style.opacity = 1;
 				    
-				    var transitionAttribute = _BMCollectionViewTransitionCellAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
+				    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
 				    transitionAttributes.push(transitionAttribute);
 			    }
 			    else {
 				    // Otherwise create the transition attributes for this cell
-				    var transitionAttribute = _BMCollectionViewTransitionCellAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
+				    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(attribute, {targetAttributes: newAttribute});
 				    transitionAttributes.push(transitionAttribute);
 			    }
 			    
@@ -3927,7 +3951,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    var oldAttribute = this._layout.attributesForCellAtIndexPath(attribute.indexPath);
 			    
 			    // Create the transition attributes for this cell
-			    var transitionAttribute = _BMCollectionViewTransitionCellAttributesMakeWithSourceAttributes(oldAttribute, {targetAttributes: attribute});
+			    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(oldAttribute, {targetAttributes: attribute});
 			    transitionAttributes.push(transitionAttribute);
 		    }
 		    else {
@@ -3937,7 +3961,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    
 			    if (isNaN(attribute.style.opacity)) attribute.style.opacity = 1;
  			    
-			    var transitionAttribute = _BMCollectionViewTransitionCellAttributesMakeWithSourceAttributes(oldAttribute, {targetAttributes: attribute});
+			    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(oldAttribute, {targetAttributes: attribute});
 			    transitionAttributes.push(transitionAttribute);
 		    }
 		    
@@ -4166,7 +4190,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * 									Layout updates caused by property updates from within this block will be animated.
 	 */
 	_updateLayoutWithBlock(block) {
-
+		throw new Error('This method is unavailable');
 	},
 	
 	/**
@@ -4905,7 +4929,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/************************************* DATA SET DELTA UPDATES ************************************/
 	
 	beginUpdatesWithBlock: function (block) {
-		
+		throw new Error('This method is unavailable.')
 	},
 	
 	
@@ -5084,8 +5108,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @param offset <BMPoint>			The scrolling offset to scroll to.
 	 */
 	_scrollToOffset: function (offset) {
-        if (_BMAnimationStack.length) {
-            var animation = _BMAnimationStack[_BMAnimationStack.length - 1];
+        if (BMAnimationContextGetCurrent()) {
+            var animation = BMAnimationContextGetCurrent();
 
 			var subscriber = animation.subscribers.get(this);
 			var self = this;
@@ -5130,7 +5154,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 						self._container[0].style.pointerEvents = 'none';
 						self._isPerformingAnimatedScrolling = YES;
-                        animation.targets.push({element: self._container, properties: {tween: 1}, complete: _ => {
+                        animation.targets.push({element: self._container[0], properties: {tween: 1}, complete: _ => {
 							self._container[0].style.pointerEvents = 'inherit';
 							self._isPerformingAnimatedScrolling = NO;
                         }, options: {progress: progress, queue: self._UUID}});
@@ -5171,7 +5195,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	_stopAnimatedScrolling() {
 		if (this._isPerformingAnimatedScrolling) {
-			this._container.velocity('stop', self._UUID);
+			(window.Velocity || $.Velocity)(this._container[0], 'stop', this.__UUID);
 			this._container[0].style.pointerEvents = 'inherit';
 			this._isPerformingAnimatedScrolling = NO;
 		}
@@ -5381,7 +5405,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
  * @return <BMCollectionView>				A collection view.
  */
 BMCollectionView.collectionViewForNode = function (node, args) {
-	let collectionView = BMCollectionViewMakeWithContainer($(node), args);
+	let collectionView = BMCollectionViewMakeWithContainer(BMJQueryShim.shimWithDOMNode(node), args);
 
 	collectionView.initWithDOMNode(node);
 
@@ -5394,7 +5418,7 @@ BMCollectionView.collectionViewForNode = function (node, args) {
  * Creates and returns a new collection view with the default properties.
  * The collection view will use a BMCollectionViewTableLayout layout object.
  * You must assign a valid object to the dataSet property to use this collection view.
- * @param container <$>						The container that the collection view will manage. 
+ * @param container <BMJQueryShim>			The container that the collection view will manage. 
  *											This container should be an empty div element, otherwise the behaviour of the collection view will be undefined.
  * {
  *	@param customScroll <Boolean, nullable> By default, this parameter is only set to YES on iOS standalone web-apps. If set to YES, the collection view will use
@@ -5402,7 +5426,7 @@ BMCollectionView.collectionViewForNode = function (node, args) {
  * }
  * @return <BMCollectionView>				A collection view.
  */
-function BMCollectionViewMakeWithContainer(container, options) {
+export function BMCollectionViewMakeWithContainer(container, options) {
 	var customScrollRequired = options && options.customScroll;
 	var collectionView = new BMCollectionView();
 
