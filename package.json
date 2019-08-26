@@ -14,7 +14,7 @@
     "module": "build/index.js",
     "sideEffects": false,
     "autoUpdate": {
-        "giteaURL": "//api.github.com/repos/ptc-iot-sharing/BMCoreUI/releases/latest"
+        "giteaURL": "https://api.github.com/repos/ptc-iot-sharing/BMCoreUI/releases/latest"
     },
     "repository": {
         "type": "git",

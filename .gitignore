@@ -21,7 +21,5 @@ BMLayoutConstraint_sizeClass.js
 BMLayoutEditor_sizeClass.js
 BMDragController.js
 BMInterpolator.js
-BMScroller.js
-TWWidget.d.ts
-Velocity.d.ts
 node_modules
+BMScroller.js
