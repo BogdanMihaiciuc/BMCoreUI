@@ -4028,7 +4028,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			// Create and render the layout elements
 			self._renderCellsWithAttributes(attributes, {exclusive: YES});
 
-			this._size = size.copy();
+			self._size = size.copy();
 
 			if (self.iScroll) {
 				// Apply the new scroll offset internally to iScroll, if it changed
