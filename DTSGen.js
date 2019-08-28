@@ -1348,8 +1348,7 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
                 else if (component.type == 'method') {
                     
                     dts +=  '\n\t' + typeScriptDocumentationWithDocumentation(component.doc).split('\n').join('\n\t') + '\n\t';
-                    dts += (component.isStatic ? 'static ' : '');
-                    dts += (component.isPrivate ? 'private ' : '') + component.name + ((type == 'interface' && component.optional) ? '?' : '') + '(';
+                    dts += (component.isPrivate ? 'private ' : '') + (component.isStatic ? 'static ' : '') + component.name + ((type == 'interface' && component.optional) ? '?' : '') + '(';
 
                     // Some methods have the first parameter "optional" but the rest required of which TypeScript complains;
                     // In CoreUI this means that the "optional" parameter may be given a value of undefined which may have
