@@ -292,6 +292,10 @@ async function prepareBuild(cb) {
             }
         }
 
+        // Update the version and update info
+        metadataXML.Entities.ExtensionPackages[0].ExtensionPackage[0].$.packageVersion = packageJson.version;
+        metadataXML.Entities.ExtensionPackages[0].ExtensionPackage[0].$.buildNumber = JSON.stringify(packageJson.autoUpdate);
+
         // Write out the updated metadata
         const builder = new xml2js.Builder();
         const outXML = builder.buildObject(metadataXML);
