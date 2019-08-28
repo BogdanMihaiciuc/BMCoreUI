@@ -10,7 +10,7 @@
     "author": "Thingworx RoIcenter",
     "minimumThingWorxVersion": "6.0.0",
     "homepage": "https://github.com/ptc-iot-sharing/BMCoreUI",
-    "main": "lib/BMCoreUI.js",
+    "main": "lib/BMCoreUI.min.js",
     "module": "build/index.js",
     "sideEffects": false,
     "autoUpdate": {
