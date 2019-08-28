@@ -80,7 +80,7 @@ class BMWindowOverlay extends BMView {
 
 // @endtype
 
-// @type BMWindow
+// @type BMWindow extends BMView
 
 var _BMWindowAnimationDurationDefault = 400;
 var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
