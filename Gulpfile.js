@@ -292,8 +292,9 @@ async function prepareBuild(cb) {
             }
         }
 
-        // Update the version and update info
-        metadataXML.Entities.ExtensionPackages[0].ExtensionPackage[0].$.packageVersion = packageJson.version;
+        // Update the version and updater info
+        // For the version, strip the "beta" or "alpha" components if they exist, as they are unsupported by Thingworx
+        metadataXML.Entities.ExtensionPackages[0].ExtensionPackage[0].$.packageVersion = packageJson.version.split('-')[0];
         metadataXML.Entities.ExtensionPackages[0].ExtensionPackage[0].$.buildNumber = JSON.stringify(packageJson.autoUpdate);
 
         // Write out the updated metadata
