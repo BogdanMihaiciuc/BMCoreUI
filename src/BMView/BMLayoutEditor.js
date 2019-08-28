@@ -55,14 +55,14 @@ class BMLayoutEditorVariableCell extends BMCollectionViewCell {
         this._initValueEditor();
 
         const addVariationButton = document.createElement('div');
-        addVariationButton.className = 'BMWindowToolbarButton BMCHToolbarButton BMLayoutEditorVariableButton BMLayoutEditorAddVariationButton';
+        addVariationButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton BMLayoutEditorVariableButton BMLayoutEditorAddVariationButton';
         addVariationButton.innerHTML = '<i class="material-icons">add_circle</i>';
         node.appendChild(addVariationButton);
         this.addVariationButton = addVariationButton;
         this._initAddVariationButton();
 
         const removeVariationButton = document.createElement('div');
-        removeVariationButton.className = 'BMWindowToolbarButton BMCHToolbarButton BMLayoutEditorVariableButton BMLayoutEditorRemoveVariationButton';
+        removeVariationButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton BMLayoutEditorVariableButton BMLayoutEditorRemoveVariationButton';
         removeVariationButton.innerHTML = '<i class="material-icons">remove_circle</i>';
         node.appendChild(removeVariationButton);
         this.removeVariationButton = removeVariationButton;
@@ -624,7 +624,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.addSubview(this.tree);
 
         let closeButton = document.createElement('div');
-        closeButton.className = 'BMCHToolbarButton BMCHCloseButton BMCHFullscreen';
+        closeButton.className = 'BMLayoutEditorToolbarButton BMLayoutEditorCloseButton BMLayoutEditorFullscreen';
         closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
 
         closeButton.style.opacity = 1;
@@ -1124,7 +1124,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      */
     _initToolbar(toolbar) {
         const fullscreenButton = document.createElement('div');
-        fullscreenButton.className = 'BMWindowToolbarButton BMCHToolbarButton';
+        fullscreenButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
         fullscreenButton.style.transition = 'margin-left .3s ease';
         fullscreenButton.innerHTML = '<i class="material-icons" style="pointer-events: none;">&#xE5DC;</i>';
         this._fullScreenButton = fullscreenButton;
@@ -1295,7 +1295,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         });
 
         const layoutVariablesButton = document.createElement('div');
-        layoutVariablesButton.className = 'BMWindowToolbarButton BMCHToolbarButton';
+        layoutVariablesButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
         layoutVariablesButton.innerHTML = '<i class="material-icons BMScriptFont" style="pointer-events: none;">{X}</i>';
         toolbar.appendChild(layoutVariablesButton);
         this.layoutVariablesButton = layoutVariablesButton;
@@ -1303,7 +1303,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         layoutVariablesButton.addEventListener('click', event => this.showLayoutVariablesPopupWithEvent(event));
 
         const toggleSettingsButton = document.createElement('div');
-        toggleSettingsButton.className = 'BMWindowToolbarButton BMCHToolbarButton';
+        toggleSettingsButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
         toggleSettingsButton.innerHTML = '<i class="material-icons" style="pointer-events: none;">&#xE5DD;</i>';
 
         toggleSettingsButton.style.opacity = 1;

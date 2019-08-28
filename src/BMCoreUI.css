@@ -589,6 +589,69 @@
 	display: block !important;
 }
 
+/* #region Layout Editor toolbar button */
+
+.BMLayoutEditorToolbarButton {
+
+	position: relative;
+
+    font-weight: bold;
+
+	width: 44px;
+	height: 44px;
+	top: 10px;
+	
+	border-radius: 50%;
+
+	margin-left: 8px;
+	margin-right: 8px;
+
+    line-height: 44px;
+    vertical-align: middle;
+    text-align: center;
+
+    pointer: default;
+    cursor: default;
+
+}
+
+.BMLayoutEditorToolbarButton:active {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorToolbarButtonSelected {
+
+}
+
+.BMLayoutEditorToolbarButtonSelected:active {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorToolbarButton > i {
+	font-size: 16px;
+	line-height: 44px;
+	vertical-align: middle;
+}
+
+.BMLayoutEditorCloseButton {
+	position: absolute;
+	
+	left: 8px;
+	opacity: 0;
+	
+	pointer-events: none;
+	
+	transition: opacity .3s ease;
+}
+
+.BMLayoutEditorCloseButton.BMLayoutEditorFullScreen {
+	opacity: 1;
+	
+	pointer-events: inherit;
+}
+
+/* #endregion */
+
 .BMWindowFlexibleSpace {
 	flex-grow: 1;
 }
