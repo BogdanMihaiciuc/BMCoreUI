@@ -39,7 +39,7 @@ BMExtend(BMPoint.prototype, {
 	 * The point's polar radius coordinate.
 	 */
 	get r() { // <Number>
-		return BMDistanceBetweenPoints(this, BMOirginPoint);
+		return BMDistanceBetweenPoints(this, BMOriginPoint);
 	},
 
 	set r(r) {
@@ -53,7 +53,7 @@ BMExtend(BMPoint.prototype, {
 	 * The point's polar angle coordinate.
 	 */
 	get t() { // <Number>
-		return BMSlopeAngleBetweenPoints(BMOirginPoint, this);
+		return BMSlopeAngleBetweenPoints(BMOriginPoint, this);
 	},
 
 	set t(t) {
@@ -266,6 +266,6 @@ export function BMSlopeAngleBetweenPoints(fromPoint, toPoint) {
 /**
  * Represents the origin point.
  */
-export const BMOirginPoint = BMPointMake(0, 0);
+export const BMOriginPoint = BMPointMake(0, 0);
 
 // @endtype
