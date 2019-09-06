@@ -32,7 +32,7 @@ Collection view layouts are no longer callable.
 
 ## BMView
 
-The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout updated had been registered.
+The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout update had been registered.
 
 The unused `isManagingLayout` property has been removed.
 
