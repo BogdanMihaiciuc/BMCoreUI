@@ -1298,7 +1298,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     /**
      * Additional CSS classes to apply to this view's node. The classes specified in this property will be added
-     * in addition to any other classes this view's node already defines.
+     * in addition to any other classes this view's node already has.
      */
     _CSSClass: '', // <String>
 
