@@ -26,10 +26,6 @@ When using `@BMAnimatableNumber` to animate a numeric property whose initial val
 
 Resolved an issue with `@BMAnimatableNumber` that would incorrectly attempt to use the `copy()` method on the initial value, leading to a crash.
 
-## BMCollectionViewLayout
-
-Collection view layouts are no longer callable.
-
 ## BMView
 
 The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout update had been registered.
@@ -37,6 +33,16 @@ The `layout()` method is now deprecated. The new `layoutIfNeeded()` method shoul
 The unused `isManagingLayout` property has been removed.
 
 The unused `layoutSubviews()` method has been deprecated.
+
+## BMCollectionViewLayout
+
+Collection view layouts are no longer callable.
+
+## BMCollectionView
+
+Resolved an issue that caused drag & drop to fail to trigger if the mouse pointer left the cell's node before moving the distance required to trigger this behaviour.
+
+Resolved an issue that could cause drag & drop to trigger without clicking on a cell, if a drag & drop was previously attempted but did not trigger because the mouse pointer had left the cell's node.
 
 # 2.5 Beta 2
 

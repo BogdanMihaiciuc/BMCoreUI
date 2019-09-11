@@ -1099,7 +1099,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		let needsContentWrapper = !this._contentWrapper;
 
-		// TODO: jQuery...
 		if (needsContentWrapper) {
 			const contentWrapperNode = document.createElement('div');
 			contentWrapperNode.style.cssText = "width: 900px; height: 900px; overflow: hidden; position: absolute; left: 0px; top: 0px;";
@@ -2109,6 +2108,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    if (cellEventTrackedTouch !== undefined) return;
 			    cellEventTrackedTouch = event.originalEvent.touches[0].identifier;
 			}
+			else {
+				// Attach the mousemove and mouseup handlers here, to continue processing this event
+				// even if the pointer exits the cell's node
+				window.addEventListener('mousemove', cell.mousemoveHandler, YES);
+				window.addEventListener('mouseup', cell.mouseupHandler, YES);
+			}
 			
 			// Ask the delegate if this event sequence may be converted to a drag & drop operation, defaulting to NO if it can't provide this information
 			canDrag = NO;
@@ -2134,11 +2139,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				
 				// If long click is not handled by the delegate, attempt to begin a drag operation
 				if (!handled) {
-					/*// Ask delegate if dragging is allowed, defaulting to NO if it can't provide this information
-					let canDrag = NO;
-					if (self.delegate && self.delegate.collectionViewCanMoveCell) {
-						canDrag = self.delegate.collectionViewCanMoveCell(self, cell, {atIndexPath: cell.indexPath});
-					}*/
+					// TODO: Consider if mouse events should also trigger drag & drop in this case
+
+					// These events will be processed by the interactive movement handlers for this point on
+					// So the global mousemove and mouseup handlers should be unregistered
+					window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+					window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+				
+					cellEventIsMouseDown = NO;
 
 					if (canDrag) {
 						if (self.delegate && self.delegate.collectionViewWillBeginInteractiveMovementForCell) {
@@ -2174,8 +2182,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		};
 		cell.element[0].addEventListener('mousedown', cell.mousedownHandler, useCapture);
 		cell.element[0].addEventListener('touchstart', cell.mousedownHandler, useCapture);
-	    
-	    //cell.element.on('mousemove.BMCollectionView touchmove.BMCollectionView', function (event) {
+		
+		// With pointing devices, the mousemove event stops being sent to the element during a click
+		// if the pointer moves outside the element, whereas with touch events, the touchmove event continues
+		// to fire even after the touch point has moved outside of the element
+		// Because of this, mousemove is attached to window for the duration of a click and then released at the end
 		cell.mousemoveHandler = function (event) {
 			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
 			if (canDrag) event.preventDefault();
@@ -2204,7 +2215,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    var x = event.pageX;
 			    var y = event.pageY;
 		    }
-		    
+			
+			// When the pointer moves beyond the click slope threshold, cancel this click event
 		    if (Math.abs(x - cellEventBasePosition.x) > _BMCollectionViewClickSlopeThreshold ||
 		    	Math.abs(y - cellEventBasePosition.y) > _BMCollectionViewClickSlopeThreshold) {
 			
@@ -2232,6 +2244,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 							self.delegate.collectionViewWillBeginInteractiveMovementForCell(self, cell, {atIndexPath: cell.indexPath});
 						}
 
+						// These events will be processed by the interactive movement handlers for this point on
+						// So the global mousemove and mouseup handlers should be unregistered
+						window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+						window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+
 						// Begin tracking this as a drag event
 						self.beginDragWithEvent(event, {forCell: cell, touchIdentifier: cellEventTrackedTouch});
 					}
@@ -2239,11 +2256,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    }
 		    
 	    };
-		cell.element[0].addEventListener('mousemove', cell.mousemoveHandler, useCapture);
+		//cell.element[0].addEventListener('mousemove', cell.mousemoveHandler, useCapture);
 		cell.element[0].addEventListener('touchmove', cell.mousemoveHandler, useCapture);
+
 	    
-	    // On touch devices, the touch may be cancelled, for example by a descendant claiming the touch event for its own use
-	    //cell.element.on('touchcancel.BMCollectionView', function (event) {
+	    // On touch devices, the touch may be cancelled, for example by a descendant or the system claiming the touch event for its own use
 		cell.touchcancelHandler = function (event) {
 			if (_BMCoreUIIsDragging) return;
 
@@ -2275,8 +2292,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    
 	    };
 		cell.element[0].addEventListener('touchcancel', cell.touchcancelHandler, useCapture);
-	    
-	    //cell.element.on('mouseup.BMCollectionView touchend.BMCollectionView', function (event) {
+		
+		// Mouseup follows a similar logic to mousemove
 		cell.mouseupHandler = function (event) {
 			if (_BMCoreUIIsDragging) return;
 
@@ -2306,7 +2323,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				
 			    // If the tracked touch did not change, ignore this touchend event
 			    if (i == event.originalEvent.changedTouches.length) return;
-		    }
+			}
+			else {
+				// Unregister the global event handlers
+				window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+				window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+			}
 		    
 		    // If the mouse moved too much during this event, ignore it
 		    if (!cellEventIsMouseDown) return;
@@ -2340,7 +2362,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    	}
 		    }
 	    };
-		cell.element[0].addEventListener('mouseup', cell.mouseupHandler, useCapture);
+		//cell.element[0].addEventListener('mouseup', cell.mouseupHandler, useCapture);
 		cell.element[0].addEventListener('touchend', cell.mouseupHandler, useCapture);
 		
 		cell.contextMenuHandler = function (event) {
@@ -3096,10 +3118,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					// 	delay: (draggingShadows.length - index) * 50
 					// });
 					__BMVelocityAnimate(otherDraggingShadow, {
-						translateY: '-256px',
 						rotateZ: ((index + 1) * 60 / cells.length) + 'deg',
-						scaleX: .66,
-						scaleY: .66,
+						blur: '20px',
 						opacity: 0
 					}, {
 						easing: 'easeInQuad',
@@ -3120,9 +3140,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				// 	delay: draggingShadows.length * 50
 				// });
 				await __BMVelocityAnimate(draggingShadow, {
-					translateY: '-256px',
-					scaleX: .66,
-					scaleY: .66,
+					blur: '20px',
 					opacity: 0
 				}, {
 					duration: 200, 
