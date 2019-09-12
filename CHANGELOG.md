@@ -1,79 +1,15 @@
-# 2.5 Beta 3
-
-## General Changes
-
-The various parts of CoreUI can now be imported as modules in Javascript or TypeScript projects.
-
-## BMPoint
-
-The new `BMPointMakeWithRadius(_, {angle})` function and the static `pointWithRadius(_, {angle})` method can be used to construct points from polar coordinates.
-
-## BMJQueryShim
-
-A new `BMJQueryShim` class is now available. Its purpose is to allow CoreUI to work without jQuery.
-
-Initially, CoreUI assumed jQuery was always available because it was only meant to run with Thingworx. Because of that, jQuery wrappers were used in a few places instead of regular DOM nodes, however, only a few methods of jQuery were actually used (such as `css`, `width` and `height`) but those methods could easily map directly to standard DOM methods with no change in functionality. 
-
-In essence, CoreUI used jQuery without actually taking advantage of it and this lead to a requirement of including jQuery in order to use CoreUI for no benefit.
-
-Now, the `BMJQueryShim` class is used in place of jQuery wrappers wherever they existed previously and simply map the jQuery calls to standard DOM calls. **This change is breaking** for implementations that previously relied on the jQuery objects used by CoreUI as the shim object is not compatible with jQuery wrappers beyond the few methods used by CoreUI.
-
-## BMAnimationContext
-
-When using the `@BMAnimatable` and `@BMAnimatableNumber` decorators on a class that doesn't have the `node` property, the animation will be registered on the body element as a fallback.
-
-When using `@BMAnimatableNumber` to animate a numeric property whose initial value is `undefined` or `NaN`, the animation will use `0` as an initial value.
-
-Resolved an issue with `@BMAnimatableNumber` that would incorrectly attempt to use the `copy()` method on the initial value, leading to a crash.
-
-## BMView
-
-The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout update had been registered.
-
-The unused `isManagingLayout` property has been removed.
-
-The unused `layoutSubviews()` method has been deprecated.
-
-## BMCollectionViewLayout
-
-Collection view layouts are no longer callable.
-
-## BMCollectionView
-
-Resolved an issue that caused drag & drop to fail to trigger if the mouse pointer left the cell's node before moving the distance required to trigger this behaviour.
-
-Resolved an issue that could cause drag & drop to trigger without clicking on a cell, if a drag & drop was previously attempted but did not trigger because the mouse pointer had left the cell's node.
-
-# 2.5 Beta 2
-
-## General Changes
-
-Core UI is now built using a gulp script instead of the previous gradle build script.
-
-## TypeScript
-
-`BMIndexPath`, `BMCollectionViewDataSet` and `BMCollectionView` are now generic types.
-
-## BMPoint
-
-Two new `r` and `t` number properties allow working with points in polar coordinates. Note that internally, points are still represented in cartesian coordinates and accessing or setting the polar coordinates will always trigger a calculation based on the point's cartesian coordinates.
-
-
-## BMCollectionView
-
-Resolved an issue that would permanently disable layout updates following an initial animated layout update.
-
-Resolved an issue that caused collection view to behave unexpectedly when web animations were enabled.
-
-## BMMenu
-
-A new `BMMenu` class is available that can be used to create and display popup menus.
-
 # 2.5
 
 CoreUI 2.5 focuses on improving on the foundation laid out by CoreUI 2.0 and expanding the role of View while also fixing many of its issues and quirks from the previous version. In 2.0, the `BMView` class was introduced as a new API that was completely separate from everything else. In this release, `BMWindow`, `BMCollectionView` and `BMCollectionViewCell` now all inherit from `BMView` and make use of its functionality in different ways - for example Collection View can now use layout constraints to automatically determine appropriate sizes for cells and windows can now be opened in non-modal mode where they can be dragged around and resized.
 
 ## General Changes
+
+Core UI is now built using a gulp script instead of the previous gradle build script, allowing modern javascript tools to be integrated with the build system.
+
+The various parts of CoreUI can now be imported as modules in Javascript or TypeScript projects. When used outside of Thingworx, CoreUI can now also be added to a project via npm:
+```sh
+npm install bm-core-ui
+```
 
 Whenever using smooth wheel scrolling, additional scrolls will now also introduce additional friction.
 
@@ -100,15 +36,25 @@ The generation of the definitions file is now part of the build system to ensure
 
 Classes that CoreUI depends upon are now declared as empty interfaces instead of classes to prevent conflicts when the correct definitions are included for those classes.
 
-## BMPoint and BMSize
-
-The `toString` method of `BMPoint` and `BMSize` now returns a customized string.
-
-These types now each include a copy initializer.
+`BMIndexPath`, `BMCollectionViewDataSet` and `BMCollectionView` are now generic types.
 
 ## BMSize
 
+The `toString` method of `BMPoint` and `BMSize` now returns a customized string.
+
 Two new `isGreaterThanSize(_)` and `isLessThanSize(_)` methods can now be used to compare two sizes.
+
+This type now includes a copy initializer.
+
+## BMPoint
+
+The `toString` method of `BMPoint` and `BMSize` now returns a customized string.
+
+Two new `r` and `t` number properties allow working with points in polar coordinates. Note that internally, points are still represented in cartesian coordinates and accessing or setting the polar coordinates will always trigger a calculation based on the point's cartesian coordinates.
+
+The new `BMPointMakeWithRadius(_, {angle})` function and the static `pointWithRadius(_, {angle})` method can be used to construct points from polar coordinates.
+
+This type now includes a copy initializer.
 
 ## BMRect
 
@@ -127,6 +73,12 @@ If an animation context is started by an event handler while the shift key is pr
 A new `BMAnimationContextBeginStatic()` function can be invoked to create an animation context in which animatable properties will not be animated. While a static animation context is active, `BMAnimationContextGetCurrent()` returns `undefined`. To clear the static animation context, `BMAnimationApply()` or `BMAnimationApplyBlocking(_)` must be invoked. Static animation contexts can be used to temporarily disable implicit animations while an animation context is already active.
 
 A new `BMAnimationContextAddCompletionHandler(_)` function can now be used to attach a handler that will be executed when the current animation context finshes its animation. If there is no current animation context or if the current animation context is static, the handler will be executed synchronously before the function returns.
+
+When using the `@BMAnimatable` and `@BMAnimatableNumber` decorators on a class that doesn't have the `node` property, the animation will be registered on the body element as a fallback.
+
+When using `@BMAnimatableNumber` to animate a numeric property whose initial value is `undefined` or `NaN`, the animation will use `0` as an initial value.
+
+Resolved an issue with `@BMAnimatableNumber` that would incorrectly attempt to use the `copy()` method on the initial value, leading to a crash.
 
 ### Web Animations
 
@@ -228,6 +180,8 @@ A new `constraintWithIdentifier(_)` method may be used to obtain a reference to 
 
 A new `allConstraints` readonly property will return all constraints used by a view and all of its descendants, regardless of whether they are active or not.
 
+The `layout()` method is now deprecated. The new `layoutIfNeeded()` method should be used instead. In addition to the previous functionality, this method will not perform any changes if no pending layout update had been registered.
+
 ### **Subview management improvements**
 
 When adding a subview to a view whose node is already a direct descendant of the new superview's content node, the subview's node will no longer be temporarily detached from the DOM.
@@ -259,6 +213,10 @@ When the `layout()` method is invoked, all scheduled layout passes are cancelled
 Whenever a layout animation is set up for a view hierarchy, subsequent layout invalidations will be delayed until after that animation finishes. Because of how layout invalidations are now queued, regardless of how many times a view's layout has been invalidated during this time, only a single layout pass will occur at the end of the animation.
 
 View will now correctly re-evaluate constraints when changing the compression or expansion resistance after the initial layout pass.
+
+The unused `isManagingLayout` property has been removed.
+
+The unused `layoutSubviews()` method has been deprecated.
 
 
 ### **`BMViewLayoutQueue`**
@@ -348,6 +306,20 @@ A new `createAdditionalSettingsForConstraint(constraint, {withReferenceView, inC
 
 A new `layoutVariableProvider` property may now be set on layout editors. This represents the source of layout variables that may be used within the current view hierarchy.
 
+## BMMenu
+
+A new `BMMenu` class is available that can be used to create and display popup menus.
+
+## BMJQueryShim
+
+A new `BMJQueryShim` class is now available. Its purpose is to allow CoreUI to work without jQuery.
+
+Initially, CoreUI assumed jQuery was always available because it was only meant to run with Thingworx. Because of that, jQuery wrappers were used in a few places instead of regular DOM nodes, however, only a few methods of jQuery were actually used (such as `css`, `width` and `height`) but those methods could easily map directly to standard DOM methods with no change in functionality. 
+
+In essence, CoreUI used jQuery without actually taking advantage of it and this lead to a requirement of including jQuery in order to use CoreUI for no benefit.
+
+Now, the `BMJQueryShim` class is used in place of jQuery wrappers wherever they existed previously and simply map the jQuery calls to standard DOM calls. **This change is breaking** for implementations that previously relied on the jQuery objects used by CoreUI as the shim object is not compatible with jQuery wrappers beyond the few methods used by CoreUI.
+
 ## BMCollectionViewCell
 
 `BMCollectionViewCell` is now a subclass of `BMView`.
@@ -377,6 +349,14 @@ When a collection view's `frame` property is changed from within an animation co
 Resolved a bug that would crash the collection view when using hidden cell attributes on a cell that was retained.
 
 Resolved a bug with `scrollToCellAtIndexPath(_, {withVerticalGravity, horizontalGravity, animated})` that would cause collection view to scroll to an unexpected position if the `withVerticalGravity` parameter was not specified.
+
+Resolved an issue that would permanently disable layout updates following an initial animated layout update.
+
+Resolved an issue that caused collection view to behave unexpectedly when web animations were enabled.
+
+Resolved an issue that caused drag & drop to fail to trigger if the mouse pointer left the cell's node before moving the distance required to trigger this behaviour.
+
+Resolved an issue that could cause drag & drop to trigger without clicking on a cell, if a drag & drop was previously attempted but did not trigger because the mouse pointer had left the cell's node.
 
 ### **Automatic cell sizes**
 
