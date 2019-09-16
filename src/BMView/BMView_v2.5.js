@@ -1213,6 +1213,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
         contentNode.style.paddingTop = insets.top + 'px';
         contentNode.style.paddingRight = insets.right + 'px';
         contentNode.style.paddingBottom = insets.bottom + 'px';
+
+        // Modifying the padding will change the node's content size
+        if (this.supportsIntrinsicSize) this.invalidateIntrinsicSize();
     },
 
     /**
@@ -1294,6 +1297,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
         }
 
         this.__activeCSSClass = CSSClass;
+
+        // Changing the class may lead to changes that invalidate the node's intrinsic size
+        if (this.supportsIntrinsicSize) this.invalidateIntrinsicSize();
     },
 
     /**
@@ -1433,6 +1439,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
                     this.node.style.display = 'none';
                 }
             }
+
+            // Changing visibility invalidates the node's intrinsic size
+            this.invalidateIntrinsicSize();
         }
     },
     
