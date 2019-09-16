@@ -3,7 +3,7 @@
 import {YES, NO, BMExtend, BMAddSmoothMousewheelInteractionToNode, BMIsTouchDevice} from '../Core/BMCoreUI'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMRectMakeWithNodeFrame} from '../Core/BMRect'
-import {BMAnimationContextGetCurrent} from '../Core/BMAnimationContext'
+import {BMAnimationContextGetCurrent, BMAnimationContext, BMAnimationContextAddCompletionHandler} from '../Core/BMAnimationContext'
 import {BMLayoutAttribute, BMLayoutConstraintRelation, BMLayoutConstraint} from './BMLayoutConstraint_v2.5'
 import {BMView} from './BMView_v2.5'
 import {IScroll} from '../iScroll/iscroll-probe'
@@ -185,46 +185,16 @@ BMScrollContentView.prototype = BMExtend({}, BMView.prototype, {
 
         frame.origin = BMPointMake();
 
-        // When the frame is assigned for the first time, make the node have an absolute positioning
-        if (!this._frame) {
-            this._node.style.position = 'absolute';
-            this._node.style.right = 'auto';
-            this._node.style.bottom = 'auto';
-        }
+        Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
 
-        if (this.isRootView) {
-            // Root view has static positioning and size regardless of the frame
-            this._node.style.left = '0px';
-            this._node.style.top = '0px';
-            this._node.style.width = '100%';
-            this._node.style.height = '100%';
-        }
-        // Make this change animated if there is an animation currently running
-        else if (BMAnimationContextGetCurrent()) {
-            let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this._node});
-            controller.registerAnimatableProperty('frame', {targetValue: frame.copy(), startingValue: this._frame});
-            controller._options = {complete: _ => this.superview._iScroll.refresh()};
-
-            // Assign back the coordinates of the previous frame
-            this._node.style.left = this._frame.origin.x + 'px';
-            this._node.style.top = this._frame.origin.y + 'px';
-            this._node.style.width = this._frame.size.width + 'px';
-            this._node.style.height = this._frame.size.height + 'px';
-
-            this._frame = frame.copy();
+        if (BMAnimationContextGetCurrent()) {
+            BMAnimationContextAddCompletionHandler(() => {
+                this.superview._iScroll.refresh();
+            });
         }
         else {
-            // Assign the frame's coordinates to the node's positioning styles
-            this._frame = frame.copy();
-            this._node.style.left = frame.origin.x + 'px';
-            this._node.style.top = frame.origin.y + 'px';
-            this._node.style.width = frame.size.width + 'px';
-            this._node.style.height = frame.size.height + 'px';
-
             (this.superview._iScroll) && this.superview._iScroll.refresh();
         }
-
-        this.didSetFrame(frame);
 
     },
 
