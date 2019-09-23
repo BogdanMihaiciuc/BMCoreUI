@@ -2,7 +2,7 @@
     "name": "bm-core-ui",
     "packageName": "BMCoreUI",
     "moduleName": "BMCoreUI",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "description": "A collection of reusable UI classes.",
     "thingworxServer": "http://localhost",
     "thingworxUser": "Administrator",

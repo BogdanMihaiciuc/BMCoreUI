@@ -8,6 +8,10 @@ Changes to `contentInsets`, `visibility` and `CSSClass` will now correctly autom
 
 This class no longer uses its own implementation for the `frame` setter.
 
+## BMCollectionView
+
+Resolved an issue that caused interactive movement to only start the first time per cell instance on touch devices.
+
 # 2.5
 
 CoreUI 2.5 focuses on improving on the foundation laid out by CoreUI 2.0 and expanding the role of View while also fixing many of its issues and quirks from the previous version. In 2.0, the `BMView` class was introduced as a new API that was completely separate from everything else. In this release, `BMWindow`, `BMCollectionView` and `BMCollectionViewCell` now all inherit from `BMView` and make use of its functionality in different ways - for example Collection View can now use layout constraints to automatically determine appropriate sizes for cells and windows can now be opened in non-modal mode where they can be dragged around and resized.
