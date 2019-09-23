@@ -2141,20 +2141,22 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				if (!handled) {
 					// TODO: Consider if mouse events should also trigger drag & drop in this case
 
-					// These events will be processed by the interactive movement handlers for this point on
-					// So the global mousemove and mouseup handlers should be unregistered
-					window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
-					window.removeEventListener('mouseup', cell.mouseupHandler, YES);
-				
-					cellEventIsMouseDown = NO;
-
 					if (canDrag) {
+						// These events will be processed by the interactive movement handlers for this point on
+						// So the global mousemove and mouseup handlers should be unregistered
+						window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+						window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+					
+						cellEventIsMouseDown = NO;
+
 						if (self.delegate && self.delegate.collectionViewWillBeginInteractiveMovementForCell) {
 							self.delegate.collectionViewWillBeginInteractiveMovementForCell(self, cell, {atIndexPath: cell.indexPath});
 						}
 
 						// Begin tracking this as a drag event
 						self.beginDragWithEvent(event, {forCell: cell, touchIdentifier: cellEventTrackedTouch});
+						
+						cellEventTrackedTouch = undefined;
 					}
 				}
 			    
