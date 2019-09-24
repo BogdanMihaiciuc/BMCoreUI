@@ -2155,7 +2155,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 						// Begin tracking this as a drag event
 						self.beginDragWithEvent(event, {forCell: cell, touchIdentifier: cellEventTrackedTouch});
-						
+
 						cellEventTrackedTouch = undefined;
 					}
 				}
@@ -3544,7 +3544,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Will be invoked whenever any cell is clicked or tapped.
 	 * @param cell <BMCollectionViewCell>			The cell that was clicked.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this method.
+	 *	@param withEvent <Event>					The event that triggered this method.
 	 * }
 	 */
 	cellWasClicked: function (cell, options) {
@@ -3591,7 +3591,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Will be invoked whenever any cell is double clicked or double tapped.
 	 * @param cell <BMCollectionViewCell>		The cell that was clicked.
 	 * {
-	 *	@param withEvent <$event>				The jQuery event that triggered this method.
+	 *	@param withEvent <Event>				The event that triggered this method.
 	 * }
 	 */
 	cellWasDoubleClicked: function (cell, options) {
@@ -3606,7 +3606,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Will be invoked whenever any cell is long clicked or long tapped.
 	 * @param cell <BMCollectionViewCell>		The cell that was clicked.
 	 * {
-	 *	@param withEvent <$event>				The jQuery event that triggered this method.
+	 *	@param withEvent <Event>				The event that triggered this method.
 	 * }
 	 */
 	cellWasLongClicked: function (cell, options) {
@@ -3621,7 +3621,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Will be invoked whenever any cell is right clicked.
 	 * @param cell <BMCollectionViewCell>			The cell that was clicked.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this method.
+	 *	@param withEvent <Event>					The event that triggered this method.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. This should be YES if the default behaviour should be supressed, NO otherwise.
 	 */
