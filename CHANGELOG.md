@@ -1,3 +1,13 @@
+# 2.5.2
+
+## BMAnimationContext
+
+When web animations are enabled, array easings are now converted into cubic bezier easings.
+
+## BMMenu
+
+A new `openFromNode` method is now available. It opens the menu from the given DOM node and visually highlights it.
+
 # 2.5.1
 
 ## BMView

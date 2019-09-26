@@ -950,12 +950,14 @@ export function BMAnimationApplyBlocking(blocking) {
 				}
 			}
 
+			const easing = Array.isArray(options.easing) ? `cubicBezier(${options.easing.join(',')})` : BMAnimationEasing[options.easing];
+
 			let nodeAnimation;
 			try {
 				nodeAnimation = node.animate([sourceAnimationProperties, webAnimationProperties], {
 				//nodeAnimation = node.animate([{perspective: 1000}, {perspective: 1000}], {
 					duration: options.duration * (window.BMAnimationMultiplier || 1), 
-					easing: BMAnimationEasing[options.easing] || 'linear', 
+					easing: easing || 'linear', 
 					//fill: 'none',
 					delay: options.delay,
 					composite: 'replace',
