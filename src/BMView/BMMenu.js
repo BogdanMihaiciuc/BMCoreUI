@@ -1,9 +1,15 @@
 // @ts-check
 
-import {YES, NO} from '../Core/BMCoreUI'
-import {BMPoint} from '../Core/BMPoint'
-import {BMHook} from '../Core/BMAnimationContext'
+import {YES, NO, BMCopyProperties} from '../Core/BMCoreUI'
+import {BMPoint, BMPointMake} from '../Core/BMPoint'
+import {BMHook, __BMVelocityAnimate} from '../Core/BMAnimationContext'
 import 'velocity-animate'
+import { BMRectMakeWithNodeFrame } from '../Core/BMRect';
+
+/**
+ * The standard spacing between the menu and the node it is created from.
+ */
+const _BMMenuSpacingToNode = 8;
 
 // @type BMMenuKind
 
@@ -146,6 +152,21 @@ BMMenu.prototype = {
     _containerNode: undefined, // <DOMNode, nullable>
 
     /**
+     * The DOM node from which this menu was opened, if it was opened from a node.
+     */
+    _sourceNode: undefined, // <DOMNode, nullable>
+
+    /**
+     * A copy of the source node, used while the menu is visible.
+     */
+    _sourceNodeShadow: undefined, // <DOMNode, nullable>
+
+    /**
+     * The source node displacement, used while the menu is visible.
+     */
+    _sourceNodeDisplacement: undefined, // <Number, nullable>
+
+    /**
      * Initializes this menu with the specified items.
      * The menu will be hidden by default; the method showAtPoint(_) should be used to make the menu visible.
      * 
@@ -160,18 +181,167 @@ BMMenu.prototype = {
     },
 
     /**
-     * Invoked by CoreUI to render the menu items displayed by this menu.
+     * Invoked by CoreUI to build the menu node.
+     */
+    _renderMenu() {
+        // The actual menu node
+        const menuNode = document.createElement('div');
+        menuNode.className = 'BMMenu';
+        this._node = menuNode;
+
+        // The overlay which intercepts clicks outside of the menu
+        const menuContainer = document.createElement('div');
+        menuContainer.className = 'BMMenuContainer';
+        if (!('backdropFilter' in document.body.style) && !('webkitBackdropFilter' in document.body.style)) {
+            menuNode.style.backgroundColor = 'white';
+        }
+        menuContainer.appendChild(menuNode);
+        this._containerNode = menuContainer;
+
+        this._renderMenuItems();
+
+        menuNode.addEventListener('click', event => event.preventDefault());
+
+        menuContainer.addEventListener('click', event => {
+            this.closeAnimated(YES);
+            event.preventDefault();
+        });
+
+        menuContainer.addEventListener('contextmenu', event => {
+            this.closeAnimated(YES);
+            event.preventDefault();
+        });
+    },
+
+    /**
+     * Invoked by CoreUI to build the menu item nodes displayed by this menu.
      */
     _renderMenuItems() {
+        // Create and append the items for this menu
         for (const item of this._items) {
-        }
+            let itemNode = document.createElement('div');
+            itemNode.className = 'BMMenuItem';
 
+            if (item.icon) {
+                const icon = document.createElement('img');
+                icon.className = 'BMMenuIcon';
+                icon.src = item.icon;
+                itemNode.appendChild(icon);
+            }
+
+            const itemText = document.createElement('span');
+            itemText.innerText = item.name;
+            itemNode.appendChild(itemText);
+    
+            itemNode.addEventListener('click', event => {
+                if (item.action) item.action(item);
+
+                if (this.delegate && this.delegate.menuDidSelectItem) {
+                    this.delegate.menuDidSelectItem(this, item);
+                }
+            });
+
+            this._node.appendChild(itemNode);
+        }
     },
 
     /**
      * The kind of menu currently displayed.
      */
     _kind: BMMenuKind.Menu,
+
+    /**
+     * Animatable. Shows this menu from the given DOM node.
+     * @param node <DOMNode>                    The node from which to show this menu.
+     * {
+     *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
+     *                                          If this method is invoked from within an animation context, the value of this parameter is ignored
+     *                                          and the values of the current animation context are used.
+     * 
+     *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
+     * }
+     */
+    async openFromNode(node, {animated = NO, kind = BMMenuKind.Menu} = {}) {
+        this._sourceNode = node;
+
+        const sourceRect = BMRectMakeWithNodeFrame(node);
+        sourceRect.size.height = node.offsetHeight;
+        const viewportHeight = window.innerHeight;
+
+        this._sourceNodeShadow = node.cloneNode(YES);
+
+        this._renderMenu();
+
+        const menuNode = this._node;
+        const menuContainer = this._containerNode;
+        document.body.appendChild(menuContainer);
+        document.body.appendChild(this._sourceNodeShadow);
+
+        // When open from a node, the menu container will darken the content behind it
+        menuContainer.classList.add('BMMenuContainerFullScreen');
+        this._sourceNodeShadow.classList.add('BMMenuSourceNodeShadow');
+        menuNode.classList.add('BMMenuTouch');
+
+        this._sourceNode.classList.add('BMMenuSourceNode');
+
+        // When applicable, this interaction will perform a short tap
+        if ('vibrate' in window.navigator) window.navigator.vibrate(10);
+
+        const remainingHeight = viewportHeight - sourceRect.bottom;
+        const menuHeight = menuNode.offsetHeight;
+
+        let displacement = 0;
+
+        const scale = .33;
+        const duration = 400;
+        const easing = [.17,1.46,.84,.93];
+
+        // Displace the element, if needed
+        if (menuHeight + _BMMenuSpacingToNode * 2 > remainingHeight) {
+            displacement = remainingHeight - (menuHeight + _BMMenuSpacingToNode * 2);
+        }
+
+        this._sourceNodeDisplacement = displacement;
+
+        BMCopyProperties(this._sourceNodeShadow.style, {left: sourceRect.origin.x + 'px', top: sourceRect.origin.y + 'px', width: sourceRect.size.width + 'px', height: sourceRect.size.height + 'px', transform: 'none'});
+
+        menuNode.style.transformOrigin = '0% 0%';
+        if (kind == BMMenuKind.PullDownMenu) {
+            menuNode.style.transformOrigin = '50% 0%';
+        }
+
+        const point = BMPointMake(sourceRect.origin.x, sourceRect.bottom + _BMMenuSpacingToNode + displacement);
+        BMCopyProperties(menuNode.style, {left: point.x + 'px', top: point.y + 'px'});
+        
+        BMHook(menuContainer, {opacity: 0});
+        BMHook(menuNode, {scaleX: kind == BMMenuKind.PullDownMenu ? 1 : scale, scaleY: scale, translateY: -displacement + 'px'});
+
+        // Make the container visible
+        __BMVelocityAnimate(menuContainer, {opacity: 1}, {duration: duration, easing: easing});
+
+        // Make the menu expand
+        __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0, translateY: 0}, {
+            duration: duration,
+            easing: easing,
+            complete: _ => ((menuNode.style.pointerEvents = 'all'), menuContainer.style.pointerEvents = 'all')
+        });
+
+        // Animate each child node in
+        let delay = 50;
+        for (let child of menuNode.childNodes) {
+            BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
+            __BMVelocityAnimate(child, {translateY: '0px', translateZ: 0, opacity: 1}, {
+                duration: 100,
+                easing: 'easeOutQuad',
+                delay: delay
+            });
+            delay += 16;
+        }
+
+        // Animate the source node shadow
+        await __BMVelocityAnimate(this._sourceNodeShadow, {translateY: displacement + 'px'}, {duration: duration, easing: easing});
+
+    },
 
     /**
      * Animatable. Shows this menu at the specified point. The coordinates of this point are relative to the viewport.
@@ -192,36 +362,10 @@ BMMenu.prototype = {
             this.delegate.menuWillOpen(this);
         }
 
-        // The actual menu node
-        const menuNode = document.createElement('div');
-        menuNode.className = 'BMMenu';
-        this._node = menuNode;
+        this._renderMenu();
 
-        // The overlay which intercepts clicks outside of the menu
-        const menuContainer = document.createElement('div');
-        menuContainer.className = 'BMMenuContainer';
-        if (!('backdropFilter' in document.body.style) && !('webkitBackdropFilter' in document.body.style)) {
-            menuNode.style.backgroundColor = 'white';
-        }
-        menuContainer.appendChild(menuNode);
-        this._containerNode = menuContainer;
-
-        // Create and append the items for this menu
-        for (const item of this._items) {
-            let itemNode = document.createElement('div');
-            itemNode.className = 'BMMenuItem';
-            itemNode.innerText = item.name;
-    
-            itemNode.addEventListener('click', event => {
-                if (item.action) item.action(item);
-
-                if (this.delegate && this.delegate.menuDidSelectItem) {
-                    this.delegate.menuDidSelectItem(this, item);
-                }
-            });
-
-            menuNode.appendChild(itemNode);
-        }
+        const menuNode = this._node;
+        const menuContainer = this._containerNode;
 
         BMHook(menuNode, {scaleX: kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0});
 
@@ -244,8 +388,6 @@ BMMenu.prototype = {
         menuNode.style.left = point.x + 'px';
         menuNode.style.top = point.y + 'px';
 
-        menuNode.addEventListener('click', event => event.preventDefault());
-
         (window.Velocity || $.Velocity).animate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0}, {
             duration: 200,
             easing: 'easeOutQuad',
@@ -262,16 +404,6 @@ BMMenu.prototype = {
             });
             delay += 16;
         }
-
-        menuContainer.addEventListener('click', event => {
-            this.closeAnimated(YES);
-            event.preventDefault();
-        });
-
-        menuContainer.addEventListener('contextmenu', event => {
-            this.closeAnimated(YES);
-            event.preventDefault();
-        });
 
         return menuNode;
     },
@@ -290,14 +422,38 @@ BMMenu.prototype = {
         let delay = this._node.childNodes.length * 16 + 100 - 200;
         delay = (delay < 0 ? 0 : delay);
 
+        const sourceNodeShadow = this._sourceNodeShadow;
         const containerNode = this._containerNode;
+        const sourceNode = this._sourceNode;
 
-        (window.Velocity || $.Velocity).animate(this._node, {scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0, translateZ: 0}, {
+        this._sourceNode = undefined;
+        this._sourceNodeShadow = undefined;
+
+        const scale = sourceNodeShadow ? .33 : .75;
+        const duration = sourceNodeShadow ? 200 : 400;
+        const easing = sourceNodeShadow ? 'easeInOutQuad' : 'easeInQuad';
+
+        if (sourceNodeShadow) {
+            __BMVelocityAnimate(sourceNodeShadow, {translateY: '0px'}, {duration: duration, easing: easing});
+            __BMVelocityAnimate(containerNode, {opacity: 0}, {duration: duration, easing: easing});
+        }
+
+        __BMVelocityAnimate(this._node, {
+            scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale, 
+            scaleY: scale, 
+            opacity: sourceNodeShadow ? 1 : 0, 
+            translateY: sourceNodeShadow ? -this._sourceNodeDisplacement + 'px' : '0px',
+            translateZ: 0
+        }, {
             duration: 200,
-            easing: 'easeInQuad',
+            easing: easing,
             delay: delay,
             complete: _ => {
                 containerNode.remove();
+                if (sourceNodeShadow) {
+                    sourceNodeShadow.remove();
+                    sourceNode.classList.remove('BMMenuSourceNode');
+                }
                 if (this.delegate && this.delegate.menuDidClose) {
                     this.delegate.menuDidClose(this);
                 }
@@ -307,7 +463,7 @@ BMMenu.prototype = {
         delay = 0;
         for (let i = this._node.childNodes.length - 1; i >= 0; i--) {
             let child = this._node.childNodes[i];
-            (window.Velocity || $.Velocity).animate(child, {translateY: '16px', translateZ: 0, opacity: 0}, {
+            __BMVelocityAnimate(child, {translateY: '16px', translateZ: 0, opacity: 0}, {
                 duration: 100,
                 easing: 'easeInQuad',
                 delay: delay
