@@ -137,6 +137,25 @@ BMMenu.prototype = {
     },
 
     /**
+     * Defaults to 24. The size to use for this menu's icons.
+     */
+    _iconSize: 24, // <Number>
+
+    get iconSize() {
+        return this._iconSize;
+    },
+    set iconSize(size) {
+        this._iconSize = size;
+
+        if (this._node) for (const icon of this._node.querySelectorAll()) {
+            BMCopyProperties(icon.style, {
+                width: size + 'px',
+                height: size + 'px'
+            });
+        }
+    },
+
+    /**
      * The point at which the menu is visible.
      */
     _point: new BMPoint(), // <BMPoint>
@@ -218,6 +237,7 @@ BMMenu.prototype = {
      */
     _renderMenuItems() {
         // Create and append the items for this menu
+        const iconSize = this._iconSize;
         for (const item of this._items) {
             let itemNode = document.createElement('div');
             itemNode.className = 'BMMenuItem';
@@ -226,6 +246,10 @@ BMMenu.prototype = {
                 const icon = document.createElement('img');
                 icon.className = 'BMMenuIcon';
                 icon.src = item.icon;
+                BMCopyProperties(icon.style, {
+                    width: iconSize + 'px',
+                    height: iconSize + 'px'
+                });
                 itemNode.appendChild(icon);
             }
 

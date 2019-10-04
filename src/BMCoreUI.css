@@ -1126,6 +1126,11 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 .BMMenuTouch > .BMMenuItem {
 	height: 44px;
 	line-height: 44px;
+	border-bottom: 1px solid rgba(0, 0, 0, .1);
+}
+
+.BMMenuTouch > .BMMenuItem:last-child {
+	border-bottom-width: 0px;
 }
 
 .BMMenuIcon {
@@ -1137,12 +1142,12 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	margin-right: 16px;
 }
 
-.BMLayoutEditorConstraintPopupOption:hover, .BMMenuItem:hover {
+.BMLayoutEditorConstraintPopupOption:hover, .BMMenuItem:hover, .BMMenuTouch > .BMMenuItem:active {
 	background: rgb(0, 128, 255);
 	color: white;
 }
 
-.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active {
+.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active, .BMMenuTouch > .BMMenuItem:hover {
 	background: transparent;
 	color: rgba(0, 0, 0, .8);
 }
@@ -1156,9 +1161,13 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		color: rgba(255, 255, 255, .9);
 	}
 
-	.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active {
+	.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active, .BMMenuTouch > .BMMenuItem:hover {
 		background: transparent;
 		color: white;
+	}
+
+	.BMMenuTouch > .BMMenuItem {
+		border-bottom-color: rgba(255, 255, 255, .1);
 	}
 }
 

@@ -8,6 +8,10 @@ When web animations are enabled, array easings are now converted into cubic bezi
 
 A new `openFromNode` method is now available. It opens the menu from the given DOM node and visually highlights it.
 
+A new `iconSize` property can be set on the menu. It controls the size of the menu item icons.
+
+When specified on menu items, the menu will now also display icons.
+
 # 2.5.1
 
 ## BMView
