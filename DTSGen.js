@@ -8,7 +8,7 @@ let returnRegex = /\s*@return <(.*?)>\s*(.*)/;
 
 //let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async)\s*(\S*?)\s*\(.*?\)\s*{/;  ///\s*(.*?)\s*:\s*function.*?\(.*?\)/;
 // This regex should also work with prototype assignments
-let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async)\s*(\S*?)\s*\(.*?\)\s*{|\s*(?:.*)\.prototype\.(.*?)\s*=\s*function\s*\(.*\)\s* {/;
+let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async function)(?:async)?\s*(\S*?)\s*\(.*?\)\s*{|\s*(?:.*)\.prototype\.(.*?)\s*=\s*function\s*\(.*\)\s* {/;
 let functionVariableRegex = /\s*var\s*(.*?)\s*=\s*function.*?\(.*?\)/;
 let globalFunctionRegex = /\s*function\s*(.*?)\s*\(.*?\)/;
 let classRegex = /\s*class\s*(\S*?)\s*(extends\s+\S+)?\s*{/;
