@@ -4,6 +4,8 @@
 
 Resolved an issue with the Thingworx extension that could cause CoreUI to crash upon loading. This issue would occur when the environment had a module loader available. This would cause `kiwi` to expose itself as a module in one of those systems instead of globally as the CoreUI extension expected. CoreUI will now explicitly disable modules for kiwi in such environments.
 
+Resolved an issue that caused certain async methods to be excluded from the TypeScript definitions.
+
 ## BMAnimationContext
 
 When web animations are enabled, array easings are now converted into cubic bezier easings.
