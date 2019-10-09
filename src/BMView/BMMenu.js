@@ -284,6 +284,7 @@ BMMenu.prototype = {
      * 
      *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
      * }
+     * @return <Promise<void>>                  A promise that resolves when the operation completes.
      */
     async openFromNode(node, {animated = NO, kind = BMMenuKind.Menu} = {}) {
         this._sourceNode = node;
