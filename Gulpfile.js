@@ -67,6 +67,18 @@ const removeFiles = [
 ];
 
 /**
+ * Files for which modules will be disabled in extension mode.
+ */
+const noModuleFiles = [
+    'kiwi.js'
+];
+
+/**
+ * Files that should only exist for the extension.
+ */
+const extensionFiles = [];
+
+/**
  * Files from which the typescript definitions are created.
  */
 const DTSFiles = [
@@ -195,6 +207,12 @@ async function prepareBuild(cb) {
             await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
         }
 
+        // Disable modules as needed
+        for (const file of noModuleFiles.map(f => `${outPath}/${f}`)) {
+            const content = fs.readFileSync(file, {encoding: 'utf8'});
+            fs.writeFileSync(file, `(function (){const define = undefined, module = undefined, exports = undefined; ${content}})()`, {encoding: 'utf8'});
+        }
+
         await new Promise(resolve => {
             src(`${outPath}/**/*.js`)
                 .pipe(babel({plugins: ['remove-import-export']}))
@@ -203,6 +221,9 @@ async function prepareBuild(cb) {
         })
     }
     else {
+        // Remove extension only files
+        await del(extensionFiles.map(f => `${outPath}/${f}`));
+
         fs.mkdirSync(`${outPath}/@types`);
         fs.mkdirSync(`${libPath}/@types`);
 
@@ -271,7 +292,7 @@ async function prepareBuild(cb) {
                     }
 
                     stream.pipe(concat(`${name}.js`))
-                        .pipe(terser({compress: true, mangle: true}))
+                        .pipe(terser({compress: true, mangle: {reserved: ['module', 'exports', 'define']}}))
                         .pipe(dest(`${args.l ? libPath : outPath}`))
                         .on('end', resolve);
                 });
