@@ -1,6 +1,8 @@
 import {YES, NO, BMExtend, BMCopyProperties} from '../Core/BMCoreUI'
 import {BMView} from './BMView_v2.5'
 
+const BM_LABEL_VIEW_DEBUG_INTRINSIC_SIZE = NO;
+
 // @type BMAttributedLabelView extends BMView
 
 /**
@@ -41,9 +43,9 @@ BMAttributedLabelView.prototype = BMExtend(Object.create(BMView.prototype), {
     get intrinsicSize() {
         let result = Object.getOwnPropertyDescriptor(BMView.prototype, 'intrinsicSize').get.call(this);
 
-        console.log('[BMAttributedLabelView] Intrinsic size is ' + result);
+        if (BM_LABEL_VIEW_DEBUG_INTRINSIC_SIZE) console.log('[BMAttributedLabelView] Intrinsic size is ' + result);
 
-        if (result && result.width > 1000) debugger;
+        if (BM_LABEL_VIEW_DEBUG_INTRINSIC_SIZE && result && result.width > 1000) debugger;
 
         return result;
     },
