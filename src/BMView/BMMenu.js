@@ -63,6 +63,10 @@ BMMenuItem.prototype = {
         return this._action;
     },
 
+    /**
+     * Additional, arbitrary information associated with this menu item.
+     */
+    userInfo: undefined, // <AnyObject, nullable>
 
     /**
      * Constructs and returns a menu item with the given name.
@@ -75,13 +79,15 @@ BMMenuItem.prototype = {
      * 
      *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
      *                                                  This function will receive the selected menu item as a parameter.
+     *  @param userInfo <AnyObject, nullable>           Optional. If specified, this represents additional arbitrary data attached to this menu item.
      * }
      * @return <BMMenuItem>                             This menu item.
      */
-    initWithName(name, {icon, action} = {}) {
+    initWithName(name, {icon, action, userInfo} = {}) {
         this._name = name;
         this._icon = icon;
         this._action = action;
+        this.userInfo = userInfo;
 
         return this;
     }
