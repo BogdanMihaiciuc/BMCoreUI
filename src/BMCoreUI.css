@@ -1651,20 +1651,41 @@ BMLayoutEditorDetailsItemBadge {
 
 	pointer-events: all !important;
 
+	transition: border .2s ease-in-out;
+	border: 2px solid transparent;
+
 	/* Sadly needed for Thingworx environment */
 	z-index: 10;
 }
 
-.BMLayoutEditorViewSelectorSelected {
+.BMLayoutEditorXRay .BMLayoutEditorViewSelector {
+	border: 1px solid rgba(128, 128, 128, 1);
+	visibility: visible;
+}
+
+.BMLayoutEditorXRay .BMLayoutEditorManagedView > *:not(.BMLayoutEditorViewSelector, .BMLayoutEditorLeadLine, .BMLayoutEditorConstraint) {
+	visibility: hidden;
+}
+
+.BMLayoutEditorXRay .BMLayoutEditorManagedView {
+	visibility: visible;
+	background-color: transparent !important;
+}
+
+.BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorSelected {
 	border: 2px solid rgba(0, 128, 255, 1);
 }
 
-.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorViewSelectorSelected {
+.BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorSelected {
 	border-color: red;
 }
 
-.BMLayoutEditorViewSelectorConstrained {
+.BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorConstrained {
 	border: 1px solid rgb(255, 251, 0);
+}
+
+.BMLayoutEditorXRay .BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorConstrained {
+	border: 1px solid rgb(255, 196, 0);
 }
 
 .BMLayoutEditorNoShadow .BMLayoutEditorViewSelector {
