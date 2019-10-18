@@ -342,6 +342,15 @@ export function BMNumberByConstrainingNumberToBounds(value, low, high) {
 }
 
 /**
+ * Returns a copy of the given string that has the first letter uppercased.
+ * @param string <String>		The string to capitalize.
+ * @return <String>				The capitalized string.
+ */
+export function BMStringByCapitalizingString(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+/**
  * Returns an array that contains all of the given object's keys that contain the given value.
  * If no key contains the given value, an empty array will be returned.
  * The object must not be null or undefined.
