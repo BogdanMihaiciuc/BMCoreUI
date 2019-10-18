@@ -640,6 +640,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * A layout queue that is shared by this collection view's cells.
 	 */
 	_cellLayoutQueue: undefined, // <BMViewLayoutQueue>
+	
 	get cellLayoutQueue() {
 		return this._cellLayoutQueue;
 	},
@@ -3107,6 +3108,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					cell.node.classList.remove('BMCollectionViewCellDragging');
 				});
 
+				const delayPerCell = 200 / draggingShadows.length;
+
 				draggingShadows.forEach((otherDraggingShadow, index) => {
 					BMHook(otherDraggingShadow, {rotateZ: ((index + 1) * 60 / cells.length) + 'deg'});
 					// (window.Velocity || $.Velocity).animate(otherDraggingShadow, {
@@ -3126,7 +3129,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					}, {
 						easing: 'easeInQuad',
 						duration: 200,
-						delay: (draggingShadows.length - index) * 50
+						delay: (draggingShadows.length - index) * delayPerCell
 					});
 				});
 	
@@ -3147,7 +3150,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				}, {
 					duration: 200, 
 					easing: 'easeInQuad',
-					delay: draggingShadows.length * 50
+					delay: draggingShadows.length * delayPerCell
 				});
 			}
 			else {
@@ -5430,6 +5433,17 @@ BMCollectionView.collectionViewForNode = function (node, args) {
 	collectionView.initWithDOMNode(node);
 
 	return collectionView;
+}
+
+/**
+ * Constructs and returns a collection view, creating a new `<div>` DOMNode for it.
+ * The node for this collection should be added to the document prior to using it.
+ * @return <BMCollectionView>			A collection view.
+ */
+BMCollectionView.collectionView = function () {
+	const node = document.createElement('div');
+
+	return this.collectionViewForNode(node);
 }
 
 /**
