@@ -70,7 +70,8 @@ const removeFiles = [
  * Files for which modules will be disabled in extension mode.
  */
 const noModuleFiles = [
-    'kiwi.js'
+    'kiwi.js',
+    'velocity.js'
 ];
 
 /**

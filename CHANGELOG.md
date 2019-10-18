@@ -1,3 +1,21 @@
+# 2.6
+
+## General Changes
+
+A new `BMStringByCapitalizingString(_)` function is now available that returns a copy of the given string with the first character uppercased.
+
+## BMCollectionView
+
+A new static `collectionView()` method can be used to create a new collection view and a DOMNode for it.
+
+## BMMenuItem
+
+A new `userInfo` property can now be set on menu items. It can be used to add additional information to the item. This object has no specific type and is not directly used by CoreUI, but can be used by custom implementations to attach arbitrary data to the item.
+
+# 2.5.3
+
+Resolved an incompatibility issue with Thingworx 8.5.
+
 # 2.5.2
 
 ## General Changes
