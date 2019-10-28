@@ -366,6 +366,8 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     recycle: function () {
         this._unmanage();
 
+        this.invalidate();
+
         //this.collectionView.cellWasUnmanaged(this);
         if (this.retainCount > 0) {
             this.collectionView.cellWasInvalidated(this);
@@ -389,6 +391,8 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
      */
     releaseRecycledCell: function () {
         this.release();
+
+        this.invalidate();
 
         if (this.retainCount > 0) {
             this.collectionView.cellWasInvalidated(this);
@@ -514,6 +518,18 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
      * Subclasses should invoke the superclass method at some point in their implementaiton.
      */
     prepareForDisplay() {
+
+    },
+
+    /**
+     * Invoked prior to this cell being destroyed either because its data set object has been removed while this cell was still
+     * being retained or because its owning collection view was released.
+     * Subclasses can override this method to perform any changes necessary for cleanup, such as removing global event listeners/
+     * The default implementation currently does nothing, but subclasses should nevertheless invoke the superclass method at some
+     * point in their implementation.
+     * After this method returns, the cell's node will be removed from the document and this cell will no longer be reused.
+     */
+    invalidate() {
 
     },
 
