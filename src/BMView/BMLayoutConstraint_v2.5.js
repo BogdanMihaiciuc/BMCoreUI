@@ -271,6 +271,9 @@ BMLayoutConstraint.constraintWithView = function (view, args) {
 	if (!args._internal) {
 		constraint._install();
 	}
+	else {
+		constraint._internal = YES;
+	}
 
 	return constraint;
 
@@ -1215,6 +1218,9 @@ BMEqualAttributeLayoutConstraint.constraintWithAttribute = function (attribute, 
 	if (!args._internal) {
 		constraint._install();
 	}
+	else {
+		constraint._internal = YES;
+	}
 
 	return constraint;
 }
@@ -1478,6 +1484,9 @@ BMEqualSpacingLayoutConstraint.constraintOfKind = function (kind, args) {
 
 	if (!args._internal) {
 		constraint._install();
+	}
+	else {
+		constraint._internal = YES;
 	}
 
 	return constraint;
