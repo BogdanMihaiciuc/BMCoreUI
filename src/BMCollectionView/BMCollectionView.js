@@ -16,7 +16,7 @@ import {IScroll} from '../iScroll/iscroll-probe'
 
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
-// When set to YES, this will cause collection view to extend view
+// When set to YES, this will cause collection view to extend view; setting this flag to NO is no longer supported
 const BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS = YES;
 // When set to YES, this will cause collection view to flash red when it measures a cell
 const BM_COLLECTION_VIEW_DEBUG_MEASURE = NO;
@@ -232,6 +232,7 @@ export function BMCollectionView() { // <constructor>
 }
 
 BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? Object.create(BMView.prototype) : {}, {
+	constructor: BMCollectionView,
 
 	// MARK: BMView overrides
 	//#region BMView overrides
@@ -691,10 +692,49 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		return BMView.prototype.initWithDOMNode.apply(this, arguments);
 	},
 
+	// @override - BMView
+	set _activeVisibility(visibility) {
+		// If initialization was delayed, perform it now if this collection view has a valid frame or is not
+		// part of a view hierarchy
+		if (visibility && this.__activeVisibility != visibility) {
+			Object.getOwnPropertyDescriptor(BMView.prototype, '_activeVisibility').set.call(this, visibility);
+			if (this.__awaitsInit) {
+				if (this.superview) {
+					if (this.frame && this.frame.size.width > 0 && this.frame.size.height > 0) {
+						// Perform init upon becoming visible and acquiring a valid frame
+						this._init();
+					}
+				}
+				else {
+					// Perform init upon becoming visible if not part of a view hierarchy
+					this._init();
+				}
+			}
+		}
+		else {
+			Object.getOwnPropertyDescriptor(BMView.prototype, '_activeVisibility').set.call(this, visibility);
+		}
+	},
+
     /**
-	 * Should not be invoked manually. It is invoked by the collection view itself to create the initial layout and cells.
+	 * Should not be invoked manually. It is invoked by collection view to create the initial layout and cells.
 	 */
     _init: function () {
+		// If currently invisible, delay the init
+		if (!this.__activeVisibility) {
+			this.__awaitsInit = YES;
+			return;
+		}
+
+		// If part of a view hierarchy and the frame is 0 size, delay the init until this collection is assigned a valid frame
+		if (this.superview) {
+			if (!this.frame || (this.frame.size.width == 0 || this.frame.size.height == 0)) {
+				this.__awaitsInit = YES;
+				return;
+			}
+		}
+
+		this.__awaitsInit = NO;
 		
 		// TODO
 		var useCustomScroll = (window.navigator.standalone && this.customScrollRequired === undefined) || this.customScrollRequired;
@@ -1863,6 +1903,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		cell._isMeasuring = YES;
 		cell._invalidatedConstraints = YES;
 
+		// Move this measurement into a separate layout queue
+		const layoutQueue = cell.layoutQueue;
+		cell.layoutQueue = BMViewLayoutQueue.layoutQueue();
+
 		// Apply the placeholder attributes
 		cell.attributes = attributes;
 
@@ -1898,6 +1942,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Run a layout pass to measure the cell's subview
 		cell.layout();
 
+		cell.layoutQueue = layoutQueue;
+
 		// If needed, temporarily retain the cell in case it will be reused
 		if (this._measuringCells) {
 			this._measuringCells.push(cell.retain());
@@ -1915,8 +1961,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 
 		// If the cell is still retained, reapply the previous attibutes
-		if (cell.retainCount > 1 && previousAttributes) {
+		if (cell.retainCount > 0 && previousAttributes) {
 			cell.attributes = previousAttributes;
+		}
+		else {
+			cell._attributes = undefined;
+			attributes._cell = undefined;
 		}
 
 		// Invalidate the cell's constraints to allow the next layout pass to correctly update the cells
@@ -5392,6 +5442,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 			
 			// The cell's element will be removed together with all the content in one call to remove()
+			cell.invalidate();
 			
 			// Let the delegate know that this cell was destroyed
 			if (self.delegate && self.delegate.collectionViewDidDestroyCell) {
