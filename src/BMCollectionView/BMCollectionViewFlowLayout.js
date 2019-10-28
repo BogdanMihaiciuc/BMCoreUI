@@ -3038,8 +3038,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 		if (this._expectedCellSize) {
 			if (this.cachedLayout.resolvedIndexPath.section < options.atIndexPath.section ||
 				(this.cachedLayout.resolvedIndexPath.section == options.atIndexPath.section && identifier == BMCollectionViewFlowLayoutSupplementaryView.Footer)) {
-					// If the layout has not been resolved up to this index path, continue computing it until it has
-					this._layoutIterator.next({indexPath: this.collectionView.indexPathForObjectAtRow(0, {inSectionAtIndex: options.atIndexPath.section + 1})});
+					if (options.atIndexPath.section == this.collectionView.numberOfSections() - 1) {
+						// If there is no following section, compute until the last index path
+						this._layoutIterator.next({indexPath: this.collectionView.indexPathForObjectAtRow(this.collectionView.numberOfObjectsInSectionAtIndex(options.atIndexPath.section), {inSectionAtIndex: options.atIndexPath.section})});
+					}
+					else {
+						// If the layout has not been resolved up to this index path, continue computing up to the beginning of the next section
+						this._layoutIterator.next({indexPath: this.collectionView.indexPathForObjectAtRow(0, {inSectionAtIndex: options.atIndexPath.section + 1})});
+					}
 				}
 		}
 	    
