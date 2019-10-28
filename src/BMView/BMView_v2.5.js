@@ -598,19 +598,47 @@ export function BMView() {} // <constructor>
     }
 
     /**
-     * Invoked internally when this view is no longer needed.
+     * Used when releasing an entire view hierarchy.
+     * Releases this view without affecting constraints or the DOM.
+     * 
+     * The final operations will be performed by the view that initiated this release
+     * operation.
+     */
+    BMView.prototype._releaseRecursive = function () {
+        if (this.__released) {
+            // This needs to be handled because of the way Thingworx DOM nodes are removed and recreated in the composer
+            return;
+        }
+        this.__released = YES;
+
+        for (const view of this._subviews) {
+            view._releaseRecursive();
+        }
+        _BMViewMap.delete(this._node);
+        rootViews.delete(this);
+    }
+
+    /**
+     * Invoked when this view is no longer needed.
      * Removes the view from its superview and removes all event listeners
      * created by this view but otherwise leaves its DOM node intact.
-     * 
-     * You should not invoke this method on views that have subviews.
      * 
      * This view should not be reused after invoking this method. Instead, if needed,
      * a new view should be obtained for that node and used.
      */
     BMView.prototype.release = function () {
+        if (this.__released) {
+            // This needs to be handled because of the way Thingworx DOM nodes are removed and recreated in the composer
+            return;
+        }
+        this.__released = YES;
+
+        for (const view of this._subviews.slice()) {
+            view._releaseRecursive();
+        }
         _BMViewMap.delete(this._node);
         if (this._superview) {
-            this._superview._detachSubview(this);
+            this.removeFromSuperview();
         }
 
         rootViews.delete(this);
@@ -698,6 +726,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     /**
      * An optional name used to identify this view when printing out debug messages.
+     * This name is also used by the layout editor when displaying this view.
      */
     debuggingName: '', // <String, nullable>
 
@@ -2400,6 +2429,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // If this view is the root of the view hierarchy, add the constraints fixing it to the top-left corner of its container
         // and sizing constraints making it as large as its container
         if (this.isRootView) {
+            // Root constraints cannot be created if the view's node is not attached to the document
+            if (!this.node.parentNode) return constraints;
+
             if (this._rootViewLeftConstraint) {
                 if (this._layoutEditor) {
                     this._rootViewHeightConstraint.constant = this._layoutEditor._staticWorkspaceHeight;
