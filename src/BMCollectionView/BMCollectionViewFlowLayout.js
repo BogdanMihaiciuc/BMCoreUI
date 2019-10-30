@@ -1800,6 +1800,140 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 			*/
 			let target;
 
+			// The sections that contain the preliminary layout
+			const preliminarySections = [];
+
+			const self = this;
+
+			// This function measures a series of cells that exist in the preliminary layout and interect the given rect
+			function measureCellsInRect(rect) {
+				// Adjust the rows to account for the resolved layout
+				if (cachedLayout.resolvedIndexPath) {
+					let targetSection = cachedLayout.resolvedIndexPath.section;
+					if (cachedLayout.resolvedIndexPath.row == -1) targetSection--;
+					let adjustment;
+					for (let i = 0; i <= targetSection; i++) {
+						let preliminarySection = preliminarySections[i];
+						let section = cachedLayout.sections[i];
+
+						if (i < targetSection || section.resolved) {
+							// Completely resolved sections can just be replaced entirely
+							preliminarySection.start = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? section.top : section.left;
+							preliminarySection.preliminaryEnd = preliminarySection.end;
+							preliminarySection.end = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? section.bottom : section.right;
+
+							preliminarySection.preliminaryRows = preliminarySection.rows;
+							preliminarySection.rows = section.rows.map(r => orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 
+								{start: r.top, end: r.bottom, indexStart: r.startIndex, indexEnd: r.endIndex} : 
+								{start: r.left, end: r.right, indexStart: r.startIndex, indexEnd: r.endIndex});
+						}
+						else {
+							preliminarySection.preliminaryRows = preliminarySection.rows;
+							preliminarySection.rows = [];
+							preliminarySection.start = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? section.top : section.left;
+							// For in-progress sections, it is necessary to figure out the adjustment between the
+							// preliminary locations and the resolved ones
+							let end = preliminarySection.start;
+							let indexEnd = 0;
+							for (const r of section.rows) {
+								let row = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 
+									{start: r.top, end: r.bottom, indexStart: r.startIndex, indexEnd: r.endIndex} : 
+									{start: r.left, end: r.right, indexStart: r.startIndex, indexEnd: r.endIndex};
+
+								preliminarySection.rows.push(row);
+								end = row.end;
+								indexEnd = row.indexEnd;
+							}
+
+							end += rowSpacing;
+
+							// After inspecting the resolved rows, it is possible to calculate the adjustment
+							for (const row of section.preliminaryRows) {
+								if (row.indexEnd > indexEnd) {
+									adjustment = end - row.start;
+									break;
+								}
+							}
+
+							// The adjustment can then be applied to all subsequent rows
+							for (const row of section.preliminaryRows) {
+								if (row.indexEnd > indexEnd) {
+									row.start += adjustment;
+									row.end += adjustment;
+								}
+							}
+						}
+					}
+
+					// The remaining sections also need to be adjusted
+					for (let i = targetSection + 1; i < sectionCount; i++) {
+						// If the adjustment is still undefined, the target section was fully defined; in this case
+						// the adjustment can be calculated directly from the section ends
+						if (adjustment === undefined) {
+							adjustment = (orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? cachedLayout.sections[targetSection].bottom : cachedLayout.sections[targetSection].right) - preliminarySections[targetSection].end;
+						}
+
+						const preliminarySection = preliminarySections[i];
+						preliminarySection.start += adjustment;
+						preliminarySection.end += adjustment;
+
+						for (const row of preliminarySection.row) {
+							row.start += adjustment;
+							row.end += adjustment;
+						}
+					}
+				}
+
+				let indexPaths = [];
+				
+				var rectTop = rect.origin.y;
+				var rectBottom = rect.bottom;
+				var rectLeft = rect.origin.x;
+				var rectRight = rect.right;
+				var rectEnd = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? rectBottom : rectRight;
+				const rectStart = orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? rectTop : rectLeft;
+				
+				var sectionIndex = 0;
+				var sectionCount = preliminarySections.length;
+				var section;
+				
+				// Find the section that intersects this rect's top origin
+				for (; sectionIndex < sectionCount; sectionIndex++) {
+					section = preliminarySections[sectionIndex];
+					if (section.end > rectStart) break;
+				}
+				
+				// If there were no sections return nothing
+				if (sectionIndex == sectionCount) return;
+				
+				// Find the first row index that intersects the rect's top.
+				var rowIndex = 0;
+				
+				for (const row of section.rows) {
+					if (row.end > rectStart) break;
+					rowIndex++;
+				}
+
+				// Then continue adding rows until reaching the end of the rect or the end of the data set
+				while (YES) {
+					section = preliminarySections[sectionIndex];
+					if (!section) return self.collectionView.measureSizesOfCellsAtIndexPaths(indexPaths);
+					const rowCount = section.rows.length;
+					for (let i = rowIndex; i < rowCount; i++) {
+						const row = section.rows[i];
+						// When encountering a row outside of the rect's bounds, perform the measurement and return
+						if (row.start > rectEnd) return self.collectionView.measureSizesOfCellsAtIndexPaths(indexPaths);
+						const indexEnd = Math.min(row.indexEnd + 1, self.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex));
+						for (let rowIndex = row.indexStart; rowIndex < indexEnd; rowIndex++) {
+							indexPaths.push(self.collectionView.indexPathForObjectAtRow(rowIndex, {inSectionAtIndex: sectionIndex}));
+						}
+					}
+
+					sectionIndex++;
+					rowIndex = 0;
+				}
+			};
+
 			if (this._expectedCellSize) {
 				cachedLayout.resolvedHeight = 0;
 				cachedLayout.resolvedWidth = 0;
@@ -1846,6 +1980,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 					}
 				}
 
+				// Create the preliminary sections
 				for (let i = 0; i < sectionCount; i++) {
 					let numberOfObjects = this.collectionView.numberOfObjectsInSectionAtIndex(i);
 					
@@ -1856,11 +1991,25 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 					if (footerHeight) spacingBreadth += rowSpacing;
 					
 					if (orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
+						// Section objects retain the overall bounds as well as the preliminary rows
 						let section = {
 							top: height,
+							start: height,
 							bottom: height + footerHeight + headerHeight + (expectedSecondarySize * numberOfRows) + spacingBreadth,
-							numberOfObjects: numberOfObjects
+							end: height + footerHeight + headerHeight + (expectedSecondarySize * numberOfRows) + spacingBreadth,
+							numberOfObjects: numberOfObjects,
+							numberOfRows: numberOfRows,
+							rows: []
 						};
+
+						let rowStart = headerHeight ? height + headerHeight + rowSpacing : height;
+						let indexStart = 0;
+						for (let i = 0; i < numberOfRows; i++) {
+							// Preliminary rows contain the overall bounds and starting and ending index paths
+							section.rows.push({start: rowStart, end: rowStart + expectedSecondarySize, indexStart: indexStart, indexEnd: indexStart + numberOfColumns - 1});
+							rowStart += expectedSecondarySize + rowSpacing;
+							indexStart += numberOfColumns;
+						}
 						
 						height = section.bottom + insetTop + insetBottom;
 						
@@ -1868,13 +2017,28 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 						if (height > frameHeight) {
 							if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
 						}
+
+						preliminarySections.push(section);
 					}
 					else {
 						let section = {
 							left: width,
+							start: width,
 							right: width + (expectedSecondarySize * numberOfRows) + spacingBreadth,
-							numberOfObjects: numberOfObjects
+							end: width + (expectedSecondarySize * numberOfRows) + spacingBreadth,
+							numberOfObjects: numberOfObjects,
+							numberOfRows: numberOfRows,
+							rows: []
 						};
+
+						let rowStart = width;
+						let indexStart = 0;
+						for (let i = 0; i < numberOfRows; i++) {
+							// Preliminary rows contain the overall bounds and starting and ending index paths
+							section.rows.push({start: rowStart, end: rowStart + expectedSecondarySize, indexStart: indexStart, indexEnd: indexStart + numberOfColumns - 1});
+							rowStart += expectedSecondarySize + rowSpacing;
+							indexStart += numberOfColumns;
+						}
 						
 						width = section.right + insetLeft + insetRight;
 						
@@ -1882,6 +2046,8 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 						if (width > frameWidth) {
 							if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
 						}
+
+						preliminarySections.push(section);
 					}
 				}
 				
@@ -1896,6 +2062,11 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 					cachedLayout.size = BMSizeMake(this.collectionView.frame.size.width, height);
 	
 					target = yield;
+
+					// When requesting a rect initially, pre-measure the cells up to that rect
+					if (target.rect) {
+						measureCellsInRect(target.rect);
+					}
 	
 					height = topPadding;
 				}
@@ -1907,6 +2078,10 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 					cachedLayout.size = BMSizeMake(width, this.collectionView.frame.size.height);
 	
 					target = yield;
+					// When requesting a rect initially, pre-measure the cells up to that rect
+					if (target.rect) {
+						measureCellsInRect(target.rect);
+					}
 	
 					width = 0;
 				}
@@ -2130,6 +2305,11 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 								section.bottom = height;
 								section.right = width;
 								target = yield;
+								
+								// When requesting a rect initially, pre-measure the cells up to that rect
+								if (target.rect) {
+									measureCellsInRect(target.rect);
+								}
 							}
 						}
 						if (target.rect) {
@@ -2154,11 +2334,18 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 								section.bottom = height;
 								section.right = width;
 								target = yield;
+
+								// When requesting a rect initially, pre-measure the cells up to that rect
+								if (target.rect) {
+									measureCellsInRect(target.rect);
+								}
 							}
 						}
 					}
 					
 				}
+
+				section.resolved == YES;
 
 				// Remove the row spacing from the last row
 				if (orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {

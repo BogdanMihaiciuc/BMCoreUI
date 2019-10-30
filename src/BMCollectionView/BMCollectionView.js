@@ -1838,6 +1838,23 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
 	/**
+	 * Computes and caches the measured sizes of the cells at the given index paths. This may cause collection view to bind multiple cells
+	 * to the given index paths and run a synchronous layout pass on its root view.
+	 * After this measurement, collection view will cache this size and return it directly when invoking `measuredSizeOfCellAtIndexPath(_)`. 
+	 * To obtain new measurements, it is required to invoke `invalidateMeasuredSizeOfCellAtIndexPath(_)` on each cell prior to invoking this method.
+	 * This operation will raise an error if any cell at one of the specified index paths has no subviews that can be measured.
+	 * @param indexPaths <[BMIndexPath]>			The index paths of the cell whose size should be measured.
+	 */
+	measureSizesOfCellsAtIndexPaths(indexPaths) {
+		const queue = BMViewLayoutQueue.layoutQueue();
+		const iterators = indexPaths.map(p => this._measuredSizeOfCellAtIndexPathGenerator(p, {layoutQueue: queue, dequeue: NO}));
+
+		iterators.forEach(i => i.next());
+		queue.dequeue();
+		iterators.forEach(i => i.next());
+	},
+
+	/**
 	 * Computes and returns the measured size of the cell at the given index path. This may cause collection view to bind a cell
 	 * to the given index path and run a synchronous layout pass on its root view.
 	 * After the initial measurement, collection view will cache this size and return it directly for subsequent requests. To obtain a new
@@ -1847,6 +1864,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @return <BMSize>							The measured size.
 	 */
 	measuredSizeOfCellAtIndexPath(indexPath) {
+		const iterator = this._measuredSizeOfCellAtIndexPathGenerator(indexPath, {layoutQueue: BMViewLayoutQueue.layoutQueue(), dequeue: YES});
+		while (YES) {
+			const result = iterator.next();
+			if (result.done) return result.value;
+		}
 
 		// Return the cached size if it is available.
 		let identifier;
@@ -1984,6 +2006,157 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		return size;
 	},
 
+	/**
+	 * Prepares the cell at the given index path for measurement, yielding prior to measuring it, then returning the measured size.
+	 * If the cell was already measured, this will immediately return the cached measured size.
+	 * @param indexPath <BMIndexPath>					The index path of the cell whose size should be measured.
+	 * {
+	 * 	@param layoutQueue <BMLayoutQueue>				The layout queue to use for this measurement.
+	 * 	@param dequeue <Boolean>						Whether the layout queue should be drained automatically or not. If set to `NO`,
+	 *													the layout queue must be drained after the first time this generator yields.
+	 * }
+	 * @return <Iterator<BMSize or undefiend>>			The iterator.
+	 */
+	*_measuredSizeOfCellAtIndexPathGenerator(indexPath, {layoutQueue: queue, dequeue}) {
+		// Return the cached size if it is available.
+		let identifier;
+		if (this._dataSet.identifierForIndexPath) {
+			identifier = this._dataSet.identifierForIndexPath(indexPath);
+
+			if (this._measures[identifier]) return this._measures[identifier];
+		}
+		else {
+			let length = this._measuredIndexPaths.length;
+			for (let i = 0; i < length; i++) {
+				let measure = this._measuredIndexPaths[i];
+				if (measure.indexPath.isEqualToIndexPath(indexPath, {usingComparator: this.identityComparator})) {
+					return this._measuredIndexPaths[i].size;
+				}
+			}
+		}
+
+		if (BM_COLLECTION_VIEW_DEBUG_MEASURE) {
+			if (!this.__debug__measuring) {
+				this.__debug__measuring = YES;
+				let flash = document.createElement('div');
+				flash.style.cssText = 'position: fixed; z-index: 999999999; top: 0px; left: 0px; width: 100%; height: 100%; background-color: red; pointer-events: none;';
+				document.body.appendChild(flash);
+				requestAnimationFrame(() => (flash.remove(), (this.__debug__measuring = NO)));
+			}
+		}
+
+		// Retrieve the cell if it is already managed
+		let cell = this.cellAtIndexPath(indexPath);
+
+		let previousAttributes;
+
+		// Current attributes are likely to not be available, so a placeholder set is created
+		let attributes = BMCollectionViewLayoutAttributesMakeForCellAtIndexPath(indexPath);
+		// TODO: Change these magic numbers to real limits
+		attributes.frame = BMRectMake(0, 0, 10000, 10000);
+
+		if (!cell) {
+			// If the cell didn't already exist, request it from the data set
+			cell = this._dataSet.cellForItemAtIndexPath(indexPath);
+		}
+		else {
+			previousAttributes = cell.attributes;
+		}
+
+		if (BM_COLLECTION_VIEW_DEBUG_MEASURE_CELL) {
+			let flash = document.createElement('div');
+			flash.style.cssText = 'position: absolute; z-index: 999999999; top: 0px; left: 0px; width: 100%; height: 100%; background-color: red; pointer-events: none;';
+			cell.node.appendChild(flash);
+			requestAnimationFrame(() => flash.remove());
+		}
+
+		cell._isMeasuring = YES;
+		cell._invalidatedConstraints = YES;
+
+		// Move this measurement into a separate layout queue
+		const layoutQueue = cell.layoutQueue;
+		cell._cancelLayout();
+		cell.layoutQueue = queue;
+
+		// Apply the placeholder attributes
+		cell.attributes = attributes;
+
+		// Retain and render the cell
+		cell.retain();
+
+		// Set up constraints for the root view's descendant to measure it
+		let constraints = [];
+		// Set the top-left position to 0
+		let constraint = cell.left.equalTo(0);//BMLayoutConstraint.constraintWithView(cell, {attribute: BMLayoutAttribute.Left});
+		constraint.isActive = YES;
+		constraints.push(constraint);
+
+		constraint = cell.top.equalTo(0);//BMLayoutConstraint.constraintWithView(cell, {attribute: BMLayoutAttribute.Top});
+		constraint.isActive = YES;
+		constraints.push(constraint);
+
+		// Express a weak intent to have the size as small as possible
+		constraint = cell.width.equalTo(0, {priority: 1});//BMLayoutConstraint.constraintWithView(cell, {attribute: BMLayoutAttribute.Width, priority: 1});
+		constraint.isActive = YES;
+		constraints.push(constraint);
+
+		constraint = cell.height.equalTo(0, {priority: 1});//BMLayoutConstraint.constraintWithView(cell, {attribute: BMLayoutAttribute.Height, priority: 1});
+		constraint.isActive = YES;
+		constraints.push(constraint);
+
+		// Request and apply additional constraints that the layout object may specify
+		for (let constraint of this.layout.constraintsForMeasuringCell(cell, {atIndexPath: indexPath})) {
+			constraint.isActive = YES;
+			constraints.push(constraint);
+		}
+
+		yield;
+
+		// Run a layout pass to measure the cell's subview
+		if (dequeue) cell.layout();
+
+		cell.layoutQueue = layoutQueue;
+
+		// If needed, temporarily retain the cell in case it will be reused
+		if (this._measuringCells) {
+			this._measuringCells.push(cell.retain());
+		}
+
+		// Retrieve the cell's measured size
+		let size = cell.subviews[0].frame.size;
+
+		// Release the temporary cell
+		cell.release();
+
+		// Remove the temporary constraints
+		for (let constraint of constraints) {
+			constraint.remove();
+		}
+
+		// If the cell is still retained, reapply the previous attibutes
+		if (cell.retainCount > 0 && previousAttributes) {
+			cell.attributes = previousAttributes;
+		}
+		else {
+			cell._attributes = undefined;
+			attributes._cell = undefined;
+		}
+
+		// Invalidate the cell's constraints to allow the next layout pass to correctly update the cells
+		cell._invalidatedConstraints = YES;
+		cell._isMeasuring = NO;
+
+		// Retain this measured state
+		if (identifier) {
+			this._measures[identifier] = size.copy();
+		}
+		else {
+			this._measuredIndexPaths.push({indexPath: indexPath, size: size});
+		}
+
+		return size;
+	},
+
 	//#endregion
 	
 	
@@ -1991,6 +2164,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
     
     /**
 	 * @deprecated Consider publishing a data change and replacing the cell's object completely.
+	 * 
 	 * Recreates the cell at the specified index path.
 	 * Unlike when updating cells, the newly reconstructed may have a different reuse identifier after the refresh.
 	 * If the cell at the specified indexPath is not currently visible or retained, this function has no effect.
