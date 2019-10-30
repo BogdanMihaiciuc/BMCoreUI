@@ -1848,7 +1848,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 							end += rowSpacing;
 
 							// After inspecting the resolved rows, it is possible to calculate the adjustment
-							for (const row of section.preliminaryRows) {
+							for (const row of preliminarySection.preliminaryRows) {
 								if (row.indexEnd > indexEnd) {
 									adjustment = end - row.start;
 									break;
@@ -1856,7 +1856,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 							}
 
 							// The adjustment can then be applied to all subsequent rows
-							for (const row of section.preliminaryRows) {
+							for (const row of preliminarySection.preliminaryRows) {
 								if (row.indexEnd > indexEnd) {
 									row.start += adjustment;
 									row.end += adjustment;
@@ -3473,10 +3473,13 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 			attributes.push(headerAttributes);
 		}
 		
-		// Start adding attributes until the current supplementary view or row's top origin is below the rect
+		// Start adding attributes until the current supplementary view or row's bottom edge is below the rect
 		try {
 			for (; sectionIndex < sectionCount; sectionIndex++) {
 				var section = cache.sections[sectionIndex];
+				// This can happen if the last added element is at the end of the section and the first unresolved element
+				// is in the next section
+				if (!section && this._expectedCellSize) return attributes;
 				var rows = section.rows;
 				var rowsLength = rows.length;
 				
@@ -3508,6 +3511,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 							}
 							
 							attributes.push(headerAttributes);
+							
+							if (cache.orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
+								var end = headerAttributes.frame.bottom;
+								if (end > rectBottom) return attributes;
+							}
+							else {
+								var end = headerAttributes.frame.right;
+								if (end > rectRight) return attributes;
+							}
 						}
 							
 						bottommostSection = section;
@@ -3534,6 +3546,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 							}
 							
 							attributes.push(footerAttributes);
+
+							if (cache.orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
+								var end = section.footerAttributes.frame.origin.y;
+								if (end > rectBottom) return attributes;
+							}
+							else {
+								var end = section.footerAttributes.frame.origin.x;
+								if (end > rectRight) return attributes;
+							}
 						}
 					}
 					else {
@@ -3550,6 +3571,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 						
 						for (var i = 0; i < row.attributes.length; i++) {
 							attributes.push(row.attributes[i]);
+						}
+
+						if (cache.orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
+							var end = row.bottom;
+							if (end > rectBottom) return attributes;
+						}
+						else {
+							var end = row.right;
+							if (end > rectRight) return attributes;
 						}
 					}
 					
