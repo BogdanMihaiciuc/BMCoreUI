@@ -53,7 +53,8 @@ export function BMCollectionViewTableLayout() {}; // <constructor>
  */
 export var BMCollectionViewTableLayoutRowHeightVariable = -1; // <Number>
 
-BMExtend(BMCollectionViewTableLayout.prototype, BMCollectionViewLayout.prototype, {
+BMCollectionViewTableLayout.prototype = BMExtend(Object.create(BMCollectionViewLayout.prototype), {
+	constructor: BMCollectionViewTableLayout,
 
 	// @override - BMCollectionViewLayout
 	get supportsCopying() {
@@ -1397,7 +1398,7 @@ export var BMCollectionViewFlowLayoutSupplementaryView = BMCollectionViewTableLa
  */
 export function BMCollectionViewFlowLayout() {}; // <constructor>
 
-BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.prototype, {
+BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLayout.prototype), {
 
 	// @override - BMCollectionViewLayout
 	get supportsCopying() {
@@ -2965,7 +2966,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 		if (gravity === BMCollectionViewFlowLayoutGravity.Center) {
 			startMargin = (startMargin + (length - occupiedLength) / 2) | 0;
 		}
-		else if (gravity === BMCollectionViewFlowLayoutGravity.Right) {
+		else if (gravity === BMCollectionViewFlowLayoutGravity.End) {
 			startMargin = (startMargin + length - occupiedLength) | 0;
 		}
 		else if (gravity === BMCollectionViewFlowLayoutGravity.Edge) {
