@@ -221,6 +221,14 @@ BMViewLayoutQueue.prototype = {
     },
 
     /**
+     * Removes a view from this queue.
+     * @param view <BMView>         The view to remove.
+     */
+    _removeView(view) {
+        this._views.delete(view);
+    },
+
+    /**
      * Runs a synchronized layout pass on the views in this queue and drains the queue.
      */
     dequeue() {
@@ -2594,6 +2602,18 @@ BMView.prototype = BMExtend(BMView.prototype, {
      * Used internally.
      */
     _layoutAnimationFrameIdentifier: undefined, // <Number>
+
+    /**
+     * Cancels any pending layout passes and removes this view from its layout queue.
+     */
+    _cancelLayout() {
+        this._layoutQueue._removeView(this);
+        if (this._layoutAnimationFrameIdentifier) {
+            window.cancelAnimationFrame(this._layoutAnimationFrameIdentifier);
+        }
+        this._layoutAnimationFrameIdentifier = undefined;
+        this._layoutIntrisicSizeInvalidationIdentifier = undefined;
+    },
 
     /**
      * Schedules a layout pass before the next animation frame.
