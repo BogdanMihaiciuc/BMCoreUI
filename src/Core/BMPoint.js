@@ -125,8 +125,8 @@ BMPoint.prototype = {
 	 * @param scalar <Number> 		The scalar by which to multiply this point's components.
 	 */
 	multiplyWithScalar(scalar) {
-		this.origin.x *= scalar;
-		this.origin.y *= scalar;
+		this.x *= scalar;
+		this.y *= scalar;
 	},
 
 	/**
