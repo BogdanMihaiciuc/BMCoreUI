@@ -84,6 +84,10 @@ class BMWindowOverlay extends BMView {
 
 var _BMWindowAnimationDurationDefault = 400;
 var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
+const _BMWindowAnimationEasingIncomingDefault = 'easeOutQuart';
+const _BMWindowAnimationDurationIncomingDefault = 200;
+const _BMWindowAnimationEasingOutgoingDefault = 'easeInQuart';
+const _BMWindowAnimationDurationOutgoingDefault = 200;
 
 const BM_WINDOW_SHOWCASE_MAX_ITERATIONS = 5000;
 const BM_WINDOW_Z_INDEX_MAX = 2007;
@@ -808,6 +812,22 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	},
 
 	/**
+	 * If this window is visible, this method dismisses it. Otherwise the window is made visible.
+	 * @param animated <Boolean, nullable>				Defaults to `YES`. If set to `YES`, this change will be animated, otherwise it will be instant.
+	 * {
+	 * 	@param completionHandler <void ^ (), nullable>	If specified, this handler will be invoked when the operation completes.
+	 * }
+	 */
+	toggleAnimated: function (animated, args) {
+		if (this._visible) {
+			this.dismissAnimated(animated, args);
+		}
+		else {
+			this.bringToFrontAnimated(animated, args);
+		}
+	},
+
+	/**
 	 * Should be invoked to make this window visible.
 	 * @param animated <Boolean, nullable>				Defaults to YES. If set to YES, this change will be animated, otherwise it will be instant.
 	 * {
@@ -823,7 +843,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		this.becomeKeyWindow();
 
 		for (let window of this._toolWindows) {
-			window.bringToFrontAnimated(animated);
+			if (window.opensAutomatically) window.bringToFrontAnimated(animated);
 		}
 		
 		animated = (animated === undefined ? YES : animated);
@@ -926,9 +946,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			}
 			else {
 			
-				__BMVelocityAnimate(this._window, {opacity: 1, scaleX: [1, 1.2], scaleY: [1, 1.2], translateZ: 0}, {
-					duration: _BMWindowAnimationDurationDefault,
-					easing: 'easeInOutQuint', 
+				__BMVelocityAnimate(this._window, {opacity: 1, scaleX: [1, .9], scaleY: [1, .9], translateZ: 0}, {
+					duration: _BMWindowAnimationDurationIncomingDefault,
+					easing: _BMWindowAnimationEasingIncomingDefault, 
 					display: 'block'
 				}, YES);
 				
@@ -1064,8 +1084,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			}
 			else {
 				__BMVelocityAnimate(this._window, {opacity: 0, scaleX: .9, scaleY: .9, translateZ: 0}, {
-					duration: _BMWindowAnimationDurationDefault,
-					easing: _BMWindowAnimationEasingDefault,
+					duration: _BMWindowAnimationDurationOutgoingDefault,
+					easing: _BMWindowAnimationEasingOutgoingDefault,
 					display: 'none'
 				}, YES);
 			}
