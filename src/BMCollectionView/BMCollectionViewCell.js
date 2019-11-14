@@ -101,6 +101,9 @@ BMJQueryShim.prototype = {
  * @return <BMJQueryShim>		A jQuery shim.
  */
 BMJQueryShim.shimWithDOMNode = function (node) {
+    if ('$' in window) {
+        return $(node);
+    }
 	const shim = new BMJQueryShim();
 	shim[0] = node;
 	return shim;
