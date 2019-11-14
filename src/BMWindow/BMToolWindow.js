@@ -13,9 +13,17 @@ import {BMWindow} from './BMWindow'
  * Whenever their associated window becomes the key window, its tool windows are considered to be key windows.
  * Whenever their associated window resigns its key window status, its tool windows are hidden.
  */
-function BMToolWindow() {} // <constructor>
+export function BMToolWindow() {} // <constructor>
 
 BMToolWindow.prototype = BMExtend(Object.create(BMWindow.prototype), {
+
+	/**
+	 * Controls whether this tool window opens automatically whenever its owning window is opened.
+	 * When this property is set to `YES`, whever the parent window is opened, this tool window will also open.
+	 * 
+	 * Otherwise this tool window will remain hidden until its `bringToFrontAnimated` method is invoked.
+	 */
+	opensAutomatically: YES, // <Boolean>
 
 	/**
 	 * Initializes this tool window with the given frame and associates it with the given window.
