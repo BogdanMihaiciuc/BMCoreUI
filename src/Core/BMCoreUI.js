@@ -156,7 +156,11 @@ export function BMAddSmoothMousewheelInteractionToNode(node, args) {
 			offsetY: lastEvent.offsetY,
 			layerX: lastEvent.layerX,
 			layerY: lastEvent.layerY,
-			target: lastEvent.target
+			target: lastEvent.target,
+			altKey: lastEvent.altKey,
+			ctrlKey: lastEvent.ctrlKey,
+			metaKey: lastEvent.metaKey,
+			shiftKey: lastEvent.shiftKey
 		});
 
 		event._BMIsCustomScrollEvent = YES;
