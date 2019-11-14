@@ -292,6 +292,28 @@ BMRect.prototype = {
 	},
 
 	/**
+	 * Multiplies all of this rect's components by the given scalar.
+	 * @param scalar <Number>		The scalar by which to multiply this rect's components.
+	 */
+	multiplyWithScalar(scalar) {
+		this.origin.x *= scalar;
+		this.origin.y *= scalar;
+		this.size.width *= scalar;
+		this.size.height *= scalar;
+	},
+
+	/**
+	 * Returns a copy of this rect whose components are multiplied by the given scalar.
+	 * @param scalar <Number>		The scalar by which to multiply the rect's components.
+	 * @return <BMRect>				A rect.
+	 */
+	rectByMultiplyingWithScalar(scalar) {
+		const rect = this.copy();
+		rect.multiplyWithScalar(scalar);
+		return rect;
+	},
+
+	/**
 	 * Contracts or expands this rect in place by the specified sizes. If the sizes are positive, the rect is inset, otherwise it is expanded.
 	 * This method may be invoked in two ways:
 	 * --------------------------------------------------

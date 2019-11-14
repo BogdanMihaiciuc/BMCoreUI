@@ -23,7 +23,7 @@ export function BMPoint(x, y) { // <constructor>
 	this.y = y;
 };
 
-BMExtend(BMPoint.prototype, {
+BMPoint.prototype = {
 	
 	/**
 	 * The point's X coordinate.
@@ -121,6 +121,26 @@ BMExtend(BMPoint.prototype, {
 	},
 
 	/**
+	 * Multiplies all of this point's components by the given scalar.
+	 * @param scalar <Number> 		The scalar by which to multiply this point's components.
+	 */
+	multiplyWithScalar(scalar) {
+		this.origin.x *= scalar;
+		this.origin.y *= scalar;
+	},
+
+	/**
+	 * Returns a copy of this point whose components are multiplied by the given scalar.
+	 * @param scalar <Number>		The scalar by which to multiply the point's components.
+	 * @return <BMPoint>			A point.
+	 */
+	pointByMultiplyingWithScalar(scalar) {
+		const point = this.copy();
+		point.multiplyWithScalar(scalar);
+		return point;
+	},
+
+	/**
 	 * Constructs and returns a point that represents the sum of the components of this point and the given point.
 	 * @param point <BMPoint>		The point.
 	 * @return <BMPoint>			A point.
@@ -181,7 +201,7 @@ BMExtend(BMPoint.prototype, {
 		return `(${this.x}:${this.y})`;
 	}
 	
-});
+};
 
 /**
  * Constructs and returns a new point with the given coordinates.
