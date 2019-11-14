@@ -1148,6 +1148,56 @@ BMLayoutConstraint.prototype = {
 	},
 
 	/**
+	 * Returns a string representation of this constraint that is relative to the given view. This is
+	 * often used when generating layout-related debug messages.
+	 * The contents of the string depend on the currently active size classes.
+	 * @param view <BMView>		The view for which to return the description.
+	 * @return <String>			A string.
+	 */
+	descriptionRelativeToView(view) {
+		let operatorMap = {
+			[BMLayoutConstraintRelation.Equals]: '=',
+			[BMLayoutConstraintRelation.GreaterThanOrEquals]: '\u2265',
+			[BMLayoutConstraintRelation.LessThanOrEquals]: '\u2264'
+		}
+
+		if (this._sourceView !== view && this._targetView!== view) return this.toString();
+		
+		if (this._targetView) {
+			const constant = this._configuration.constant ? `${this._configuration.constant < 0 ? '-' : '+'} ${this._configuration.constant < 0 ? -this._configuration.constant : this._configuration.constant}` : '';
+
+			if (this._sourceView === view) {
+				const constant = this._configuration.constant ? `${this._configuration.constant < 0 ? '-' : '+'} ${this._configuration.constant < 0 ? -this._configuration.constant : this._configuration.constant}` : '';
+				return `${this._sourceViewAttribute} ${operatorMap[this._relation]} \
+						${(this._multiplier != 1 ? this._multiplier + '* ' : '')}${this._targetView.debuggingName || this._targetView.node.id}.${this._targetViewAttribute} \
+						${constant}`;
+			}
+			else {
+				const constant = this._configuration.constant ? `${this._configuration.constant > 0 ? '-' : '+'} ${this._configuration.constant < 0 ? -this._configuration.constant : this._configuration.constant}` : '';
+				const operatorMap = {
+					[BMLayoutConstraintRelation.Equals]: '=',
+					[BMLayoutConstraintRelation.GreaterThanOrEquals]: '\u2264',
+					[BMLayoutConstraintRelation.LessThanOrEquals]: '\u2265'
+				}
+
+				return `${this._targetViewAttribute}  ${operatorMap[this._relation]} \
+						${(this._multiplier != 1 ? '(' : '')}${this._sourceView.debuggingName || this._sourceView.node.id}.${this._sourceViewAttribute} \
+						${constant}${(this._multiplier != 1 ? ') / ' + this._multiplier : '')}`
+
+				return `${this._sourceView.debuggingName || this._sourceView.node.id}.${this._sourceViewAttribute} ${operatorMap[this._relation]} \
+				${(this._multiplier != 1 ? this._multiplier + '* ' : '')}${this._targetView.debuggingName || this._targetView.node.id}.${this._targetViewAttribute} \
+				${constant}`;
+			}
+
+			return `${this._sourceView.debuggingName || this._sourceView.node.id}.${this._sourceViewAttribute} ${operatorMap[this._relation]} \
+			${(this._multiplier != 1 ? this._multiplier + '* ' : '')}${this._targetView.debuggingName || this._targetView.node.id}.${this._targetViewAttribute} \
+			${constant}`;
+		}
+
+		return `${this._sourceViewAttribute} ${operatorMap[this._relation]} ${this._configuration.constant}`;
+	},
+
+	/**
 	 * Returns an object representing this constraint that may be serialized to a string.
 	 * @param block <String ^(BMView)> 		A block that will be invoked for each view that this constraint affects.
 	 * 										The block is given the view instance and should return a string from which
