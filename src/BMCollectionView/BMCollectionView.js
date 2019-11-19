@@ -28,6 +28,8 @@ const BM_COLLECTION_VIEW_DISABLE_ISCROLL = NO;
 const BM_DEPRECATION_WARN = NO;
 // When set to YES, this will cause deprecation warnings to also incude the call stack.
 const BM_DEPRECATION_TRACE = YES;
+// Causes an alert to appear when collection view first loads its data containing the total time the `reloadLayout()` method took.
+const BM_SIMPLE_BENCH = NO;
 
 // @type BMCollectionViewTransferPolicy
 
@@ -747,8 +749,15 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    this._prepareFrame();
 	    
 	    this._createBounds();
-	    
-	    this._reloadLayout();
+		
+		if (BM_SIMPLE_BENCH) {
+			const date = Date.now();
+			this._reloadLayout();
+			alert(`[BMCollectionView] Initial layout took ${Date.now() - date}ms.`);
+		}
+		else {
+			this._reloadLayout();
+		}
 	    
 	    // Use custom scrolling only if specifically requested or if not specifically disabled and this collection view is running in iOS standalone web-app mode
 	    if (useCustomScroll && !BM_COLLECTION_VIEW_DISABLE_ISCROLL) {
