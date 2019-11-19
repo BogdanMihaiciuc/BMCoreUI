@@ -1,25 +1,33 @@
 // @ts-check
 
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
+import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice, BMNumberByConstrainingNumberToBounds, BMAddSmoothMousewheelInteractionToNode} from '../Core/BMCoreUI'
 import {BMInsetMakeWithEqualInsets} from '../Core/BMInset'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
 import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
 import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2} from '../Core/BMAnimationContext'
+import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationContextAddCompletionHandler} from '../Core/BMAnimationContext'
 import {BMLayoutOrientation, BMLayoutSizeClass} from './BMLayoutSizeClass'
 import {BMViewport} from './BMViewport'
 import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from './BMLayoutConstraint_v2.5'
 import {BMView} from './BMView_v2.5'
-import {BMMenuKind} from './BMMenu'
+import {BMMenuKind, BMMenuItem} from './BMMenu'
 import {BMWindow} from '../BMWindow/BMWindow'
 import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
+import { _BMLayoutEditorSettingsView } from './BMLayoutEditorSettings'
+import { BMToolWindow } from '../BMWindow/BMToolWindow'
 
 
 var _BMWindowAnimationDurationDefault = 400;
 var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
+
+// Uses the new settings view when set to `YES`.
+export let BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW = YES;
+
+// The height to use for the toolbar
+const _BMLayoutEditorToolbarHeight = 32;
 
 // @type BMLayoutEditorVariableCell extends BMCollectionViewCell
 
@@ -484,6 +492,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         return this._view;
     },
 
+    _settingsView: undefined, // <_BMLayoutEditorSettingsView>
+
     /**
      * Set to `YES` while constraints are being created using a touch interface.
      * This causes regular touch events to create constraints instead of triggering a
@@ -544,6 +554,27 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * Animatable. The current pan offset.
+     */
+    _panOffset: BMPointMake(), // <BMPoint>
+    get panOffset() {
+        return this._panOffset.copy();
+    },
+    set panOffset(offset) {
+        offset = offset.copy();
+        this._panOffset = offset;
+        
+        if (BMAnimationContextGetCurrent()) {
+            const controller = BMAnimationContextGetCurrent().controllerForObject(this.workspace, {node: this.workspace.node});
+            controller.registerBuiltInPropertiesWithDictionary({translateX: offset.x + 'px', translateY: offset.y + 'px'});
+        }
+        else {
+            BMHook(this.workspace.node, {translateX: offset.x + 'px', translateY: offset.y + 'px'});
+        }
+    },
+
+
+    /**
      * Designated initializer. Must be invoked after creating this layout editor, passing in the
      * root of the view hierarchy whose layout will be edited by this window.
      * The view's node will be temporarily detached from its parent and attached to the layout editor
@@ -573,6 +604,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             subview.node.classList.add('BMLayoutEditorManagedView');
 
             selector.addEventListener('click', event => {
+                if (event.altKey) return;
+
                 this.selectView(subview, {withEvent: event});
 
                 event.stopPropagation();
@@ -621,16 +654,49 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.content.appendChild(treeNode);
 
         this.tree = _BMLayoutEditorTree.editorTreeWithView(view, {node: treeNode, editor: this});
-        this.addSubview(this.tree);
 
-        let closeButton = document.createElement('div');
-        closeButton.className = 'BMLayoutEditorToolbarButton BMLayoutEditorCloseButton BMLayoutEditorFullscreen';
-        closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            const frame = BMRectMake(64, 56 + 64, 320, window.innerHeight - 56 - 280);
+            const treeWindow = BMToolWindow.toolWindowWithFrame(frame, {forWindow: this});
+            treeWindow.addSubview(this.tree);
+            this._treeWindow = treeWindow;
 
-        closeButton.style.opacity = 1;
-        closeButton.style.pointerEvents = 'all';
+            treeWindow.opensAutomatically = NO;
 
-        closeButton.addEventListener('click', event => this.dismissAnimated(YES, {toNode: this._returnNode}));
+            this.tree.left.equalTo(treeWindow.left).isActive = YES;
+            this.tree.right.equalTo(treeWindow.right).isActive = YES;
+            this.tree.top.equalTo(treeWindow.top).isActive = YES;
+            this.tree.bottom.equalTo(treeWindow.bottom).isActive = YES;
+
+            const closeButton = document.createElement('div');
+            closeButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton BMLayoutEditorCloseButton BMLayoutEditorFullscreen BMLayoutEditorDetailsCloseButton';
+            closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
+    
+            closeButton.style.opacity = '1';
+            closeButton.style.pointerEvents = 'all';
+    
+            closeButton.addEventListener('click', e => treeWindow.dismissAnimated(YES));
+            treeWindow.node.appendChild(closeButton);
+
+            treeWindow.node.classList.add('BMLayoutEditorDetailsWindow');
+            treeWindow.toolbar.style.height = '64px';
+        }
+        else {
+            this.addSubview(this.tree);
+        }
+
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            let closeButton = document.createElement('div');
+            closeButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton BMLayoutEditorCloseButton BMLayoutEditorFullscreen';
+            closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
+
+            closeButton.style.opacity = 1;
+            closeButton.style.pointerEvents = 'all';
+
+            closeButton.addEventListener('click', event => this.dismissAnimated(YES, {toNode: this._returnNode}));
+            
+            this.content.appendChild(closeButton);
+        }
 
         // The workspace area represents the center portion of the layout editor
         var workspaceArea = document.createElement('div');
@@ -640,10 +706,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.workspaceView = BMView.viewForNode(workspaceArea);
         this.addSubview(this.workspaceView);
 
-        this.content.appendChild(closeButton);
 
         var workspaceToolbar = document.createElement('div');
-        workspaceToolbar.className = 'BMLayoutEditorWorkspaceToolbar';
+        workspaceToolbar.className = 'BMLayoutEditorWorkspaceToolbar BMWindowToolbarMini';
         workspaceArea.appendChild(workspaceToolbar);
         this._initToolbar(workspaceToolbar);
         this.workspaceToolbar = workspaceToolbar;
@@ -663,41 +728,85 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.workspace = BMView.viewForNode(workspaceNode);
         this.workspaceWrapperView.addSubview(this.workspace);
 
+        BMAddSmoothMousewheelInteractionToNode(workspaceWrapper);
+        this._initWorkspaceGestures();
+
+        this.panOffset = BMPointMake();
+
         // The details node represents the right portion of the window
         let detailsNode = document.createElement('div');
         detailsNode.className = 'BMLayoutEditorDetails';
-        this.content.appendChild(detailsNode);
         this.detailsNode = detailsNode;
-        this.detailsView = BMView.viewForNode(detailsNode);
-        this.addSubview(this.detailsView);
+        this.detailsView = BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? _BMLayoutEditorSettingsView.settingsViewWithNode(detailsNode, {forEditor: this}) : BMView.viewForNode(detailsNode);
 
-        let detailsNodeTitle = document.createElement('div');
-        detailsNodeTitle.className = 'BMWindowTitle';
-        detailsNode.appendChild(detailsNodeTitle);
-        this.detailsNodeTitle = detailsNodeTitle;
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            detailsNode.classList.add('BMLayoutEditorDetailsView');
 
-        let detailsNodeContent = document.createElement('div');
-        detailsNodeContent.className = 'BMLayoutEditorDetailsContent';
-        detailsNode.appendChild(detailsNodeContent);
-        this.detailsNodeContent = detailsNodeContent;
+            const frame = BMRectMake(window.innerWidth - 64 - 384, 56 + 64, 384, window.innerHeight - 56 - 128);
+            const detailsToolWindow = BMToolWindow.toolWindowWithFrame(frame, {forWindow: this});
+            detailsToolWindow.addSubview(this.detailsView);
+            this.detailsView.left.equalTo(detailsToolWindow.left).isActive = YES;
+            this.detailsView.right.equalTo(detailsToolWindow.right).isActive = YES;
+            this.detailsView.top.equalTo(detailsToolWindow.top).isActive = YES;
+            this.detailsView.bottom.equalTo(detailsToolWindow.bottom).isActive = YES;
+
+            this.detailsView._window = detailsToolWindow;
+
+            detailsToolWindow.node.classList.add('BMLayoutEditorDetailsWindow');
+
+            const closeButton = document.createElement('div');
+            closeButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton BMLayoutEditorCloseButton BMLayoutEditorFullscreen BMLayoutEditorDetailsCloseButton';
+            closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
+    
+            closeButton.style.opacity = '1';
+            closeButton.style.pointerEvents = 'all';
+    
+            closeButton.addEventListener('click', e => detailsToolWindow.dismissAnimated(YES));
+            detailsToolWindow.node.appendChild(closeButton);
+            detailsToolWindow.toolbar.style.height = '64px';
+            detailsToolWindow.opensAutomatically = NO;
+        }
+        else {
+            this.content.appendChild(detailsNode);
+            this.addSubview(this.detailsView);
+
+            // With the legacy settings panel, these titles are managed by the layout editor
+            let detailsNodeTitle = document.createElement('div');
+            detailsNodeTitle.className = 'BMWindowTitle';
+            detailsNode.appendChild(detailsNodeTitle);
+            this.detailsNodeTitle = detailsNodeTitle;
+    
+            let detailsNodeContent = document.createElement('div');
+            detailsNodeContent.className = 'BMLayoutEditorDetailsContent';
+            detailsNode.appendChild(detailsNodeContent);
+            this.detailsNodeContent = detailsNodeContent;
+        }
 
         // Set up constraints for the main layout
-        this.tree.top.equalTo(this.top).isActive = YES;
-        this.tree.bottom.equalTo(this.bottom).isActive = YES;
-        BMEqualAttributeLayoutConstraint.constraintWithAttribute(BMLayoutAttribute.Top, {forViews: [this.tree, this.workspaceView, this.detailsView]}).isActive = YES;
-        BMEqualAttributeLayoutConstraint.constraintWithAttribute(BMLayoutAttribute.Bottom, {forViews: [this.tree, this.workspaceView, this.detailsView]}).isActive = YES;
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            this.tree.top.equalTo(this.top).isActive = YES;
+            this.tree.bottom.equalTo(this.bottom).isActive = YES;
+        }
+        const equalAttributeViews = BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? [this, this.workspaceView] : [this.tree, this.workspaceView, this.detailsView];
+        BMEqualAttributeLayoutConstraint.constraintWithAttribute(BMLayoutAttribute.Top, {forViews: equalAttributeViews}).isActive = YES;
+        BMEqualAttributeLayoutConstraint.constraintWithAttribute(BMLayoutAttribute.Bottom, {forViews: equalAttributeViews}).isActive = YES;
         
-        this.tree.leading.equalTo(this.leading).isActive = YES;
-        this.tree.trailing.equalTo(this.workspaceView.leading).isActive = YES;
-        this.workspaceView.trailing.equalTo(this.detailsView.leading).isActive = YES;
-        this.detailsView.trailing.equalTo(this.trailing).isActive = YES;
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            this.tree.leading.equalTo(this.leading).isActive = YES;
+            this.tree.trailing.equalTo(this.workspaceView.leading).isActive = YES;
+        }
+        else {
+            this.workspaceView.leading.equalTo(this.leading).isActive = YES;
+        }
+        this.workspaceView.trailing.equalTo(BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? this.trailing : this.detailsView.leading).isActive = YES;
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsView.trailing.equalTo(this.trailing).isActive = YES;
 
         //BMEqualSpacingLayoutConstraint.constraintOfKind(BMLayoutConstraintKind.Horizontal, {forViews: [this.tree, this.workspaceView, this.detailsView], withSuperview: YES}).isActive = YES;
         this.treeWidthConstraint = this.tree.width.equalTo(256);
-        this.treeWidthConstraint.isActive = YES;
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.treeWidthConstraint.isActive = YES;
 
-        this.detailsWidthConstraint = this.detailsView.width.equalTo(344);
-        this.detailsWidthConstraint.isActive = YES;
+        this.detailsWidthConstraint = this.detailsView.width.equalTo(344, {priority: 1});
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsWidthConstraint.isActive = YES;
 
         // Set up constraints for the workspace layout
         this.workspaceToolbarView.top.equalTo(this.workspaceView.top).isActive = YES;
@@ -709,7 +818,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.workspaceWrapperView.leading.equalTo(this.workspaceView.leading).isActive = YES;
         this.workspaceWrapperView.trailing.equalTo(this.workspaceView.trailing).isActive = YES;
 
-        this.workspaceToolbarHeightConstraint = this.workspaceToolbarView.height.equalTo(64);
+        this.workspaceToolbarHeightConstraint = this.workspaceToolbarView.height.equalTo(_BMLayoutEditorToolbarHeight);
         this.workspaceToolbarHeightConstraint.isActive = YES;
 
         // Set up constraints for the workspace
@@ -762,6 +871,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     _isFullScreen: NO, // <Boolean>
 
     /**
+     * @deprecated Unused when using the settings view.
+     * 
      * Invoked to toggle the visibility of the view hierarchy tree.
      * @param event <Event>         The event that triggered this action.
      */
@@ -887,6 +998,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     _isSettingsPaneHidden: NO, // <Boolean>
 
     /**
+     * @deprecated Unused when using the settings view.
+     * 
      * Should be invoked to toggle the visibility of the settings pane.
      * @param event <Event>         The event that triggered this action.
      */
@@ -990,6 +1103,29 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * Animatable. The current zoom level.
+     */
+    _scale: 1, // <Number>
+    get scale() {
+        return this._scale;
+    },
+    set scale(scale) {
+        if (isNaN(scale)) return;
+        scale = BMNumberByConstrainingNumberToBounds(scale, .25, 2);
+
+        if (this._scale != scale) {
+            this._scale = scale;
+            if (BMAnimationContextGetCurrent()) {
+                const controller = BMAnimationContextGetCurrent().controllerForObject(this.workspace, {node: this.workspace.node});
+                controller.registerBuiltInPropertiesWithDictionary({scaleX: scale, scaleY: scale});
+            }
+            else {
+                BMHook(this.workspace.node, {scaleX: scale, scaleY: scale});
+            }
+        }
+    },
+
+    /**
      * Controls the currently selected size class.
      */
     _activeSizeClass: undefined, // <BMLayoutSizeClass, nullable>
@@ -1085,7 +1221,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         option.className = 'BMLayoutEditorConstraintPopupOption BMLayoutEditorSizeClassPopupOption';
 
         let icon = document.createElement('div');
-        icon.className = 'BMLayoutEditorSizeClassImage BMLayoutEditorImage' + args.ofType;
+        icon.className = 'BMLayoutEditorSizeClassImage BMLayoutEditorImage' + args.ofType + 'Mini';
         option.appendChild(icon);
 
         let text = document.createElement('span');
@@ -1103,7 +1239,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             }
 
             this.activeSizeClass = args.sizeClass;
-            this._sizeClassImage.className = 'BMLayoutEditorSizeClassImage BMLayoutEditorImage' + args.ofType;
+            this._sizeClassImage.className = 'BMLayoutEditorSizeClassImage BMLayoutEditorImage' + args.ofType + 'Mini';
             this._sizeClassText.innerText = name;
 
             if (args.preview) {
@@ -1113,6 +1249,10 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             }
 
             this.awaitLayout = NO;
+
+            if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+                this.detailsView.layoutEditorDidSelectSizeClass(args.sizeClass);
+            }
         });
 
         return option;
@@ -1123,16 +1263,27 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param toolbar <DOMNode>     The toolbar DOM node.
      */
     _initToolbar(toolbar) {
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            const closeButton = document.createElement('div');
+            closeButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
+            closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
+            closeButton.style.opacity = 1;
+
+            closeButton.addEventListener('click', event => this.dismissAnimated(YES, {toNode: this._returnNode}));
+            
+            toolbar.appendChild(closeButton);
+        }
+
         const fullscreenButton = document.createElement('div');
         fullscreenButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
         fullscreenButton.style.transition = 'margin-left .3s ease';
-        fullscreenButton.innerHTML = '<i class="material-icons" style="pointer-events: none;">&#xE5DC;</i>';
+        fullscreenButton.innerHTML = `<i class="material-icons" style="pointer-events: none;">${BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? 'layers' : '&#xE5DC;'}</i>`;
         this._fullScreenButton = fullscreenButton;
 
         fullscreenButton.style.opacity = 1;
         fullscreenButton.style.pointerEvents = 'all';
 
-        fullscreenButton.addEventListener('click', event => this.toggleFullscreenWithEvent(event));
+        fullscreenButton.addEventListener('click', BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? event => this._treeWindow.toggleAnimated(YES) : event => this.toggleFullscreenWithEvent(event));
         toolbar.appendChild(fullscreenButton);
 
         let deviceSelectorLabel = document.createElement('div');
@@ -1145,6 +1296,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.deviceSelector = deviceSelector;
 
         deviceSelector.appendChild(this.optionNamed('Fill'));
+        deviceSelector.appendChild(this.optionNamed('Full HD'));
+        deviceSelector.appendChild(this.optionNamed('15" Laptop'));
+        deviceSelector.appendChild(this.optionNamed('13" Laptop'));
         deviceSelector.appendChild(this.optionNamed('Tablet Landscape'));
         deviceSelector.appendChild(this.optionNamed('Tablet Portrait'));
         deviceSelector.appendChild(this.optionNamed('Phone Portrait'));
@@ -1156,10 +1310,12 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         let widthInput = document.createElement('input');
         widthInput.type = 'number';
-        widthInput.style = 'width: 64px !important; margin-left: 32px !important; text-align: center;'
+        widthInput.style.cssText = 'width: 64px !important; margin-left: 32px !important; text-align: center;';
         widthInput.className = 'BMWindowInput BMWindowToolbarInput';
         widthInput.disabled = true;
         toolbar.appendChild(widthInput);
+
+        const debounceInterval = 400;
 
         let widthDebouncing;
 
@@ -1174,7 +1330,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._staticWorkspaceSize.width = width;
                     this._setStaticWorkspaceSize(this._staticWorkspaceSize);
                 }
-            }, 200);
+            }, debounceInterval);
         });
 
         let sizeXLabel = document.createElement('div');
@@ -1184,7 +1340,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         let heightInput = document.createElement('input');
         heightInput.type = 'number';
-        heightInput.style = 'width: 64px !important; text-align: center;'
+        heightInput.style.cssText = 'width: 64px !important; text-align: center;'
         heightInput.className = 'BMWindowInput BMWindowToolbarInput';
         heightInput.disabled = true;
         toolbar.appendChild(heightInput);
@@ -1202,7 +1358,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._staticWorkspaceSize.height = height;
                     this._setStaticWorkspaceSize(this._staticWorkspaceSize);
                 }
-            }, 200);
+            }, debounceInterval);
         });
 
         deviceSelector.addEventListener('change', event => {
@@ -1234,6 +1390,21 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 heightInput.disabled = true;
             }
             else {
+                if (device == 'Full HD') {
+                    this._setStaticWorkspaceSize(BMSizeMake(1920, 1080), {animated: YES});
+                    widthInput.value = 1920;
+                    heightInput.value = 1080;
+                }
+                if (device == '15" Laptop') {
+                    this._setStaticWorkspaceSize(BMSizeMake(1680, 1050), {animated: YES});
+                    widthInput.value = 1680;
+                    heightInput.value = 1050;
+                }
+                if (device == '13" Laptop') {
+                    this._setStaticWorkspaceSize(BMSizeMake(1400, 900), {animated: YES});
+                    widthInput.value = 1400;
+                    heightInput.value = 900;
+                }
                 if (device == 'Tablet Portrait') {
                     this._setStaticWorkspaceSize(BMSizeMake(768, 1024), {animated: YES});
                     widthInput.value = 768;
@@ -1272,6 +1443,68 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         flexibleSpace.className = 'BMWindowFlexibleSpace';
         toolbar.appendChild(flexibleSpace);
 
+        let zoomLabel = document.createElement('div');
+        zoomLabel.className = 'BMWindowToolbarLabel';
+        zoomLabel.innerText = 'Zoom:';
+        toolbar.appendChild(zoomLabel);
+
+        const zoomSlider = document.createElement('input');
+        zoomSlider.type = 'range';
+        zoomSlider.min = '25';
+        zoomSlider.max = '200';
+        zoomSlider.value = '100';
+        zoomSlider.style.cssText = 'width: 100px; height: 24px';
+        toolbar.appendChild(zoomSlider);
+
+        const zoomBox = document.createElement('input');
+        zoomBox.type = 'number';
+        zoomBox.value = '100';
+        zoomBox.style.cssText = 'width: 64px !important; text-align: center;'
+        zoomBox.className = 'BMWindowInput BMWindowToolbarInput';
+        toolbar.appendChild(zoomBox);
+
+        zoomSlider.addEventListener('input', event => {
+            const value = parseFloat(zoomSlider.value);
+            if (isNaN(value)) return;
+
+            zoomBox.value = value;
+            const scale = value / 100;
+            this.scale = scale;
+        });
+
+        zoomBox.addEventListener('input', event => {
+            let value = parseFloat(zoomBox.value);
+            if (isNaN(value)) return;
+
+            value = BMNumberByConstrainingNumberToBounds(value, 25, 200);
+            zoomSlider.value = value;
+            const scale = value / 100;
+            this.scale = scale;
+        });
+        this.zoomBox = zoomBox;
+        this.zoomSlider = zoomSlider;
+
+        const zoomResetButton = document.createElement('div');
+        zoomResetButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
+        zoomResetButton.innerHTML = `<i class="material-icons" style="pointer-events: none;">center_focus_strong</i>`;
+
+        zoomResetButton.style.opacity = 1;
+        zoomResetButton.style.pointerEvents = 'all';
+
+        zoomResetButton.addEventListener('click', event => {
+            BMAnimateWithBlock(() => {
+                this.zoomSlider.value = 100;
+                this.zoomBox.value = 100;
+                this.panOffset = BMPointMake(0, 0);
+                this.scale = 1;
+            }, {duration: 200, easing: 'easeInOutQuad'});
+        });
+        toolbar.appendChild(zoomResetButton);
+
+        let zoomFlexibleSpace = document.createElement('div');
+        zoomFlexibleSpace.className = 'BMWindowFlexibleSpace';
+        toolbar.appendChild(zoomFlexibleSpace);
+
         let sizeClassSelector = document.createElement('div');
         sizeClassSelector.className = 'BMWindowInput BMWindowToolbarInput BMLayoutEditorSizeClassSelector';
 
@@ -1304,14 +1537,102 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         const toggleSettingsButton = document.createElement('div');
         toggleSettingsButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
-        toggleSettingsButton.innerHTML = '<i class="material-icons" style="pointer-events: none;">&#xE5DD;</i>';
+        toggleSettingsButton.innerHTML = `<i class="material-icons" style="pointer-events: none;">${BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? 'toggle_on' : '&#xE5DD;'}</i>`;
 
         toggleSettingsButton.style.opacity = 1;
         toggleSettingsButton.style.pointerEvents = 'all';
 
-        toggleSettingsButton.addEventListener('click', event => this.toggleSettingsPaneWithEvent(event));
+        toggleSettingsButton.addEventListener('click', BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? event => this.detailsView._window.toggleAnimated(YES) : event => this.toggleSettingsPaneWithEvent(event));
         toolbar.appendChild(toggleSettingsButton);
 
+    },
+
+    /**
+     * Sets up the various gesture recognizers for the workspace wrapper.
+     */
+    _initWorkspaceGestures() {
+        const workspaceWrapper = this.workspaceWrapperView.node;
+
+        // Set up the touch zoom and pan gestures
+        workspaceWrapper.addEventListener('touchstart', event => {
+
+        });
+
+        // Set up the mousewheel zoom and pan gestures
+        workspaceWrapper.addEventListener('wheel', event => {
+            event.preventDefault();
+
+            if (event.altKey) {
+                // When scrolling with the option key pressed, perform a zoom
+                const zoomAmount = ((event.deltaMode == 0 ? event.deltaY : (10 * event.deltaY)) / 25 | 0) / 100;
+                this.scale += zoomAmount;
+                this.zoomBox.value = this.scale * 100 | 0;
+                this.zoomSlider.value = this.scale * 100 | 0;
+            }
+            else {
+                // Otherwise pan
+                let distanceX, distanceY;
+                if (event.deltaMode == 0) {
+                    distanceX = event.deltaX | 0;
+                    distanceY = event.deltaY | 0;
+                }
+                else {
+                    distanceX = 10 * event.deltaX | 0;
+                    distanceY = 10 * event.deltaY | 0;
+                }
+
+                const offset = this.panOffset;
+                offset.x -= distanceX;
+                offset.y -= distanceY;
+
+                this.panOffset = offset;
+            }
+        });
+
+        let lastOffset;
+        const downListener = event => {
+            if (event.button != 0) return;
+
+            if (event.altKey) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                lastOffset = BMPointMake(event.screenX, event.screenY);
+
+                const moveListener = event => {
+                    const offset = this.panOffset;
+                    offset.x += event.screenX - lastOffset.x;
+                    offset.y += event.screenY - lastOffset.y;
+
+                    lastOffset = BMPointMake(event.screenX, event.screenY);
+                    this.panOffset = offset;
+
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+
+                const upListener = event => {
+                    event.stopPropagation();
+                    event.preventDefault();
+
+                    window.removeEventListener('click', clickListener, YES);
+                    window.removeEventListener('mousemove', moveListener, YES);
+                    window.removeEventListener('mouseup', upListener, YES);
+                }
+
+                const clickListener = event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                window.addEventListener('click', clickListener, YES);
+                window.addEventListener('mousemove', moveListener, YES);
+                window.addEventListener('mouseup', upListener, YES);
+            }
+        };
+
+        // Set up the mouse drag pan gesture; this is a capturing listener that only has effect if the option key is pressed
+        workspaceWrapper.addEventListener('mousedown', downListener, YES);
     },
 
     /**
@@ -1321,11 +1642,14 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * {
      *  @param widthIndicatorSize <Number, nullable>    Defaults to `8`. The size of the popover's indicator.
      *  @param radius <Number, nullable>                Defaults to `4`. Controls how rounded the corners are.
-     *  @param inset <Number, nullable>                 Defaults to `0`. An option inset to apply to the path.
+     *  @param inset <Number, nullable>                 Defaults to `0`. An optional inset to apply to the path.
+     *  @param knobPosition <Number, nullable>          Defaults to half of the frame's width. The position along the top frame on which to place the knob.
+     *                                                  This coordinate is relative to the popover's frame and represents the center position of the knob.
+     *                                                  This position should not overlap the specified corner radius.
      * }
      * @return <String>                                 The SVG path.
      */
-    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 4, inset = 0} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
+    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 4, inset = 0, knobPosition = undefined} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
         let top = size * Math.SQRT2 / 2 | 0;
         const left = inset;
 
@@ -1337,10 +1661,17 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             top += inset;
         }
 
+        if (knobPosition === undefined) {
+            knobPosition = frame.size.width / 2 | 0;
+        }
+        else {
+            knobPosition = (knobPosition - inset) | 0;
+        }
+
         const knobWidth = size * Math.SQRT2;
         const knobHeight = knobWidth / 2 | 0;
 
-        let path =  `M${left + radius},${top} L${(frame.size.width / 2 - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} L${frame.size.width + left - radius},${top} `;
+        let path =  `M${left + radius},${top} L${(knobPosition - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} L${frame.size.width + left - radius},${top} `;
         path +=     `Q${frame.size.width + left},${top} ${frame.size.width + left},${top + radius} L${frame.size.width + left},${frame.size.height + inset - radius} `;
         path +=     `Q${frame.size.width + left},${frame.size.height + inset} ${frame.size.width + left - radius},${frame.size.height + inset} L${radius},${frame.size.height + inset} `;
         path +=     `Q${left},${frame.size.height + inset} ${left},${frame.size.height + inset - radius} L${left},${top + radius} Q${left},${top} ${radius},${top} Z`;
@@ -1353,6 +1684,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param event <Event, nullable>         The event that triggered this action. 
      */
     showLayoutVariablesPopupWithEvent(event) {
+        const popoverParentElement = document.body;
+
         // Create the popover container
         const popoverContainer = document.createElement('div');
         popoverContainer.className = 'BMPopoverContainer';
@@ -1374,12 +1707,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const location = BMRectMakeWithNodeFrame(this.layoutVariablesButton).center;
 
         // Create the frame for the popover container and move it accordingly
-        const frame = BMRectMake(0, 0, 320, 380 + 8);
-        frame.center = location;
-        frame.origin.y = location.y + 16;
+        const frame = BMRectMake(window.innerWidth - 320 - 16, location.y + 16, 320, 380 + 8);
+        const knobPosition = location.x - frame.origin.x;
+        /*frame.origin.x = location;
+        frame.origin.y = location.y + 16;*/
 
-        const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16})}')`;
-        const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1})}')`;
+        const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition})}')`;
+        const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1, knobPosition})}')`;
 
         // Assign the frame to the window, and to the drop shadow container
         const positionStyle = {
@@ -1405,7 +1739,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // Create the click blocker behind the popover
         const blocker = document.createElement('div');
         blocker.className = 'BMPopoverOverlay';
-        this.node.appendChild(blocker);
+        popoverParentElement.appendChild(blocker);
 
         // Create the popover's content
         const title = document.createElement('div');
@@ -1440,9 +1774,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         variablesCollection.layout.contentGravity = BMCollectionViewFlowLayoutAlignment.Start;
 
         // Add the popover to the document
-        this.node.appendChild(popoverBackground);
-        this.node.appendChild(popoverDropShadowContainer);
-        this.node.appendChild(popoverContainer);
+        popoverParentElement.appendChild(popoverBackground);
+        popoverParentElement.appendChild(popoverDropShadowContainer);
+        popoverParentElement.appendChild(popoverContainer);
 
         let popoverVisible = YES;
 
@@ -1462,7 +1796,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const popoverLayers = [popoverContainer, popoverBackground, popoverDropShadowContainer];
 
         for (const layer of popoverLayers) {
-            layer.style.transformOrigin = '50% 0%';
+            layer.style.transformOrigin = ((knobPosition / frame.size.width) * 100) + '% 0%';
             BMHook(layer, {scaleX: .75, scaleY: .75, opacity: 0});
 
             __BMVelocityAnimate(layer, {scaleX: 1, scaleY: 1, opacity: 1}, {duration: 300, easing: [0,1.59,.49,1]});
@@ -1578,6 +1912,19 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (event && (event.metaKey || event.ctrlKey)) {
             return this.toggleSelectionForView(view);
         }
+
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && this.selectedView === view) {
+            // When using the new settings view, if the view is already selected, just redraw the constraints
+            // This is currently done because select view is invoked in place of a more specialized redraw constraints method
+            // which should be fixed in the future
+            this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+
+            this._clearOffsets();
+            this._drawConstraintsForView(view);
+
+            return;
+        }
+
         this.tree.selectView(view);
 
         view._checkConstraints();
@@ -1589,7 +1936,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.workspaceNode.classList.remove('BMLayoutEditorWorkspaceInvalidLayout');
         }
 
-        this.detailsNodeTitle.innerText = view.debuggingName || view.node.id;
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsNodeTitle.innerText = view.debuggingName || view.node.id;
 
         // Clear the previous selection and set of constraints
         this._view.node.querySelectorAll('.BMLayoutEditorViewSelectorSelected, .BMLayoutEditorViewSelectorConstrained').forEach(node => {
@@ -1626,8 +1973,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             this._drawConstraintsForView(view);
 
-            this.detailsNodeContent.innerHTML = '';
-            this.createSettingsForView(view);
+            if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+                this.detailsNodeContent.innerHTML = '';
+                this.createSettingsForView(view);
+            }
+            else {
+                this.detailsView.layoutEditorDidSelectView(view);
+            }
         }
     },
 
@@ -1803,6 +2155,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 frameDidMove = true;
 
                 let displacement = BMPointMake(event.pageX - position.x, event.pageY - position.y);
+                if (this.scale != 1) {
+                    // Because the elements can be scaled, the displacement needs to have the inverse scaling applied 
+                    // to avoid the element moving out of sync with the pointer
+                    displacement.multiplyWithScalar(1 / this.scale);
+                }
                 let displacedFrame = frame.copy();
                 displacedFrame.offsetWithX(displacement.x, {y: displacement.y});
                 view.frame = displacedFrame;
@@ -2209,6 +2566,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * }
      */
     selectConstraint(constraint, args) {
+        if (this.selectedConstraint == constraint && this.selectedConstraintReferenceView == args.withReferenceView) return;
 
         this.selectedView = undefined;
         this.selectedViews = undefined;
@@ -2219,7 +2577,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this.workspaceNode.classList.remove('BMLayoutEditorWorkspaceInvalidLayout');
 
-        this.detailsNodeTitle.innerText = 'Constraint';
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsNodeTitle.innerText = 'Constraint';
 
         // Clear the previous selection and set of constraints
         this._view.node.querySelectorAll('.BMLayoutEditorViewSelectorSelected, .BMLayoutEditorViewSelectorConstrained').forEach(node => {
@@ -2247,8 +2605,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 }
             }
 
-            this.detailsNodeContent.innerHTML = '';
-            this.createSettingsForConstraint(constraint, {withReferenceView: args.withReferenceView});
+            if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+                this.detailsView.layoutEditorDidSelectConstraint(constraint, {withReferenceView: args.withReferenceView});
+            }
+            else {
+                this.detailsNodeContent.innerHTML = '';
+                this.createSettingsForConstraint(constraint, {withReferenceView: args.withReferenceView});
+            }
         }
     },
 
@@ -2296,6 +2659,10 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         // The reference coordinates are the coordinates of the root view
         let referenceCoordinates = BMRectMakeWithNodeFrame(this._view.node);
+        if (this.scale != 1) {
+            // Because BMRectMakeWithNodeFrame takes transforms into account, it is necessary to apply the inverse scale when a scale is used
+            referenceCoordinates = referenceCoordinates.rectByMultiplyingWithScalar(1 / this.scale);
+        }
         let referenceView = args.withReferenceView;
 
         // Determine which of the constraint's view members is the reference view
@@ -2317,6 +2684,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             let sourceCoordinates = BMRectMakeWithNodeFrame(referenceView.node);
             let targetCoordinates = BMRectMakeWithNodeFrame(targetView.node);
+            if (this.scale != 1) {
+                // Because BMRectMakeWithNodeFrame takes transforms into account, it is necessary to apply the inverse scale when a scale is used
+                sourceCoordinates = sourceCoordinates.rectByMultiplyingWithScalar(1 / this.scale);
+                targetCoordinates = targetCoordinates.rectByMultiplyingWithScalar(1 / this.scale);
+            }
 
             let sourcePoint = BMPointMake(0, 0);
             let targetPoint = BMPointMake(0, targetCoordinates.center.y - referenceCoordinates.origin.y);
@@ -2374,6 +2746,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         else {
             let sourceCoordinates = BMRectMakeWithNodeFrame(referenceView.node);
             let targetCoordinates = BMRectMakeWithNodeFrame(targetView.node);
+            if (this.scale != 1) {
+                // Because BMRectMakeWithNodeFrame takes transforms into account, it is necessary to apply the inverse scale when a scale is used
+                sourceCoordinates = sourceCoordinates.rectByMultiplyingWithScalar(1 / this.scale);
+                targetCoordinates = targetCoordinates.rectByMultiplyingWithScalar(1 / this.scale);
+            }
 
             let sourcePoint = BMPointMake(0, 0);
             let targetPoint = BMPointMake(targetCoordinates.center.x - referenceCoordinates.origin.x, 0);
@@ -2533,7 +2910,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     },
 
+    // #region Deprecated settings
+
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Returns a badge that will be displayed next to settings that have variations
      * for the given size class.
      * @param sizeClass <BMLayoutSizeClass>         A size class.
@@ -2569,6 +2950,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a readonly setting.
      * @param name <String>                         The name of the setting.
      * {
@@ -2607,6 +2990,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates a list of boolean settings for the given property, depending on its active variations
      * and the currently selected size class.
      * @param name <String>                                     The name of the setting.
@@ -2696,6 +3081,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a boolean setting. This method should be used by custom settings providers
      * when creating additional settings.
      * @param name <String>                                                     The name of the setting as it will appear at runtime.
@@ -2788,6 +3175,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a string setting. This method should be used by custom settings providers
      * when creating additional settings.
      * @param name <String>                         The name of the setting as it will appear at runtime.
@@ -2843,6 +3232,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a string setting.
      * @param name <String>                                 The name of the setting.
      * {
@@ -2930,6 +3321,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates a list of string settings for the given property, depending on its active variations
      * and the currently selected size class.
      * @param name <String>                                     The name of the setting.
@@ -2990,6 +3383,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates a list of numeric settings for the given property, depending on its active variations
      * and the currently selected size class.
      * @param name <String>                                     The name of the setting.
@@ -3050,6 +3445,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a constant setting.
      * @param name <String>                                 The name of the setting.
      * {
@@ -3267,6 +3664,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a numeric setting.
      * @param name <String>                                 The name of the setting.
      * {
@@ -3354,6 +3753,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for an `<option>` element with the given attributes.
      * @param named <String>                    The display name of this option.
      * {
@@ -3375,6 +3776,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a numeric setting.
      * @param name <String>                         The name of the setting.
      * {
@@ -3444,6 +3847,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns the DOM node for a numeric setting.
      * @param name <String>                         The name of the setting.
      * {
@@ -3492,6 +3897,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns a settings button.
      * @return <DOMNode>                A DOM node.
      * @param name <String>
@@ -3516,6 +3923,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns a settings divier.
      * @return <DOMNode>        A DOM node.
      */
@@ -3527,6 +3936,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates a setting item that represents a view.
      * Clicking on it will select the view in the layout editor.
      * @param view <BMView>     The view.
@@ -3544,6 +3955,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Invoked by layout editor to create any non-standard settings for the given constraint. This method may be overriden by
      * subclasses to include additional settings to configure for constraints. The new settings should be included in the supplied
      * container.
@@ -3564,6 +3977,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the `constant` settings for the given constraint.
      * @param constraint <BMLayoutConstraint>           The constraint for which to show settings.
      * {
@@ -3597,6 +4012,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the `priority` settings for the given constraint.
      * @param constraint <BMLayoutConstraint>           The constraint for which to show settings.
      * {
@@ -3629,6 +4046,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the `isActive` settings for the given constraint.
      * @param constraint <BMLayoutConstraint>           The constraint for which to show settings.
      * {
@@ -3679,6 +4098,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the settings pane for the given constraint.
      * @param constraint <BMLayoutConstraint>           The constraint for which to show settings.
      * {
@@ -3735,6 +4156,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the settings pane for the given constraint collection.
      * @param constraint <BMLayoutConstraint>       The constraint.
      */
@@ -3776,6 +4199,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * 
      * @param constraint <BMLayoutConstraint>
      * {
@@ -3827,6 +4252,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the settings pane for the given view.
      * @param view <BMView>
      */
@@ -4146,6 +4573,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Constructs and returns a settings button that creates an equal attribute constraint
      * over a set of views.
      * @param name <String>                     The name of the button.
@@ -4175,6 +4604,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * @deprecated Unused when the new settings view is enabled.
+     * 
      * Creates the settings pane for multiple selected views.
      */
     createSettingsForMultipleViews() {
@@ -4310,6 +4741,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     },
 
+    // #endregion
+
 	// @override - BMWindow
 	bringToFrontAnimated: function (animated, args) {
 		this._visible = YES;
@@ -4361,6 +4794,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                         if (self.delegate && self.delegate.windowDidAppear) {
                             self.delegate.windowDidAppear(self);
                         }
+                        
                         if (args && args.completionHandler) args.completionHandler();
                     }
                 });
@@ -4386,7 +4820,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
                 this.treeWidthConstraint.constant = 256;
                 this.detailsWidthConstraint.constant = 344;
-                this.workspaceToolbarHeightConstraint.constant = 64;
+                this.workspaceToolbarHeightConstraint.constant = _BMLayoutEditorToolbarHeight;
                 this.layout();
 
                 BMCopyProperties(this.node.style, {
@@ -4403,7 +4837,12 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 controller.registerBuiltInProperty('height', {withValue: frame.size.height + 'px'});
                 this._frame = frame;
 
-            }, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault, complete: () => this.selectView(this.view)});
+            }, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault, complete: () => {
+
+                for (const window of self._toolWindows) {
+                    if (window.opensAutomatically) window.bringToFrontAnimated(animated);
+                }
+            }});
 		
 		}
 		else {
@@ -4420,6 +4859,10 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 			this._window.style.pointerEvents = '';
 			
 			if (self.delegate && self.delegate.windowDidAppear) self.delegate.windowDidAppear(self);
+
+            for (const window of this._toolWindows) {
+                window.bringToFrontAnimated(animated);
+            }
 			
 			if (args && args.completionHandler) args.completionHandler();
 		}
@@ -4459,6 +4902,10 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 		
 		if (self.delegate && self.delegate.windowWillClose) {
 			self.delegate.windowWillClose(self);
+		}
+
+		for (const window of this._toolWindows) {
+			window.dismissAnimated(animated);
 		}
 		
 		if (animated) {
@@ -4512,6 +4959,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 (this.workspaceHeight = this.workspace.height.equalTo(this.workspaceWrapperView.height)).isActive = YES;
 
                 this.layout();
+                this.panOffset = BMPointMake(0, 0);
+                this.scale = 1;
 
                 BMCopyProperties(this.node.style, {
                     left: frame.origin.x + 'px',
@@ -4587,6 +5036,7 @@ BMLayoutEditor.editorForView = function (view) {
 function _BMLayoutEditorTree () {} // <constructor>
 
 _BMLayoutEditorTree.prototype = BMExtend(Object.create(BMView.prototype), {
+    constructor: _BMLayoutEditorTree,
 
     /**
      * The DOM node into which this tree will render itself.
@@ -4869,6 +5319,8 @@ _BMLayoutEditorTree.editorTreeWithView = function _BMLayoutEditorTreeMakeWithVie
     return (new _BMLayoutEditorTree()).initWithView(view, args);
 }
 
-const BMLayoutEditorAvailable = YES;
-
 // @endtype
+
+
+// Indicates that this file and the layout editor are available. Only used when CoreUI is imported globally.
+const BMLayoutEditorAvailable = YES;

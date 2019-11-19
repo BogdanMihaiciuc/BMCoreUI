@@ -415,12 +415,19 @@
 	height: calc(100% - 16px) !important;
 	min-width: 44px !important;
 	
-	transition: all .2s ease !important;
+	transition: box-shadow .2s ease, background-color .2s ease !important;
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 
-	width: auto !important;
 	padding-left: 8px !important;
 	padding-right: 8px !important;
+}
+
+.BMWindowInput:not(.BMLayoutEditorDetailsCellInput) {
+	width: auto !important;
+}
+
+.BMLayoutEditorDetailsCellInput.BMWindowInput {
+	margin: 0px !important;
 }
 
 .BMWindowInput:hover:not(:focus) {
@@ -520,6 +527,11 @@
 	line-height: 1em !important;
 }
 
+.BMWindowToolbarMini > .BMWindowToolbarInput {
+	height: 24px !important;
+	font-size: 14px !important;
+}
+
 @media (prefers-color-scheme: dark) {
 	.BMWindowToolbarInput {
 		color: rgba(255, 255, 255, .9);
@@ -545,6 +557,10 @@
 	display: flex;
 	align-content: center;
 	align-items: center;
+}
+
+.BMWindowToolbarMini > .BMWindowToolbarLabel {
+	font-size: 14px !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -610,9 +626,22 @@
     vertical-align: middle;
     text-align: center;
 
-    pointer: default;
     cursor: default;
 
+}
+
+.BMWindowToolbarMini > .BMLayoutEditorToolbarButton {
+	width: 24px;
+	height: 24px;
+
+	top: 0px;
+	line-height: 24px;
+
+	font-size: 12px;
+}
+
+.BMWindowToolbarMini > .BMLayoutEditorToolbarButton > i {
+	line-height: 24px !important;
 }
 
 .BMLayoutEditorToolbarButton:active {
@@ -634,9 +663,9 @@
 }
 
 .BMLayoutEditorCloseButton {
-	position: absolute;
+	position: absolute !important;
 	
-	left: 8px;
+	left: 8px !important;
 	opacity: 0;
 	
 	pointer-events: none;
@@ -648,6 +677,11 @@
 	opacity: 1;
 	
 	pointer-events: inherit;
+}
+
+.BMLayoutEditorDetailsCloseButton {
+	top: 12px;
+	left: 6px !important;
 }
 
 /* #endregion */
@@ -690,6 +724,7 @@
 	padding-right: 8px;
 	
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	font-size: 10px !important;
 	
 	margin-left: 32px;
 	margin-right: 32px;
@@ -716,7 +751,7 @@
 	margin-right: 8px;
 	
 	flex-grow: 1;
-	height: 24px;
+	height: 20px;
 	
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 	overflow: hidden;
@@ -730,7 +765,7 @@
 	box-shadow: 0px 2px 8px rgba(0, 0, 0, .3), 0px -4px 8px rgba(0, 0, 0, .05) inset;
 	border-radius: 5px;
 
-	transform: translateX(calc(100% + 1px));
+	transform: translateX(100%);
 	
 	transition: transform .2s ease, width .2s ease, opacity .2s ease;
 }
@@ -837,7 +872,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	-webkit-backdrop-filter: none !important;
 }
 
-.BMLayoutEditorSizeClassSelector {
+.BMWindowInput.BMLayoutEditorSizeClassSelector {
 	width: 240px !important;
 	cursor: default;
 }
@@ -848,12 +883,11 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	pointer-events: none;
 
-	width: 32px;
-	height: 32px;
+	width: 16px;
+	height: 16px;
 
-	background-size: 32px 32px;
+	background-size: 16px 16px;
 	position: relative;
-	top: 10px;
 }
 
 .BMWindowInput > .BMLayoutEditorSizeClassImage {
@@ -875,7 +909,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 }
 
 .BMLayoutEditorSizeClassPopupOption {
-	height: 48px !important;
+	height: 32px !important;
 }
 
 .BMLayoutEditorSizeClassPopupOption:hover > .BMLayoutEditorSizeClassImage {
@@ -936,15 +970,15 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	padding-left: 8px;
 	padding-right: 8px;
 
-	border-right: 1px solid rgba(0, 0, 0, .15);
+	/* border-right: 1px solid rgba(0, 0, 0, .15); */
 
 	/*transition: width .3s ease, padding .3s ease;*/
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMLayoutEditorTree {
+	/* .BMLayoutEditorTree {
 		border-right-color: black;
-	}
+	} */
 }
 
 .BMLayoutEditorWorkspaceArea {
@@ -993,7 +1027,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	display: flex;
 
 	background: #E0E0E0;
-	overflow: auto;
+	overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1207,6 +1241,16 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 /* MARK: Layout editor details */
 
+.BMLayoutEditorDetailsTitle {
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+.BMLayoutEditorDetailsWindow {
+	backdrop-filter: blur(25px);
+	-webkit-backdrop-filter: blur(25px);
+}
+
 .BMLayoutEditorDetails {
 	width: 344px;
 	height: 100%;
@@ -1217,9 +1261,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 
-	background-color: #F0F0F0;
-
-	border-left: 1px solid rgba(0, 0, 0, .2);
+	background-color: rgba(255, 255, 255, .1);
 
 	display: flex;
 	flex-direction: column;
@@ -1227,10 +1269,26 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	/*transition: width .3s ease;*/
 }
 
+.BMLayoutEditorDetailsView {
+	background-color: rgba(200, 200, 200, .1);
+	overflow: hidden;
+}
+
+.BMLayoutEditorDetailsPanel {
+	background-color: #F0F0F0;
+}
+
 @media (prefers-color-scheme: dark) {
 	.BMLayoutEditorDetails {
-		background-color: rgb(50, 50, 50);
-		border-left-color: black;
+		background-color: rgba(255, 255, 255, .1);
+	}
+
+	.BMLayoutEditorDetailsView {
+		background-color: rgba(0, 0, 0, .1);
+	}
+
+	.BMLayoutEditorDetailsPanel {
+		background-color: rgba(0, 0, 0, .2);
 	}
 }
 
@@ -1255,9 +1313,13 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	flex-shrink: 0;
 }
 
+.BMLayoutEditorDetailsDividerCell {
+	background: rgba(0, 0, 0, .05);
+}
+
 @media (prefers-color-scheme: dark) {
-	.BMLayoutEditorDetailsDivider {
-		background: rgba(255, 255, 255, .15);
+	.BMLayoutEditorDetailsDivider, .BMLayoutEditorDetailsDividerCell {
+		background: rgba(255, 255, 255, .05);
 	}
 }
 
@@ -1326,7 +1388,6 @@ BMLayoutEditorDetailsItemBadge {
 	width: 128px;
 
 	text-align: right;
-	color: rgba(0, 0, 0, .33);
 
 	line-height: 32px;
 	vertical-align: middle;
@@ -1337,8 +1398,20 @@ BMLayoutEditorDetailsItemBadge {
 	cursor: default;
 }
 
+.BMLayoutEditorDetailsTitleCell, .BMLayoutEditorDetailsItemTitle {
+	color: rgba(0, 0, 0, .33);
+	font-size: 11px !important;
+	font-weight: 500 !important;
+	cursor: default;
+
+	user-select: none;
+	-ms-user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+
 @media (prefers-color-scheme: dark) {
-	.BMLayoutEditorDetailsItemTitle {
+	.BMLayoutEditorDetailsTitleCell, .BMLayoutEditorDetailsItemTitle {
 		color: rgba(255, 255, 255, .33);
 	}
 }
@@ -1360,8 +1433,46 @@ BMLayoutEditorDetailsItemBadge {
 	width: 300px !important;
 }
 
-.BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
+.BMLayoutEditorDetailsItemVariationsButton {
+	color: rgba(0, 0, 0, .5);
+	text-align: center;
+	vertical-align: middle;
+
+	border-radius: 12px;
+	cursor: default;
+
+	opacity: 0;
+	transition: opacity .2s ease-in-out;
+}
+
+.BMLayoutEditorDetailsItemVariationsButton:active {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorDetailsCell:hover .BMLayoutEditorDetailsItemVariationsButton {
+	opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsItemVariationsButton {
+		color: rgba(255, 255, 255, .5);
+	}
+
+	.BMLayoutEditorDetailsItemVariationsButton:active {
+		background-color: rgba(255, 255, 255, .1);
+	}
+}
+
+.BMLayoutEditorDetailsItemVariationsButton > i {
+	font-size: 16px !important;
+	line-height: 24px !important;
+}
+
+.BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
 	height: 32px !important;
+}
+
+.BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
 	flex-grow: 1 !important;
 
 	text-align: left;
@@ -1375,14 +1486,17 @@ BMLayoutEditorDetailsItemBadge {
 	padding-left: 8px !important;
 	padding-top: 0px !important;
 	padding-bottom: 0px !important;
-
-	cursor: default;
 }
 
 @media (prefers-color-scheme: dark) {
 	.BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
 		color: rgba(255, 255, 255, .9);
 	}
+}
+
+.BMLayoutEditorDetailsItemReadonlyValueCell {
+	line-height: 24px !important;
+	min-height: 24px !important;
 }
 
 .BMLayoutEditorDetailsItemReadonlyValue {
@@ -1395,7 +1509,7 @@ BMLayoutEditorDetailsItemBadge {
 
 	transition: background-color .2s ease;
 
-	height: 24px !important;
+	min-height: 24px !important;
 	line-height: 24px !important;
 
 	margin-top: 4px !important;
@@ -1420,12 +1534,23 @@ BMLayoutEditorDetailsItemBadge {
 	}
 }
 
+.BMLayoutEditorDetailsItemViewLink {
+	color: rgba(0, 0, 0, .33) !important;
+	font-size: 8px !important;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsItemViewLink {
+		color: rgba(255, 255, 255, .33) !important;
+	}
+}
+
 .BMLayoutEditorDetailsConstraintItem {
 	margin-left: 8px;
 	margin-right: 8px;
 	margin-bottom: 8px;
 
-	padding: 8px;
+	padding: 4px;
 
 	border-radius: 4px;
 	border: 1px solid rgba(0, 0, 0, .25);
@@ -1439,6 +1564,13 @@ BMLayoutEditorDetailsItemBadge {
 	transition: background-color .2s ease;
 }
 
+.BMLayoutEditorDetailsConstraintItem.BMLayoutEditorDetailsConstraintItemCell {
+	margin: 0;
+	box-sizing: border-box;
+	font-size: 11px !important;
+	font-weight: 500 !important;
+}
+
 .BMLayoutEditorDetailsConstraintItem:hover {
 	background-color: rgba(0, 0, 0, .1);
 }
@@ -1449,6 +1581,11 @@ BMLayoutEditorDetailsItemBadge {
 
 .BMLayoutEditorDetailsConstraintItemReadonly {
 	border-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorDetailsConstraintItemInactive {
+	text-decoration-line: line-through;
+	text-decoration-color: rgba(0, 0, 0, .5);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1467,6 +1604,11 @@ BMLayoutEditorDetailsItemBadge {
 	
 	.BMLayoutEditorDetailsConstraintItemReadonly {
 		border-color: rgba(255, 255, 255, .1);
+	}
+
+	.BMLayoutEditorDetailsConstraintItemInactive {
+		text-decoration-line: line-through;
+		text-decoration-color: rgba(255, 255, 255, .5);
 	}
 }
 
@@ -1651,7 +1793,6 @@ BMLayoutEditorDetailsItemBadge {
 
 	pointer-events: all !important;
 
-	transition: border .2s ease-in-out;
 	border: 2px solid transparent;
 
 	/* Sadly needed for Thingworx environment */
@@ -2043,7 +2184,7 @@ The background layer contains the background.
 	font-weight: 600;
 }
 
-.BMLayoutEditorVariableValue {
+.BMWindowInput.BMLayoutEditorVariableValue {
 	width: 48px !important;
 	flex-shrink: 0;
     -moz-appearance: textfield;
@@ -2098,10 +2239,7 @@ The background layer contains the background.
 	overflow: auto;
 }
 
-.BMLayoutEditorDetailsTabStrip {
-	height: 32px;
-	width: 100%;
-
+.BMLayoutEditorDetailsTabView {
 	display: flex;
 	flex-direction: row;
 	align-content: center;
@@ -2110,17 +2248,18 @@ The background layer contains the background.
 
 	padding-bottom: 1px;
 	border-bottom: 1px solid rgba(0, 0, 0, .1);
+}
 
-	flex-shrink: 0;
+.BMLayoutEditorDetailsSegmentControl {
+	border: none;
 }
 
 .BMLayoutEditorDetailsTab {
 	width: 32px;
 	height: 32px;
 
-	background-size: 16px 16px;
-	background-position: center;
-	background-repeat: no-repeat;
+	padding: 8px;
+	box-sizing: border-box;
 
 	transition: background-color .2s ease;
 
@@ -2128,6 +2267,15 @@ The background layer contains the background.
 
 	margin-left: 4px;
 	margin-right: 4px;
+}
+
+.BMLayoutEditorDetailsTab:active {
+	background-color: rgba(0, 0, 0, .1);
+}
+
+.BMLayoutEditorDetailsTabSelected {
+	background-color: rgb(235, 235, 235);
+	box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, .1) inset;
 }
 
 .BMLayoutEditorDetailsTabLayoutVariables {
@@ -2149,8 +2297,16 @@ The background layer contains the background.
 @media (prefers-color-scheme: dark) {
 	.BMLayoutEditorDetailsTab {
 		filter: invert(100%);
-		-webkit-backface-visibility: hidden;
-		backface-visibility: hidden;
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
+
+	.BMLayoutEditorDetailsTabView {
+		border-bottom: 1px solid rgba(255, 255, 255, .05);
+	}
+
+	.BMLayoutEditorDetailsSegmentControl {
+		border: none;
 	}
 }
 
@@ -2161,6 +2317,23 @@ The background layer contains the background.
 	width: 100%;
 
 	position: relative;
+}
+
+.BMLayoutEditorDetailsConstraintIcon {
+	width: 16px;
+	height: 16px;
+
+	margin-right: 4px;
+
+	display: inline-block;
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMLayoutEditorDetailsConstraintIcon {
+		filter: invert(100%);
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
 }
 
 
