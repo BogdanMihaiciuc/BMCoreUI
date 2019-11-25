@@ -1082,6 +1082,11 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
         this._bound = YES;
     },
 
+    /**
+     * Returns the value that indicates that the property should be "unset".
+     * 
+     * The default implementation returns an empty string.
+     */
     get nullValue() {
         return '';
     },
@@ -1132,6 +1137,17 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
     },
 
     /**
+     * Returns the value that should be applied to the setting.
+     * Subclasses can override this getter to perform any necessary transforms
+     * on the filter value if needed.
+     * 
+     * The default implementation returns the `value` property of this cell's input node.
+     */
+    get value() {
+        return this._inputView.node.value;
+    },
+
+    /**
      * Invoked whenever the value of this cell's input element changes as a result of user action.
      * This can either be due to the user typing content into the input element or pasting.
      * 
@@ -1141,7 +1157,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
     inputValueDidChangeWithEvent(event) {
         const setting = this.setting;
         if (setting.sizeClass) {
-            const value = this._inputView.node.value;
+            const value = this.value;
             if (value === undefined || value === '') {
                 setting.target[`remove${BMStringByCapitalizingString(setting.property)}VariationForSizeClass`](setting.sizeClass);
             }
@@ -1150,7 +1166,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
             }
         }
         else {
-            setting.target[setting.property] = this._inputView.node.value;
+            setting.target[setting.property] = this.value;
         }
     },
 
@@ -1243,6 +1259,220 @@ BMLayoutEditorSettingsStringCell.prototype = BMExtend(Object.create(BMLayoutEdit
     // @override - BMCollectionViewCell
     cellDidBindToSetting(setting) {
         BMLayoutEditorSettingsInputCell.prototype.cellDidBindToSetting.apply(this, arguments);
+    }
+})
+
+// @endtype
+
+// @type BMLayoutEditorSettingsConstantCell extends BMLayoutEditorInputCell
+
+/**
+ * A cell type specialized for displaying constraint constant settings.
+ */
+export function BMLayoutEditorSettingsConstantCell() {} // <constructor>
+
+BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEditorSettingsInputCell.prototype), {
+    constructor: BMLayoutEditorSettingsConstantCell,
+
+    initWithCollectionView(collectionView, args) {
+        args.inputKind = 'text';
+        args.inputClasses = 'BMLayoutEditorDetailsItemTextValue';
+        BMLayoutEditorSettingsInputCell.prototype.initWithCollectionView.apply(this, arguments);
+
+        const inputNode = this._inputView.node;
+        // This array contains all the available layout variables and is initialized upon the input
+        // element acquiring keyboard focus
+        let suggestions = [];
+        // This array contains the layout variables that match the text contained within the input element
+        let filteredSuggestions = [];
+        // The popup menu displaying the filtered suggestions
+        let menu;
+        // The index of the top hit suggestion. And index of -1 represents no top hit.
+        let highlightedItemIndex;
+
+        // TODO: Consider encapsulating this functionality into a separate auto-complete text box class
+        inputNode.addEventListener('focus', async event => {
+            // Select all content upon receiving focus
+            inputNode.select();
+
+            suggestions = [];
+            // Load up the variable names
+            const variables = Object.keys(this.layoutEditor.layoutVariableProvider.layoutVariables);
+            const uniqueNames = new Set;
+            variables.forEach(variable => uniqueNames.add(variable));
+
+            let options = [];
+
+            // Create a pair of regular and minus-prefixed variable names
+            for (const variable of uniqueNames) {
+                suggestions.unshift(variable);
+                suggestions.push('-' + variable);
+            }
+
+            filteredSuggestions = suggestions;
+            highlightedItemIndex = -1;
+
+            for (const option of suggestions) {
+                options.push(this.layoutEditor.constraintOptionWithLabel(option, {action: () => {
+                    menu = undefined;
+                    inputNode.value = option;
+                    inputNode.dispatchEvent(new Event('input'));
+
+                    // Remove focus from the text box upon selecting a value
+                    inputNode.blur();
+                }}));
+            }
+
+            // Create and show a pulldown menu below the constant textbox, if there are any suggestions
+            if (suggestions.length) {
+                let frame = BMRectMakeWithNodeFrame(inputNode);
+                let point = BMPointMake(frame.origin.x, frame.bottom);
+                menu = this.layoutEditor.showMenuAtPoint(point, {withOptions: options, kind: BMMenuKind.PullDownMenu});
+                menu.classList.add('BMLayoutEditorConstantSuggestions');
+
+                menu.parentNode.classList.add('BMLayoutEditorConstantSuggestionsOverlay');
+
+                // Prevent the menu from stealing focus, which would dismiss it before an option is selected
+                menu.addEventListener('mousedown', e => e.preventDefault(), YES);
+            }
+
+            const fn = event => event.preventDefault();
+            inputNode.addEventListener('mouseup', fn);
+            // This timeout is necessary because otherwise regular clicks would instantly dismiss the menu
+            await new Promise(resolve => setTimeout(resolve, 200));
+            inputNode.removeEventListener('mouseup', fn);
+            
+        });
+
+        inputNode.addEventListener('keydown', event => {
+            if (event.code == 'ArrowDown' || event.code == 'ArrowUp') {
+                event.preventDefault();
+                if (filteredSuggestions.length == 0) return;
+
+                // Move the selection accordingly
+                if (event.code == 'ArrowUp') {
+                    highlightedItemIndex = Math.max((highlightedItemIndex || 0) - 1, 0);
+                }
+                else {
+                    highlightedItemIndex = Math.min((isNaN(highlightedItemIndex) ? -1 : highlightedItemIndex) + 1, filteredSuggestions.length - 1);
+                }
+
+                // Remove the highlighted class from the previously selected item
+                for (const element of menu.querySelectorAll('.BMLayoutEditorConstraintPopupOptionHighlighted')) {
+                    element.classList.remove('BMLayoutEditorConstraintPopupOptionHighlighted');
+                }
+
+                // Highlight the current item
+                menu.childNodes[highlightedItemIndex].classList.add('BMLayoutEditorConstraintPopupOptionHighlighted');
+            }
+
+            if (event.code == 'Enter') {
+                // Upon pressing the enter key, select the currently highlighted item, if available
+                // then remove focus from the constant box
+                if (!isNaN(highlightedItemIndex) && filteredSuggestions.length) {
+                    inputNode.value = filteredSuggestions[highlightedItemIndex];
+                    inputNode.dispatchEvent(new Event('input'));
+                }
+
+                inputNode.blur();
+            }
+        });
+
+        inputNode.addEventListener('input', event => {
+            const number = parseFloat(inputNode.value);
+            const constantValue = isNaN(number) ? inputNode.value : number;
+
+            if (menu) {
+                // If the menu is visible, filter it accordingly
+                filteredSuggestions = suggestions.filter(e => e.toLowerCase().startsWith(inputNode.value.toLowerCase()));
+                
+                // Empty the menu
+                menu.innerHTML = '';
+
+                // Reset the highlighted item index
+                highlightedItemIndex = 0;
+
+                // Then add the filtered options
+                for (const option of filteredSuggestions) {
+                    menu.appendChild(this.constraintOptionWithLabel(option, {action: () => {
+                        menu = undefined;
+                        inputNode.value = option;
+                        inputNode.dispatchEvent(new Event('input'));
+                    }}));
+                }
+
+                // Highlight the first item
+                if (filteredSuggestions.length) {
+                    menu.childNodes[0].classList.add('BMLayoutEditorConstraintPopupOptionHighlighted');
+                    menu.style.display = 'block';
+                }
+                else {
+                    menu.style.display = 'none';
+                }
+            }
+
+            if (!inputNode.value) {
+                if (args.sizeClass) {
+                    if (constraint) {
+                        constraint[`remove${capitalizedPropertyName}VariationForSizeClass`](args.sizeClass);
+                        constraint._updateConfiguration();
+                    }
+                    else {
+                        view[`remove${capitalizedPropertyName}VariationForSizeClass`](args.sizeClass);
+                        view._updateConfiguration();
+                    }
+                }
+                return;
+            }
+
+            if (constraint) {
+
+                if (args.sizeClass) {
+                    constraint[`set${capitalizedPropertyName}`](constantValue, {forSizeClass: args.sizeClass});
+                }
+                else {
+                    constraint[property] = constantValue;
+                }
+                constraint._updateConfiguration();
+                constraint._constraint = undefined;
+                constraint._constituentConstraints = undefined;
+                if (constraint._sourceView) {
+                    constraint._sourceView.needsLayout = YES;
+                }
+                else {
+                    constraint._views[0].needsLayout = YES;
+                }
+            }
+            else {
+                if (args.sizeClass) {
+                    view[`set${capitalizedPropertyName}`](number, {forSizeClass: args.sizeClass});
+                }
+                else {
+                    view[property] = number;
+                }
+                view.needsLayout = YES;
+            }
+        });
+
+        // Upon the value box losing focus, dismiss the menu, if it was open
+        // unless the newly focused item is a descendant of the menu
+        inputNode.addEventListener('blur', event => {
+            if (menu) {
+                menu.parentNode.dispatchEvent(new Event('click'));
+            }
+        });
+
+        return this;
+    },
+
+    // @override - BMCollectionViewCell
+    cellDidBindToSetting(setting) {
+        BMLayoutEditorSettingsInputCell.prototype.cellDidBindToSetting.apply(this, arguments);
+    },
+
+    // @override - BMLayoutEditorSettingCell
+    inputValueDidChangeWithEvent(event) {
+        // This cell has a custom implementation, therefore this method is a no op
     }
 })
 
