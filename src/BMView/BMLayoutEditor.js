@@ -597,11 +597,122 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         window.addEventListener('resize', this.resizeListener);
 
         view.allSubviews.forEach(subview => {
+            // Create and add the selector, that takes over interactions for the view
             let selector = document.createElement('div');
             selector.className = 'BMLayoutEditorViewSelector';
 
             subview._selector = selector;
             subview.node.classList.add('BMLayoutEditorManagedView');
+
+            // Also add a resize drag handle that can be used to resize the view's frame
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'material-icons BMWindowDragHandle BMLayoutEditorViewDragHandle';
+            dragHandle.innerText = 'dehaze';
+			dragHandle.style.cursor = 'nwse-resize';
+
+            selector.appendChild(dragHandle);
+
+	
+			let touchDragPoint;
+            
+			// Initialize dragging touch events for the drag handler
+			dragHandle.addEventListener('mousedown', event => {
+	
+				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
+				let lastPosition = BMPointMake(event.clientX, event.clientY);
+	
+				let mouseMoveEventListener = event => {
+                    let position = BMPointMake(event.clientX, event.clientY);
+                    const frame = subview.frame.copy();
+					frame.size.width = size.width + position.x - lastPosition.x;
+					frame.size.height = size.height + position.y - lastPosition.y;
+					subview.frame = frame;
+					size = BMSizeMake(size.width + position.x - lastPosition.x, size.height + position.y - lastPosition.y);
+                    lastPosition = position;
+                    
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    this.selectView(subview);
+				};
+
+				let mask = document.createElement('div');
+				mask.className = 'BMLayoutGuideMask';
+				mask.style.cursor = 'nwse-resize';
+				document.body.appendChild(mask);
+	
+				let mouseUpEventListener = event => {
+					window.removeEventListener('mousemove', mouseMoveEventListener, YES);
+					window.removeEventListener('mouseup', mouseUpEventListener, YES);
+					mask.remove();
+                    event.preventDefault();
+                    event.stopPropagation();
+				}
+	
+				window.addEventListener('mousemove', mouseMoveEventListener, YES);
+				window.addEventListener('mouseup', mouseUpEventListener, YES);
+	
+                event.preventDefault();
+                event.stopPropagation();
+			});
+	
+			let touchDragHandlePoint;
+	
+			dragHandle.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
+				// If there is already a drag in progress, don't process this new event
+				if (typeof touchDragPoint !== 'undefined') {
+					return;
+				}
+	
+				// Only use the first touch point
+				touchDragHandlePoint = event.changedTouches[0].identifier;
+	
+				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
+				let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+	
+				let mouseMoveEventListener = event => {
+					// Look for the actively tracked touch point
+					let touch;
+					for (let changedTouch of event.changedTouches) {
+						if (changedTouch.identifier == touchDragHandlePoint) {
+							touch = changedTouch;
+							break;
+						}
+					}
+	
+					// If the actively tracked touch point did not move, do not process this event
+					if (!touch) return;
+	
+					let position = BMPointMake(touch.clientX, touch.clientY);
+                    const frame = subview.frame.copy();
+					frame.size.width = size.width + position.x - lastPosition.x;
+					frame.size.height = size.height + position.y - lastPosition.y;
+					subview.frame = frame;
+					size = BMSizeMake(size.width + position.x - lastPosition.x, size.height + position.y - lastPosition.y);
+					lastPosition = position;
+                    event.preventDefault();
+                    event.stopPropagation();
+				};
+	
+				let mouseUpEventListener = event => {
+					touchDragHandlePoint = undefined;
+					window.removeEventListener('touchmove', mouseMoveEventListener);
+					window.removeEventListener('touchend', mouseUpEventListener);
+                    window.removeEventListener('touchcancel', mouseUpEventListener);
+                    
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    this.selectView(subview);
+				}
+	
+				window.addEventListener('touchmove', mouseMoveEventListener);
+				window.addEventListener('touchend', mouseUpEventListener);
+				window.removeEventListener('touchcancel', mouseUpEventListener);
+	
+				event.preventDefault();
+                event.stopPropagation();
+			});
 
             selector.addEventListener('click', event => {
                 if (event.altKey) return;
@@ -877,6 +988,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param event <Event>         The event that triggered this action.
      */
     toggleFullscreenWithEvent(event) {
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) return;
+
         if (this._isFullScreen) {
             this.treeWidthConstraint.constant = 256;
             BMAnimateWithBlock(() => this.layout(), {duration: 300, easing: 'easeInOutQuad'});
@@ -888,107 +1001,6 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             BMAnimateWithBlock(() => this.layout(), {duration: 300, easing: 'easeInOutQuad'});
             this._fullScreenButton.style.marginLeft = '72px';
             this._isFullScreen = true;
-        }
-        return;
-
-        // NOTE: The new code forces several reflows initially, but compared to previously, the reflows now occur before the animation begins instead of
-        // during the animation as previously which drastically improves the framerate of the animation, at a small, impercievable cost before the
-        // animation begins
-        // This is especially important, as while the layout editor is active for a view hierarchy, all layout computation are performed using the
-        // slowest possible code path, re-evaluating all constraints and intrinsic sizes
-        if (this._isFullScreen) {
-            this._isFullScreen = NO;
-            (window.Velocity || $.Velocity).animate(event.target, {
-                marginLeft: '8px'
-            }, {
-                queue: NO,
-                duration: 300,
-                easing: 'ease'
-            });
-
-            // Temporarily disable the transitions, and update the layout to the final form
-            let workspaceTransition = this.workspaceArea.style.transition;
-            let treeTransition = this.treeNode.style.transition;
-            this.workspaceArea.style.transition = 'none';
-            this.treeNode.style.transition = 'none';
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {left: ''});
-            BMCopyProperties(this.treeNode.style, {width: '', paddingLeft: '', paddingRight: ''});
-
-            // Run an animated layout update on the managed view
-            BMAnimateWithBlock(() => {
-                this.view.layout();
-            }, {duration: 300, easing: 'ease'});
-
-            // Then reset the transitions and layout to the initial step and update the DOM nodes as well
-            BMCopyProperties(this.workspaceArea.style, {left: '0px'});
-            BMCopyProperties(this.treeNode.style, {width: '0px', paddingLeft: '0px', paddingRight: '0px'});
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            this.workspaceArea.style.transition = workspaceTransition;
-            this.treeNode.style.transition = treeTransition;
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {left: ''});
-            BMCopyProperties(this.treeNode.style, {width: '', paddingLeft: '', paddingRight: ''});
-
-        }
-        else {
-            this._isFullScreen = YES;
-            (window.Velocity || $.Velocity).animate(event.target, {
-                marginLeft: '72px'
-            }, {
-                queue: NO,
-                duration: 300,
-                easing: 'ease'
-            });
-
-            // Temporarily disable the transitions, and update the layout to the final form
-            let workspaceTransition = this.workspaceArea.style.transition;
-            let treeTransition = this.treeNode.style.transition;
-            this.workspaceArea.style.transition = 'none';
-            this.treeNode.style.transition = 'none';
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {left: '0px'});
-            BMCopyProperties(this.treeNode.style, {width: '0px', paddingLeft: '0px', paddingRight: '0px'});
-
-            // Run an animated layout update on the managed view
-            BMAnimateWithBlock(() => {
-                this.view.layout();
-            }, {duration: 300, easing: 'ease'});
-
-            // Then reset the transitions and layout to the initial step and update the DOM nodes as well
-            BMCopyProperties(this.workspaceArea.style, {left: ''});
-            BMCopyProperties(this.treeNode.style, {width: '', paddingLeft: '', paddingRight: ''});
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            this.workspaceArea.style.transition = workspaceTransition;
-            this.treeNode.style.transition = treeTransition;
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.treeNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {left: '0px'});
-            BMCopyProperties(this.treeNode.style, {width: '0px', paddingLeft: '0px', paddingRight: '0px'});
-
         }
     },
 
@@ -1004,6 +1016,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param event <Event>         The event that triggered this action.
      */
     toggleSettingsPaneWithEvent(event) {
+        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) return;
+
         if (this._isSettingsPaneHidden) {
             this.detailsWidthConstraint.constant = 344;
             BMAnimateWithBlock(() => this.layout(), {duration: 300, easing: 'easeInOutQuad'});
@@ -1013,92 +1027,6 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.detailsWidthConstraint.constant = 0;
             BMAnimateWithBlock(() => this.layout(), {duration: 300, easing: 'easeInOutQuad'});
             this._isSettingsPaneHidden = true;
-        }
-        return;
-        // NOTE: The new code forces several reflows initially, but compared to previously, the reflows now occur before the animation begins instead of
-        // during the animation as previously which drastically improves the framerate of the animation, at a small, impercievable cost before the
-        // animation begins
-        // This is especially important, as while the layout editor is active for a view hierarchy, all layout computation are performed using the
-        // slowest possible code path, re-evaluating all constraints and intrinsic sizes
-        if (this._isSettingsPaneHidden) {
-            this._isSettingsPaneHidden = NO;
-
-            // Temporarily disable the transitions, and update the layout to the final form
-            let workspaceTransition = this.workspaceArea.style.transition;
-            let detailsTransition = this.detailsNode.style.transition;
-            this.workspaceArea.style.transition = 'none';
-            this.detailsNode.style.transition = 'none';
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            this.workspaceArea.style.right = '';
-            this.detailsNode.style.width = '';
-
-            // Run an animated layout update on the managed view
-            BMAnimateWithBlock(() => {
-                this.view.layout();
-            }, {duration: 300, easing: 'ease'});
-
-            // Then reset the transitions and layout to the initial step and update the DOM nodes as well
-            BMCopyProperties(this.workspaceArea.style, {right: '0px'});
-            BMCopyProperties(this.detailsNode.style, {width: '0px'});
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            this.workspaceArea.style.transition = workspaceTransition;
-            this.detailsNode.style.transition = detailsTransition;
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {right: ''});
-            BMCopyProperties(this.detailsNode.style, {width: ''});
-
-        }
-        else {
-            this._isSettingsPaneHidden = YES;
-
-            // Temporarily disable the transitions, and update the layout to the final form
-            let workspaceTransition = this.workspaceArea.style.transition;
-            let detailsTransition = this.detailsNode.style.transition;
-            this.workspaceArea.style.transition = 'none';
-            this.detailsNode.style.transition = 'none';
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {right: '0px'});
-            BMCopyProperties(this.detailsNode.style, {width: '0px'});
-
-            // Run an animated layout update on the managed view
-            BMAnimateWithBlock(() => {
-                this.view.layout();
-            }, {duration: 300, easing: 'ease'});
-
-            // Then reset the transitions and layout to the initial step and update the DOM nodes as well
-            BMCopyProperties(this.workspaceArea.style, {right: ''});
-            BMCopyProperties(this.detailsNode.style, {width: ''});
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            this.workspaceArea.style.transition = workspaceTransition;
-            this.detailsNode.style.transition = detailsTransition;
-
-            // Trigger a reflow to activate the CSS transition changes
-            this.workspaceArea.offsetHeight;
-            this.detailsNode.offsetHeight;
-
-            BMCopyProperties(this.workspaceArea.style, {right: '0px'});
-            BMCopyProperties(this.detailsNode.style, {width: '0px'});
-
         }
     },
 
