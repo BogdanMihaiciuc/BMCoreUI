@@ -1526,7 +1526,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
         this._settingSections.length = 0;
 
         if (this._intrinsicResistanceSection) {
-            this._settingSections.push(this._intrinsicResistanceSection);
+            if (view.supportsIntrinsicSize) this._settingSections.push(this._intrinsicResistanceSection);
         }
         else {
             const intrinsicResistanceSection = BMLayoutEditorSettingsSection.section();
@@ -1534,18 +1534,20 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
             intrinsicResistanceSection.name = 'Intrinsic Size Resistance';
             intrinsicResistanceSection._settings[0] = BMLayoutEditorSetting.settingWithName('Compression', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'compressionResistance'});
             intrinsicResistanceSection._settings[1] = BMLayoutEditorSetting.settingWithName('Expansion', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'expansionResistance'});
-            this._settingSections.push(intrinsicResistanceSection);
+            if (view.supportsIntrinsicSize) this._settingSections.push(intrinsicResistanceSection);
         }
 
+        /*
         if (this._intrinsicSizeSection) {
-            this._settingSections.push(this._intrinsicSizeSection);
+            if (view.supportsIntrinsicSize) this._settingSections.push(this._intrinsicSizeSection);
         }
         else {
             const intrinsicSizeSection = BMLayoutEditorSettingsSection.section();
             this._intrinsicSizeSection = intrinsicSizeSection;
             intrinsicSizeSection._settings[0] = BMLayoutEditorSetting.settingWithName('Intrinsic Size', {kind: BMLayoutEditorSettingKind.Info, target: view, property: 'supportsIntrinsicSize'});
-            this._settingSections.push(intrinsicSizeSection);
+            if (view.supportsIntrinsicSize) this._settingSections.push(intrinsicSizeSection);
         }
+        */
 
         const constraintViewPicker = this._constraintViewPickerSection || BMLayoutEditorSettingsSection.section();
         this._constraintViewPickerSection = constraintViewPicker;
