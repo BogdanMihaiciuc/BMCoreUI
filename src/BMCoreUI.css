@@ -1097,11 +1097,24 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	padding-bottom: 4px;
 
 	background-color: rgba(255, 255, 255, .8);
-	backdrop-filter: blur(25px);
-	-webkit-backdrop-filter: blur(25px);
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 
 	border-radius: 4px;
+}
+
+.BMLayoutEditorConstraintPopup::before, .BMMenu::before {
+	content: '';
+
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+
+	border-radius: 4px;
+
+	backdrop-filter: blur(25px);
+	-webkit-backdrop-filter: blur(25px);
 }
 
 .BMMenuSourceNodeShadow {
@@ -1129,12 +1142,20 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 @media (prefers-color-scheme: dark) {
 	.BMLayoutEditorConstraintPopup, .BMMenu {
-		background-color: rgba(50, 50, 50, .8);
-		box-shadow: 0px 4px 8px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(255, 255, 255, .25) inset;
+		background-color: rgba(50, 50, 50, .75);
+		box-shadow: 0px 4px 8px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(0, 0, 0, .66);
+	}
+
+	.BMLayoutEditorConstraintPopup::before, .BMMenu::before {
+		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .25) inset;
 	}
 
 	.BMMenuTouch {
 		box-shadow: 0px 4px 8px rgba(0, 0, 0, .33);
+	}
+
+	.BMMenuTouch::before {
+		box-shadow: none;
 	}
 }
 
@@ -1799,6 +1820,13 @@ BMLayoutEditorDetailsItemBadge {
 	z-index: 10;
 }
 
+.BMWindowDragHandle.BMLayoutEditorViewDragHandle {
+	color: transparent;
+	pointer-events: none;
+	right: 0;
+	bottom: 0;
+}
+
 .BMLayoutEditorXRay .BMLayoutEditorViewSelector {
 	border: 1px solid rgba(128, 128, 128, 1);
 	visibility: visible;
@@ -1815,6 +1843,11 @@ BMLayoutEditorDetailsItemBadge {
 
 .BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorSelected {
 	border: 2px solid rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorViewSelectorSelected > .BMWindowDragHandle.BMLayoutEditorViewDragHandle {
+	color: rgba(0, 128, 255, 1);
+	pointer-events: all;
 }
 
 .BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorSelected {
