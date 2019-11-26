@@ -16,7 +16,7 @@ import {BMWindow} from '../BMWindow/BMWindow'
 import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
-import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell } from './BMLayoutEditorSettingCells'
+import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell } from './BMLayoutEditorSettingCells'
 import { settings } from 'cluster'
 
 /**
@@ -642,6 +642,7 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         collectionView.registerCellClass(BMLayoutEditorSettingsTitleCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Title});
         collectionView.registerCellClass(BMLayoutEditorSettingsIntegerCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Integer});
         collectionView.registerCellClass(BMLayoutEditorSettingsNumberCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Number});
+        collectionView.registerCellClass(BMLayoutEditorSettingsConstantCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Constant});
         collectionView.registerCellClass(BMLayoutEditorSettingsStringCell, {forReuseIdentifier: BMLayoutEditorSettingKind.String});
         collectionView.registerCellClass(BMLayoutEditorSettingsBooleanCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Boolean});
         collectionView.registerCellClass(BMLayoutEditorSettingsReadonlyCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Info});
@@ -1276,12 +1277,12 @@ BMLayoutEditorSetting.prototype = {
 
     /**
      * Tests whether this setting and the given setting are equivalent.
-     * Two settings are equivalent if they have the same name, target object and size class.
+     * Two settings are equivalent if they have the same name, target object, target property and size class.
      * @param setting <BMLayoutEditorSetting>       The setting to test against.
      * @return <Boolean>                            `YES` if the settings are equivalent, `NO` otherwise.
      */
     isEqualToSetting(setting) {
-        const result = setting.name == this.name && setting.target == this.target && setting._sizeClass == this._sizeClass;
+        const result = setting.name == this.name && setting.target == this.target && setting._sizeClass == this._sizeClass && setting.property == this.property;
         return result;
     }
 }
@@ -1768,11 +1769,11 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         if (constraint._targetView) {
             secondView._settings[0] = BMLayoutEditorSetting.settingWithName('Multiplier', {kind: BMLayoutEditorSettingKind.Number, target: constraint, property: '_multiplier'});
             secondView._settings[1] = BMLayoutEditorSetting.settingWithName('Second View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_targetView'});
-            secondView._settings[2] = BMLayoutEditorEnumSetting.settingWithName('Second Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_targetViewAttribute'});
+            secondView._settings[2] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_targetViewAttribute'});
             secondView._settings[2].options = attributeOptions;
         }
         let constantSetting;
-        secondView._settings[secondView._settings.length] = constantSetting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.String, target: constraint, variations: YES, property: 'constant'});
+        secondView._settings[secondView._settings.length] = constantSetting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
         constantSetting.automaticallyExpandsVariations = YES;
         this._attributesTab._settingSections.push(secondView);
 

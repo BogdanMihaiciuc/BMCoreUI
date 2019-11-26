@@ -80,6 +80,8 @@ The new method can be enabled by setting the global `BM_LAYOUT_EDITOR_USE_SETTIN
  * The navigation tree is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resized.
  * The settings sidebar is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resied. Whenever the settings inspector is dismissed, selecting a view or constraint will cause it to reappear.
 
+When a view doesn't expose an intrinsic size, the compression and expansion resistance settings will no longer be displayed by the layout editor.
+
 When using the settings view, it is no longer required to subclass the layout editor to enable custom settings. The settings are now organized in:
  * The settings view is the root of the settings inspector and contains one or several *settings panels*. Only one settings panel can be visible at any time and CoreUI manages creating and destroying these panels.
  * A settings panel can contain one or more tabs. Tabs are represented by `BMLayoutEditorSettingsTab` objects.
@@ -96,6 +98,10 @@ After the tabs are created and whenever they are updated, for each tab, CoreUI w
  * `layoutEditorAdditionalSettingSectionsForTab(_, _)` can be used to add additional settings to a tab. This includes the custom tabs created previously, which normally have no settings of their own.
 
 Similarly, view subclasses can implement the `additionalSettingSectionsForTab(_, {layoutEditor})` to add their own specific settings.
+
+## BMMenu
+
+Resolved an issue that caused the backdrop filter used by this element to not be applied properly.
 
 # 2.5.3
 
