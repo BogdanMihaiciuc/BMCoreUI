@@ -1379,6 +1379,16 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
         });
 
         inputNode.addEventListener('input', event => {
+            const view = this.tab._settingsPanel._referenceView;
+            const constraint = this._setting.target;
+
+            // Note that these are currently static, but this may be used in the future for custom constraint or view properties as well at which point they may become
+            // editable
+            const property = 'constant';
+            const capitalizedPropertyName = 'Constant';
+
+            if (!view || !constraint) return;
+
             const number = parseFloat(inputNode.value);
             const constantValue = isNaN(number) ? inputNode.value : number;
 
@@ -1394,7 +1404,7 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
 
                 // Then add the filtered options
                 for (const option of filteredSuggestions) {
-                    menu.appendChild(this.constraintOptionWithLabel(option, {action: () => {
+                    menu.appendChild(this.layoutEditor.constraintOptionWithLabel(option, {action: () => {
                         menu = undefined;
                         inputNode.value = option;
                         inputNode.dispatchEvent(new Event('input'));
