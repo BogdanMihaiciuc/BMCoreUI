@@ -619,21 +619,26 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 			dragHandle.addEventListener('mousedown', event => {
 	
 				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
-				let lastPosition = BMPointMake(event.clientX, event.clientY);
+                let lastPosition = BMPointMake(event.clientX, event.clientY);
+                
+                let didRemoveConstraints = NO;
 	
 				let mouseMoveEventListener = event => {
+                    if (!didRemoveConstraints) {
+                        this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                        didRemoveConstraints = YES;
+                    }
+
                     let position = BMPointMake(event.clientX, event.clientY);
                     const frame = subview.frame.copy();
-					frame.size.width = size.width + position.x - lastPosition.x;
-					frame.size.height = size.height + position.y - lastPosition.y;
+					frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
+					frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
 					subview.frame = frame;
-					size = BMSizeMake(size.width + position.x - lastPosition.x, size.height + position.y - lastPosition.y);
+					size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
                     lastPosition = position;
                     
                     event.preventDefault();
                     event.stopPropagation();
-
-                    this.selectView(subview);
 				};
 
 				let mask = document.createElement('div');
@@ -647,6 +652,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 					mask.remove();
                     event.preventDefault();
                     event.stopPropagation();
+
+                    this.selectView(subview);
 				}
 	
 				window.addEventListener('mousemove', mouseMoveEventListener, YES);
@@ -668,7 +675,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 				touchDragHandlePoint = event.changedTouches[0].identifier;
 	
 				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
-				let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+                let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+                
+                let didRemoveConstraints = NO;
 	
 				let mouseMoveEventListener = event => {
 					// Look for the actively tracked touch point
@@ -681,14 +690,19 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 					}
 	
 					// If the actively tracked touch point did not move, do not process this event
-					if (!touch) return;
+                    if (!touch) return;
+                    
+                    if (!didRemoveConstraints) {
+                        this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                        didRemoveConstraints = YES;
+                    }
 	
 					let position = BMPointMake(touch.clientX, touch.clientY);
                     const frame = subview.frame.copy();
-					frame.size.width = size.width + position.x - lastPosition.x;
-					frame.size.height = size.height + position.y - lastPosition.y;
+					frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
+					frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
 					subview.frame = frame;
-					size = BMSizeMake(size.width + position.x - lastPosition.x, size.height + position.y - lastPosition.y);
+					size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
 					lastPosition = position;
                     event.preventDefault();
                     event.stopPropagation();
@@ -853,7 +867,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
             detailsNode.classList.add('BMLayoutEditorDetailsView');
 
-            const frame = BMRectMake(window.innerWidth - 64 - 384, 56 + 64, 384, window.innerHeight - 56 - 128);
+            const frame = BMRectMake(window.innerWidth - 64 - 384, 56 + 64, 320, Math.min(window.innerHeight - 56 - 128, 576));
             const detailsToolWindow = BMToolWindow.toolWindowWithFrame(frame, {forWindow: this});
             detailsToolWindow.addSubview(this.detailsView);
             this.detailsView.left.equalTo(detailsToolWindow.left).isActive = YES;
@@ -1482,9 +1496,51 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const workspaceWrapper = this.workspaceWrapperView.node;
 
         // Set up the touch zoom and pan gestures
+        let lastFirstTouch;
+        let lastSecondTouch;
+        let lastCenterPoint;
+        let lastDistance;
         workspaceWrapper.addEventListener('touchstart', event => {
+            // prevent panning while creating touch constraints
+            if (this.isCreatingTouchConstraints) return;
 
-        });
+            if (event.touches.length == 2) {
+                lastFirstTouch = BMPointMake(event.touches[0].pageX, event.touches[0].pageY);
+                lastSecondTouch = BMPointMake(event.touches[1].pageX, event.touches[1].pageY);
+                lastCenterPoint = BMPointMake((lastFirstTouch.x + lastSecondTouch.x) / 2, (lastFirstTouch.y + lastSecondTouch.y) / 2);
+                lastDistance = lastFirstTouch.distanceToPoint(lastSecondTouch);
+
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        }, YES);
+
+        workspaceWrapper.addEventListener('touchmove', event => {
+            // prevent panning while creating touch constraints
+            if (this.isCreatingTouchConstraints) return;
+
+            if (event.touches.length == 2) {
+                event.stopPropagation();
+                event.preventDefault();
+
+                const firstTouch = BMPointMake(event.touches[0].pageX, event.touches[0].pageY);
+                const secondTouch = BMPointMake(event.touches[1].pageX, event.touches[1].pageY);
+                const centerPoint = BMPointMake((firstTouch.x + secondTouch.x) / 2, (firstTouch.y + secondTouch.y) / 2);
+
+                const displacement = BMPointMake(centerPoint.x - lastCenterPoint.x, centerPoint.y - lastCenterPoint.y);
+                const offset = BMPointMake(this.panOffset.x + displacement.x, this.panOffset.y + displacement.y);
+                this.panOffset = offset;
+
+                const distance = firstTouch.distanceToPoint(secondTouch);
+                const distanceOffset = distance / lastDistance - 1;
+                this.scale += distanceOffset / 1.25;
+
+                lastFirstTouch = firstTouch;
+                lastSecondTouch = secondTouch;
+                lastCenterPoint = centerPoint;
+                lastDistance = distance;
+            }
+        }, YES);
 
         // Set up the mousewheel zoom and pan gestures
         workspaceWrapper.addEventListener('wheel', event => {
@@ -2067,6 +2123,88 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         node.addEventListener('mousedown', mousedownEventListener);
         node.addEventListener('touchstart', mousedownEventListener);
 
+        
+        // Create the handler for tap drags, which temporarily displaces the view's frame
+        node.addEventListener('touchstart', event => {
+            const touchIdentifier = event.changedTouches[0].identifier;
+            const touch = event.changedTouches[0];
+
+            // Save a reference to the current frame of the view
+            let frame = view.frame || BMRectMakeWithNodeFrame(view.node);
+
+            let frameDidMove = false;
+
+            // Retain a reference to the current position
+            let position = BMPointMake(touch.pageX, touch.pageY);
+
+            let didRemoveConstraints = NO;
+
+            let mousemoveEventListener = event => {
+                let touch;
+                for (let i = 0; i < event.changedTouches.length; i++) {
+                    const changedTouch = event.changedTouches;
+                    if (changedTouch.identifier == touchIdentifier) {
+                        touch = changedTouch;
+                        break;
+                    }
+                }
+
+                if (!touch) return;
+                frameDidMove = true;
+                
+                if (!didRemoveConstraints) {
+                    this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                    didRemoveConstraints = YES;
+                }
+
+                let displacement = BMPointMake(touch.pageX - position.x, touch.pageY - position.y);
+                if (this.scale != 1) {
+                    // Because the elements can be scaled, the displacement needs to have the inverse scaling applied 
+                    // to avoid the element moving out of sync with the pointer
+                    displacement.multiplyWithScalar(1 / this.scale);
+                }
+                let displacedFrame = frame.copy();
+                displacedFrame.offsetWithX(displacement.x, {y: displacement.y});
+                view.frame = displacedFrame;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                event.stopPropagation();
+            };
+
+            let mouseupEventListener = event => {
+                let touch;
+                for (let i = 0; i < event.changedTouches.length; i++) {
+                    const changedTouch = event.changedTouches;
+                    if (changedTouch.identifier == touchIdentifier) {
+                        touch = changedTouch;
+                        break;
+                    }
+                }
+
+                if (!touch) return;
+
+                node.removeEventListener('touchend', mouseupEventListener, {capture: YES});
+                node.removeEventListener('touchcancel', mouseupEventListener, {capture: YES});
+                node.removeEventListener('touchmove', mousemoveEventListener, {capture: YES});
+                
+                if (frameDidMove) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    event.stopPropagation();
+
+                    this.selectView(view);
+                }
+
+            };
+
+            node.addEventListener('touchend', mouseupEventListener, {capture: YES});
+            node.addEventListener('touchcancel', mouseupEventListener, {capture: YES});
+            node.addEventListener('touchmove', mousemoveEventListener, {capture: YES});
+        });
+
+        
+
         // Create the handler for left-click drags, which temporarily displaces the view's frame.
         node.addEventListener('mousedown', event => {
             if (event.button != 0) return;
@@ -2078,9 +2216,15 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             // Retain a reference to the current position
             let position = BMPointMake(event.pageX, event.pageY);
+            let didRemoveConstraints = NO;
 
             let mousemoveEventListener = event => {
                 frameDidMove = true;
+
+                if (!didRemoveConstraints) {
+                    this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                    didRemoveConstraints = YES;
+                }
 
                 let displacement = BMPointMake(event.pageX - position.x, event.pageY - position.y);
                 if (this.scale != 1) {
@@ -2091,8 +2235,6 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 let displacedFrame = frame.copy();
                 displacedFrame.offsetWithX(displacement.x, {y: displacement.y});
                 view.frame = displacedFrame;
-
-                this.selectView(view);
 
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -2107,6 +2249,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     event.stopPropagation();
+
+                    this.selectView(view);
                 }
 
             };
