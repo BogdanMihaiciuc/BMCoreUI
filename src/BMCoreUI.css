@@ -1115,6 +1115,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	backdrop-filter: blur(25px);
 	-webkit-backdrop-filter: blur(25px);
+
+	z-index: -1;
 }
 
 .BMMenuSourceNodeShadow {
