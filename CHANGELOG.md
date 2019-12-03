@@ -46,6 +46,8 @@ When measuring cells, the measurement operation will now run in a separate layou
 
 Resolved an issue that would cause cells to improperly lose their layout attributes during measurement if they had an exact retain count of 1.
 
+Resolved an issue that would cause the `scrollBarSize` property to return an incorrect value during the initial layout pass when `iScroll` was used.
+
 ## BMCollectionViewCell
 
 A new `invalidate` method can now be overriden on collection view cells. This method is invoked prior to the cell being permanently removed and can be used by subclasses to perform any final cleanup they might need.
