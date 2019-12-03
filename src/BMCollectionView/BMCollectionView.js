@@ -582,7 +582,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * In most cases this value is platform dependent, but when using iScroll this value is always 0.
 	 */
 	get scrollBarSize() { // <Number>
-		return this.iScroll ? 0 : BMScrollBarGetSize();
+		return this._usesIScroll ? 0 : BMScrollBarGetSize();
 	},
 	
 	/**
@@ -748,7 +748,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    
 	    this._prepareFrame();
 	    
-	    this._createBounds();
+		this._createBounds();
+		
+		// TODO: Determine why iScroll is initialized later; this would cause the `scrollBarSize` property to return an incorrect value during the initial layout pass
+		// Also check if creating iScroll early has a negative impact on other parts of the initialization
+		if (useCustomScroll && !BM_COLLECTION_VIEW_DISABLE_ISCROLL) {
+			this._usesIScroll = YES;
+		}
 		
 		if (BM_SIMPLE_BENCH) {
 			const date = Date.now();
