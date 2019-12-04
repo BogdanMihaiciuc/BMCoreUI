@@ -2445,27 +2445,32 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					else if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Bottom) {
 						topAdjustment = this.collectionView.frame.size.height - height;
 					}
+
+					// This represents the height that is actually used by rows, excluding spaces and supplementary views
+					let usedHeight = 0;
 					
-					if (topAdjustment != 0) {
-						var sectionsLength = cachedLayout.sections.length;
+					if (topAdjustment != 0 || this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						let sectionsLength = cachedLayout.sections.length;
 						
 						// Displace the sections
-						for (var i = 0; i < sectionsLength; i++) {
-							var section = cachedLayout.sections[i];
+						for (let i = 0; i < sectionsLength; i++) {
+							let section = cachedLayout.sections[i];
 							
 							section.top += topAdjustment;
 							section.bottom += topAdjustment;
 							
 							// Displace all the rows in this sections
-							var rowsLength = section.rows.length;
-							for (var j = 0; j < rowsLength; j++) {
-								var row = section.rows[j];
+							let rowsLength = section.rows.length;
+							for (let j = 0; j < rowsLength; j++) {
+								let row = section.rows[j];
 								
 								row.top += topAdjustment;
 								row.bottom += topAdjustment;
+
+								usedHeight += row.bottom - row.top;
 								
 								// Displace all the cells in the row
-								for (var k = 0; k < row.attributes.length; k++) {
+								for (let k = 0; k < row.attributes.length; k++) {
 									row.attributes[k].frame.origin.y += topAdjustment;
 								}
 							}
@@ -2476,6 +2481,45 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							
 						}
 					}
+
+					// When using the expand gravity, a factor is used to multiply the heights of all rows
+					if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						const spacingSize = height - usedHeight;
+						const usableHeight = this.collectionView.frame.size.height - spacingSize;
+
+						const scaleFactor = usableHeight / usedHeight;
+
+						let displacement = 0;
+
+						// Scale and displace the rows as needed
+						for (const section of this.cachedLayout.sections) {
+							// Displace the header and section origin
+							section.top += displacement;
+							if (section.headerAttributes) section.headerAttributes.frame.origin.y += displacement;
+
+							for (const row of section.rows) {
+								// Displace the row origin
+								const rowHeight = row.bottom - row.top;
+								row.top += displacement;
+
+								// Scale and display each attribute's frame
+								const scaledRowHeight = rowHeight * scaleFactor | 0;
+								for (const attribute of row.attributes) {
+									attribute.frame.origin.y += displacement;
+									attribute.frame.size.height = attribute.frame.size.height * scaleFactor | 0;
+								}
+
+								// Advance the displacement based on the row's new height then displace the row end
+								displacement += scaledRowHeight - rowHeight;
+								row.bottom += displacement;
+							}
+
+							// Displace the section end and the footer
+							section.bottom += displacement;
+							if (section.footerAttributes) section.footerAttributes.frame.origin.y += displacement;
+						}
+					}
+
 				}
 				
 				cachedLayout.size = BMSizeMake(this.collectionView.frame.size.width, Math.max(height, this.collectionView.frame.size.height));
@@ -2495,27 +2539,32 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					else if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Bottom) {
 						leftAdjustment = this.collectionView.frame.size.width - width;
 					}
+
+					// This represents the width that is actually used by rows, excluding spaces and supplementary views
+					let usedWidth = 0;
 					
-					if (leftAdjustment != 0) {
-						var sectionsLength = cachedLayout.sections.length;
+					if (leftAdjustment != 0 || this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						let sectionsLength = cachedLayout.sections.length;
 						
 						// Displace the sections
-						for (var i = 0; i < sectionsLength; i++) {
-							var section = cachedLayout.sections[i];
+						for (let i = 0; i < sectionsLength; i++) {
+							let section = cachedLayout.sections[i];
 							
 							section.left += leftAdjustment;
 							section.right += leftAdjustment;
 							
 							// Displace all the rows in this sections
-							var rowsLength = section.rows.length;
-							for (var j = 0; j < rowsLength; j++) {
-								var row = section.rows[j];
+							let rowsLength = section.rows.length;
+							for (let j = 0; j < rowsLength; j++) {
+								let row = section.rows[j];
 								
 								row.left += leftAdjustment;
 								row.right += leftAdjustment;
+
+								usedWidth += row.right - row.left;
 								
 								// Displace all the cells in the row
-								for (var k = 0; k < row.attributes.length; k++) {
+								for (let k = 0; k < row.attributes.length; k++) {
 									row.attributes[k].frame.origin.x += leftAdjustment;
 								}
 							}
@@ -2524,6 +2573,44 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							if (section.headerAttributes) section.headerAttributes.frame.origin.x += leftAdjustment;
 							if (section.footerAttributes) section.footerAttributes.frame.origin.x += leftAdjustment;
 							
+						}
+					}
+
+					// When using the expand gravity, a factor is used to multiply the heights of all rows
+					if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						const spacingSize = width - usedWidth;
+						const usableWidth = this.collectionView.frame.size.width - spacingSize;
+
+						const scaleFactor = usableWidth / usedWidth;
+
+						let displacement = 0;
+
+						// Scale and displace the rows as needed
+						for (const section of this.cachedLayout.sections) {
+							// Displace the header and section origin
+							section.left += displacement;
+							if (section.headerAttributes) section.headerAttributes.frame.origin.x += displacement;
+
+							for (const row of section.rows) {
+								// Displace the row origin
+								const rowWidth = row.right - row.left;
+								row.left += displacement;
+
+								// Scale and display each attribute's frame
+								const scaledRowHeight = rowWidth * scaleFactor | 0;
+								for (const attribute of row.attributes) {
+									attribute.frame.origin.x += displacement;
+									attribute.frame.size.height = attribute.frame.size.height * scaleFactor | 0;
+								}
+
+								// Advance the displacement based on the row's new width then displace the row end
+								displacement += scaledRowHeight - rowWidth;
+								row.right += displacement;
+							}
+
+							// Displace the section end and the footer
+							section.right += displacement;
+							if (section.footerAttributes) section.footerAttributes.frame.origin.x += displacement;
 						}
 					}
 				}
@@ -2673,7 +2760,8 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					let section = {
 						top: height,
 						bottom: height + footerHeight + headerHeight + (rowBreadth * numberOfRows) + spacingHeight,
-						numberOfObjects: numberOfObjects
+						numberOfObjects,
+						numberOfRows
 					};
 					cachedLayout.sections.push(section);
 					
@@ -2714,6 +2802,38 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							
 						}
 					}
+
+					if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						// With static sizes, all rows and attributes have the same height, so the adjustment can just be directly applied to each row
+						let usedHeight = 0;
+						for (const section of cachedLayout.sections) {
+							usedHeight += section.numberOfRows * rowBreadth;
+						}
+
+						const spacingSize = height - usedHeight;
+						const scaleFactor = (this.collectionView.frame.size.height - spacingSize) / usedHeight;
+
+						// Multiply the height of the prototype rows by the scale factor
+						for (const row of cachedLayout.prototypeRows) {
+							for (const attribute of row.attributes) {
+								attribute.frame.size.height = attribute.frame.size.height * scaleFactor | 0;
+							}
+						}
+
+						// Adjust the bounds of each section as needed
+						let displacement = 0;
+						for (const section of cachedLayout.sections) {
+							section.top += displacement;
+
+							const sectionHeight = section.numberOfRows * rowBreadth;
+							displacement += (sectionHeight * scaleFactor | 0) - sectionHeight;
+
+							section.bottom += displacement;
+						}
+
+						cachedLayout.rowHeight = cachedLayout.rowHeight * scaleFactor | 0;
+						cachedLayout.rowBreadth = cachedLayout.rowBreadth * scaleFactor | 0;
+					}
 				}
 			}
 			else {
@@ -2731,7 +2851,8 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					let section = {
 						left: width,
 						right: width + (breadth * numberOfRows) + spacingWidth,
-						numberOfObjects: numberOfObjects
+						numberOfObjects,
+						numberOfRows
 					};
 					cachedLayout.sections.push(section);
 					
@@ -2769,6 +2890,37 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							section.right += leftAdjustment;
 							
 						}
+					}
+
+					if (this._contentGravity === BMCollectionViewFlowLayoutAlignment.Expand) {
+						// With static sizes, all rows and attributes have the same width, so the adjustment can just be directly applied to each row
+						let usedWidth = 0;
+						for (const section of cachedLayout.sections) {
+							usedWidth += section.numberOfRows * rowBreadth;
+						}
+
+						const spacingSize = width - usedWidth;
+						const scaleFactor = (this.collectionView.frame.size.width - spacingSize) / usedWidth;
+
+						// Multiply the width of the prototype rows by the scale factor
+						for (const row of cachedLayout.prototypeRows) {
+							for (const attribute of row.attributes) {
+								attribute.frame.size.width = attribute.frame.size.width * scaleFactor | 0;
+							}
+						}
+
+						// Adjust the bounds of each section as needed
+						let displacement = 0;
+						for (const section of cachedLayout.sections) {
+							section.left += displacement;
+
+							const sectionWidth = section.numberOfRows * rowBreadth;
+							displacement += (sectionWidth * scaleFactor | 0) - sectionWidth;
+
+							section.right += displacement;
+						}
+						cachedLayout.cellWidth = cachedLayout.cellWidth * scaleFactor | 0;
+						cachedLayout.rowBreadth = cachedLayout.rowBreadth * scaleFactor | 0;
 					}
 				}
 			}
@@ -3036,7 +3188,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		}
 		else {
 			return this.cachedLayout.sections.length ? 
-				BMSizeMake(Math.max(this.cachedLayout.sections[this.cachedLayout.sections.length - 1].right + this._bottomPadding + this.sectionInsets.right, 
+				BMSizeMake(Math.max(this.cachedLayout.sections[this.cachedLayout.sections.length - 1].right + this.sectionInsets.right, 
 							this.collectionView.frame.size.width), 
 							this.collectionView.frame.size.height) : 
 				this.collectionView.frame.size.copy();

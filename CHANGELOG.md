@@ -34,6 +34,10 @@ Resolved a crash that could occur in certain situations when using automatic cel
 
 Resolved an issue that would cause the `End` gravity to behave the same as `Start`.
 
+The `Expand` constant can now be used for the `contentGravity` property and will expand the rows along the primary scrolling axis to take up the entire available space. The sizes of supplementary views and spacing will be kept constant.
+
+Resolved an issue that could cause the content width to add the size of the `bottomSpacing` property to the right of the content when using horizontal orientation.
+
 ## BMCollectionView
 
 A new static `collectionView()` method can be used to create a new collection view and a DOMNode for it.
