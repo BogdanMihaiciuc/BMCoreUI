@@ -726,12 +726,24 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 	
 				event.preventDefault();
                 event.stopPropagation();
-			});
+            });
+            
+            // Enable double click to select views
+            let doubleClickTimeout;
 
             selector.addEventListener('click', event => {
                 if (event.altKey) return;
 
                 this.selectView(subview, {withEvent: event});
+                if (!doubleClickTimeout) {
+                    doubleClickTimeout = setTimeout(() => doubleClickTimeout = undefined, 250);
+                }
+                else {
+                    doubleClickTimeout = undefined;
+                    if (!this._detailsToolWindow._visible) {
+                        this._detailsToolWindow.bringToFrontAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)});
+                    }
+                }
 
                 event.stopPropagation();
                 event.stopImmediatePropagation();
@@ -886,10 +898,15 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             closeButton.style.opacity = '1';
             closeButton.style.pointerEvents = 'all';
     
-            closeButton.addEventListener('click', e => detailsToolWindow.dismissAnimated(YES));
+            closeButton.addEventListener('click', e => {
+                this.detailsView._dismissedByUser = YES;
+                detailsToolWindow.dismissAnimated(YES, {toRect: BMRectMakeWithNodeFrame(this._inspectorButton)});
+            });
             detailsToolWindow.node.appendChild(closeButton);
             detailsToolWindow.toolbar.style.height = '64px';
             detailsToolWindow.opensAutomatically = NO;
+
+            this._detailsToolWindow = detailsToolWindow;
         }
         else {
             this.content.appendChild(detailsNode);
@@ -1201,6 +1218,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * The toggle inspector button.
+     */
+    _inspectorButton: undefined, // <DOMNode>
+
+    /**
      * Initializes the toolbar.
      * @param toolbar <DOMNode>     The toolbar DOM node.
      */
@@ -1484,7 +1506,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         toggleSettingsButton.style.opacity = 1;
         toggleSettingsButton.style.pointerEvents = 'all';
 
-        toggleSettingsButton.addEventListener('click', BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? event => this.detailsView._window.toggleAnimated(YES) : event => this.toggleSettingsPaneWithEvent(event));
+        this._inspectorButton = toggleSettingsButton;
+
+        toggleSettingsButton.addEventListener('click', BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? event => this.detailsView._window.toggleAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)}) : event => this.toggleSettingsPaneWithEvent(event));
         toolbar.appendChild(toggleSettingsButton);
 
     },

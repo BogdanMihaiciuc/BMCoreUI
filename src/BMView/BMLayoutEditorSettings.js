@@ -56,8 +56,14 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
      */
     _window: undefined, // <BMWindow, nullable>
 
+    /**
+     * Set to `YES` after the user dismisses the settings window via the close button.
+     * After it is set to `YES`, the window will no longer open after selecting a view.
+     */
+    _dismissedByUser: NO, // <Boolean>
+
     get window() {
-        return this.window;
+        return this._window;
     },
 
     /**
@@ -174,8 +180,8 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
 
         let animated = YES;
 
-        if (this._window && !this._window._visible) {
-            this._window.bringToFrontAnimated(YES);
+        if (this._window && !this._window._visible && !this._dismissedByUser) {
+            this._window.bringToFrontAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._editor._inspectorButton)});
             animated = NO;
         }
 
@@ -221,7 +227,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
 
         let animated = YES;
 
-        if (this._window && !this._window._visible) {
+        if (this._window && !this._window._visible && !this._dismissedByUser) {
             this._window.bringToFrontAnimated(YES);
             animated = NO;
         }

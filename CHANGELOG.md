@@ -84,7 +84,7 @@ The height of the toolbar and the various settings controls has been reduced.
 The manner in which custom settings can be added and the structure and organization of the settings panel has changed. In this release, the change is opt-in and the previous method is still available and enabled by default.
 The new method can be enabled by setting the global `BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW` flag to `YES`. In addition to the changes above, when enabling the settings view, the layout editor will also have the following changes:
  * The navigation tree is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resized.
- * The settings sidebar is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resied. Whenever the settings inspector is dismissed, selecting a view or constraint will cause it to reappear.
+ * The settings sidebar is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resied. Whenever the settings inspector is dismissed, double clicking a view will cause it to reappear.
 
 When a view doesn't expose an intrinsic size, the compression and expansion resistance settings will no longer be displayed by the layout editor.
 
