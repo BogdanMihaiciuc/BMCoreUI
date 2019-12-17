@@ -710,7 +710,7 @@ BMLayoutConstraint.prototype = {
 	},
 	set priority(priority) {
 		if (this._priority != priority) {
-			this.priority = priority;
+			this._priority = priority;
 			return this._updateConfiguration();
 			
 			this._sourceView.needsLayout = YES;
