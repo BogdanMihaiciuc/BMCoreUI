@@ -2338,6 +2338,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    // Don't handle events originating from buttons and input elements or their direct descendants
 		    if (event.target.nodeName == 'BUTTON' || event.target.nodeName == 'INPUT' || event.target.nodeName == 'LABEL' || event.target.nodeName == 'A' ||
 				event.target.parentNode.nodeName == 'BUTTON' || event.target.parentNode.nodeName == 'INPUT' || event.target.parentNode.nodeName == 'LABEL' ||
+				event.target.classList.contains('BMCollectionViewCellEventHandler') ||
 				// This a specific Thingworx workaround that depends on jQuery
 				(window.$ ? window.$(event.target).parents('.widget-dhxdropdown').length : false)) {
 			    return;
