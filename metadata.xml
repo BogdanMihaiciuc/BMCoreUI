@@ -23,6 +23,7 @@
         <FileResource type="JS" file="BMView/BMScrollView.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMView/BMLayoutGuide.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMView/BMAttributedLabelView.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMView/BMTextField.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMCollectionView/BMCollectionViewLayoutAttributes.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMCollectionView/BMCollectionViewCell.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMCollectionView/BMCollectionViewLayout.js" description="" isDevelopment="true" isRuntime="true"/>
