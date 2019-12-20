@@ -40,7 +40,7 @@ Resolved an issue that could cause the content width to add the size of the `bot
 
 ## BMCollectionView
 
-A new static `collectionView()` method can be used to create a new collection view and a DOMNode for it.
+A new static `collectionView()` method can be used to create a new collection view and a `DOMNode` for it.
 
 A new `measureSizesOfCellsAtIndexPaths(_)` method can be used to measure several cells in bulk. When measuring multiple cells, this can be faster than individually measuring each cell, as the measurements will happen on the same layout queue to reduce the amount of layout thrashing. Note that in order to be measured, new cells have to be created, so this method should not be used with a very large amount of cells.
 
@@ -80,6 +80,14 @@ There is also a slider control and precise zoom input box available in the toolb
 A new **Reset** button is now available in the toolbar that can be used to reset the zoom level and pan position.
 
 The height of the toolbar and the various settings controls has been reduced.
+
+The following keyboard shortcuts are now available when a view is selected:
+ * `⌘←`: Selects the first active constraint that affects the view's `Leading` or `Left` attribute. If such a constraint isn't available but the view has a constraints that affect its `Width` and `Trailing` or `Right` attributes, the `Width` constraint will be selected. If no such constraints are available, an appropriate `Leading` or `Width` constraint is created and selected.
+ * `⌘↑`: Selects the first active constraint that affects the view's `Top` attribute. If such a constraint isn't available but the view has a constraints that affect its `Height` and `Bottom` attributes, the `Height` constraint will be selected. If no such constraints are available, an appropriate `Top` constraint is created and selected.
+ * `⌘→`: Selects the first active constraint that affects the view's `Trailing`, `Right` or `Width` attribute. If no such constraint is available, an appropriate `Trailing` or `Width` constraint is created.
+ * `⌘↓`: Selects the first active constraint that affects the view's `Bottom` or `Height` attribute. If no such constraint is available, an appropriate `Bottom` or `Height` constraint is created.
+ * `⌘A`: Creates missing constraints for the selected view.
+In all of the above cases, if a size class is selected, the newly created constraints will only be activated for the given size class.
 
 The manner in which custom settings can be added and the structure and organization of the settings panel has changed. In this release, the change is opt-in and the previous method is still available and enabled by default.
 The new method can be enabled by setting the global `BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW` flag to `YES`. In addition to the changes above, when enabling the settings view, the layout editor will also have the following changes:

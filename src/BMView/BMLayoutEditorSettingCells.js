@@ -322,7 +322,7 @@ BMLayoutEditorSettingsConstraintCell.prototype = BMExtend(Object.create(BMLayout
         constraintView.top.equalTo(this.top, {plus: 8}).isActive = YES;
         constraintView.bottom.equalTo(this.bottom).isActive = YES;
 
-        constraintView.node.className = 'BMLayoutEditorDetailsConstraintItem BMLayoutEditorDetailsConstraintItemCell';
+        constraintView.node.className = 'BMLayoutEditorDetailsConstraintItem BMLayoutEditorDetailsConstraintItemCell BMCollectionViewCellEventHandler';
 
         constraintView.node.addEventListener('click', event => {
             const constraint = this.setting.target;
@@ -448,7 +448,7 @@ BMLayoutEditorSettingsDeactivateConstraintsCell.prototype = BMExtend(Object.crea
         buttonView.top.equalTo(this.contentView.top, {plus: 8}).isActive = YES;
         buttonView.bottom.equalTo(this.contentView.bottom, {plus: -8}).isActive = YES;
 
-        buttonView.node.className = 'BMWindowButton';
+        buttonView.node.className = 'BMWindowButton BMCollectionViewCellEventHandler';
         buttonView.node.style.boxSizing = 'border-box';
         buttonView.node.style.textAlign = 'center';
         buttonView.node.style.pointer = 'default';
@@ -688,8 +688,8 @@ BMLayoutEditorSettingsViewCell.prototype = BMExtend(Object.create(BMLayoutEditor
 
         const view = setting.target[setting.property];
         const arrowSpan = document.createElement('span');
-        arrowSpan.innerText = '▶';
-        arrowSpan.className = 'BMLayoutEditorDetailsItemViewLink';
+        arrowSpan.innerText = '›';
+        arrowSpan.className = 'BMLayoutEditorDetailsItemViewLink BMCollectionViewCellEventHandler';
         const viewSpan = document.createElement('span');
         viewSpan.innerText = ' ' + (view.debuggingName || view.node.id);
         this._inputView.node.innerHTML = '';
@@ -734,7 +734,7 @@ BMLayoutEditorSettingsSegmentCell.prototype = BMExtend(Object.create(BMLayoutEdi
         for (const menuItem of setting.options) {
             // Create the clickable tabs
             const tabNode = document.createElement('img');
-            tabNode.className = 'BMLayoutEditorDetailsTab';
+            tabNode.className = 'BMLayoutEditorDetailsTab BMCollectionViewCellEventHandler';
             tabNode.src = menuItem.icon;
             this.contentView.contentNode.appendChild(tabNode);
 

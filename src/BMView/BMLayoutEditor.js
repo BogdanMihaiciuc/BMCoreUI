@@ -18,6 +18,7 @@ import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutG
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { _BMLayoutEditorSettingsView } from './BMLayoutEditorSettings'
 import { BMToolWindow } from '../BMWindow/BMToolWindow'
+import { BMTextField } from './BMTextField'
 
 
 var _BMWindowAnimationDurationDefault = 400;
@@ -1654,11 +1655,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      *  @param knobPosition <Number, nullable>          Defaults to half of the frame's width. The position along the top frame on which to place the knob.
      *                                                  This coordinate is relative to the popover's frame and represents the center position of the knob.
      *                                                  This position should not overlap the specified corner radius.
+     *  @param gravity <String, nullable>               Defaults to `"Top"`. If set to `"Bottom"`, the popover knob will be placed at the bottom of the popover.
      * }
      * @return <String>                                 The SVG path.
      */
-    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 4, inset = 0, knobPosition = undefined} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
-        let top = size * Math.SQRT2 / 2 | 0;
+    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 4, inset = 0, knobPosition = undefined, gravity = 'Top'} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
+        let top = gravity === 'Bottom' ? 0 : size * Math.SQRT2 / 2 | 0;
+        let bottom = gravity === 'Bottom' ? frame.size.height - size * Math.SQRT2 / 2 | 0 : frame.size.height;
         const left = inset;
 
         if (inset) {
@@ -1667,6 +1670,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             frame.insetWithInset(BMInsetMakeWithEqualInsets(inset));
             radius = radius + inset;
             top += inset;
+            bottom -= inset;
         }
 
         if (knobPosition === undefined) {
@@ -1679,10 +1683,20 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const knobWidth = size * Math.SQRT2;
         const knobHeight = knobWidth / 2 | 0;
 
-        let path =  `M${left + radius},${top} L${(knobPosition - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} L${frame.size.width + left - radius},${top} `;
-        path +=     `Q${frame.size.width + left},${top} ${frame.size.width + left},${top + radius} L${frame.size.width + left},${frame.size.height + inset - radius} `;
-        path +=     `Q${frame.size.width + left},${frame.size.height + inset} ${frame.size.width + left - radius},${frame.size.height + inset} L${radius},${frame.size.height + inset} `;
-        path +=     `Q${left},${frame.size.height + inset} ${left},${frame.size.height + inset - radius} L${left},${top + radius} Q${left},${top} ${radius},${top} Z`;
+        // bottom should be equivalent to frame.size.height + inset
+        const pathTop = gravity === 'Bottom' ?
+            `M${left + radius},${top} L${frame.size.width + left - radius},${top} ` :
+            `M${left + radius},${top} L${(knobPosition - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} L${frame.size.width + left - radius},${top} `;
+
+        const pathBottom = gravity === 'Bottom' ?
+            `Q${frame.size.width + left},${bottom} ${frame.size.width + left - radius},${bottom} L${(knobPosition + knobWidth / 2 + left)},${bottom} l${(-knobWidth / 2)},${knobHeight} l${(-knobWidth / 2)},${-knobHeight} L${radius},${bottom} ` :
+            `Q${frame.size.width + left},${bottom} ${frame.size.width + left - radius},${bottom} L${radius},${bottom} `;
+
+
+        let path =  pathTop;
+        path +=     `Q${frame.size.width + left},${top} ${frame.size.width + left},${top + radius} L${frame.size.width + left},${bottom - radius} `;
+        path +=     pathBottom;
+        path +=     `Q${left},${bottom} ${left},${bottom - radius} L${left},${top + radius} Q${left},${top} ${radius},${top} Z`;
 
         return path;
     },
@@ -1717,8 +1731,6 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // Create the frame for the popover container and move it accordingly
         const frame = BMRectMake(window.innerWidth - 320 - 16, location.y + 16, 320, 380 + 8);
         const knobPosition = location.x - frame.origin.x;
-        /*frame.origin.x = location;
-        frame.origin.y = location.y + 16;*/
 
         const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition})}')`;
         const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1, knobPosition})}')`;
@@ -1817,6 +1829,196 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 this.layoutVariableProvider.persistLayoutVariables();
             }
             variablesCollection.release();
+            blocker.remove();
+            for (const layer of popoverLayers) {
+                layer.style.pointerEvents = 'none';
+    
+                __BMVelocityAnimate(layer, {scaleX: .9, scaleY: .9, opacity: 0}, {duration: 200, easing: 'easeInOutQuart', complete() {layer.remove(); }});
+            }
+        });
+    },
+
+    /**
+     * Brings up a popover to edit a constraint's constant.
+     * @param event <Event>                             The event that triggered this action.
+     * {
+     *  @param forConstraint <BMLayoutConstraint>       The constraint whose constant should be edited.
+     *  @param withReferenceView <BMView>               The reference view.
+     * }
+     */
+    _showConstantPopupWithEvent(event, {forConstraint: constraint, withReferenceView: referenceView}) {
+        // TODO Extract the popover code into a common method
+        const popoverParentElement = document.body;
+
+        // Create the popover container
+        const popoverContainer = document.createElement('div');
+        popoverContainer.className = 'BMPopoverContainer BMPopoverContainerConstant';
+
+        // A second layer is used to draw the drop shadow, due to the unusual shape of the popover window
+        const popoverDropShadowContainer = document.createElement('div');
+        popoverDropShadowContainer.className = 'BMPopoverContainerLayer BMPopoverDropShadowContainer';
+        const popoverDropShadowContent = document.createElement('div');
+        popoverDropShadowContent.className = 'BMPopoverDropShadowContent';
+        popoverDropShadowContainer.appendChild(popoverDropShadowContent);
+
+        // A third layer is used to draw the background
+        const popoverBackground = document.createElement('div');
+        popoverBackground.className = 'BMPopoverBackground';
+
+        popoverBackground.innerHTML = '<div class="BMPopoverBackgroundDarkModeContainer"><div class="BMPopoverBackgroundDarkModeOutline"></div><div class="BMPopoverBackgroundDarkModeFill"></div></div>';
+
+        // Find out the location where the popover should be
+        const location = BMPointMake(event.clientX | 0, event.clientY | 0);
+
+        const height = this.activeSizeClass ? 96 : 64;
+
+        // Create the frame for the popover container and move it accordingly
+        const frame = BMRectMake(location.x - 120, location.y - height - 8, 240, height + 8);
+        const knobPosition = location.x - frame.origin.x;
+
+        const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition, gravity: 'Bottom'})}')`;
+        const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1, knobPosition, gravity: 'Bottom'})}')`;
+
+        // Assign the frame to the window, and to the drop shadow container
+        const positionStyle = {
+            left: frame.origin.x + 'px',
+            top: frame.origin.y + 'px',
+            width: frame.size.width + 'px',
+            height: frame.size.height + 'px'
+        };
+        BMCopyProperties(popoverContainer.style, positionStyle);
+
+        BMCopyProperties(popoverBackground.style, positionStyle);
+        popoverBackground.style.clipPath = path;
+        popoverBackground.style.webkitClipPath = path;
+
+        const popoverDarkModeFill = popoverBackground.querySelector('.BMPopoverBackgroundDarkModeFill');
+        popoverDarkModeFill.style.clipPath = outlinePath;
+        popoverDarkModeFill.style.webkitClipPath = outlinePath;
+
+        BMCopyProperties(popoverDropShadowContainer.style, positionStyle);
+        popoverDropShadowContent.style.clipPath = path;
+        popoverDropShadowContent.style.webkitClipPath = path;
+
+        // Create the click blocker behind the popover
+        const blocker = document.createElement('div');
+        blocker.className = 'BMPopoverOverlay';
+        popoverParentElement.appendChild(blocker);
+
+        // Add the popover to the document
+        popoverParentElement.appendChild(popoverBackground);
+        popoverParentElement.appendChild(popoverDropShadowContainer);
+        popoverParentElement.appendChild(popoverContainer);
+
+        const editor = this;
+
+        if (this.activeSizeClass) {
+            const blankIcon = document.createElement('div');
+            blankIcon.className = 'BMLayoutEditorDetailsItemBadgeIcon';
+            blankIcon.style.flexShrink = '0';
+            blankIcon.style.top = '1px';
+            popoverContainer.appendChild(blankIcon);
+
+            const label = document.createElement('div');
+            label.className = 'BMLayoutEditorDetailsTitleCell';
+            label.innerText = 'Constant:';
+            label.style.paddingRight = '8px';
+            popoverContainer.appendChild(label);
+
+            const box = document.createElement('input');
+            box.type = 'text';
+            box.style.width = '50px';
+            box.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemTextValue';
+            popoverContainer.appendChild(box);
+
+            const textField = BMTextField.textFieldForInputNode(box);
+            textField.delegate = {
+                textFieldSuggestionsForText() {
+                    const suggestions = [];
+                    // Load up the variable names
+                    const variables = Object.keys(editor.layoutVariableProvider.layoutVariables);
+                    const uniqueNames = new Set;
+                    variables.forEach(variable => uniqueNames.add(variable));
+        
+                    // Create a pair of regular and minus-prefixed variable names
+                    for (const variable of uniqueNames) {
+                        suggestions.unshift(variable);
+                        suggestions.push('-' + variable);
+                    }
+
+                    return suggestions;
+                },
+
+                textFieldShouldShowSuggestions() {
+                    return NO;
+                }
+            };
+
+            const flexDivider = document.createElement('div');
+            flexDivider.style.flexBasis = '100%';
+            flexDivider.className = 'BMLayoutEditorDetailsDivider';
+            flexDivider.style.marginTop = '0px';
+            flexDivider.style.marginBottom = '0px';
+            popoverContainer.appendChild(flexDivider);
+
+            const icon = this.settingsBadgeForSizeClass(this.activeSizeClass);
+            icon.style.flexShrink = '0';
+            icon.style.top = '1px';
+            popoverContainer.appendChild(icon);
+        }
+
+        const label = document.createElement('div');
+        label.className = 'BMLayoutEditorDetailsTitleCell';
+        label.innerText = 'Constant:';
+        label.style.paddingRight = '8px';
+
+        popoverContainer.appendChild(label);
+
+        const box = document.createElement('input');
+        box.type = 'text';
+        box.style.width = '50px';
+        box.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemTextValue';
+        popoverContainer.appendChild(box);
+
+        const textField = BMTextField.textFieldForInputNode(box);
+        textField.delegate = {
+            textFieldSuggestionsForText() {
+                const suggestions = [];
+                // Load up the variable names
+                const variables = Object.keys(editor.layoutVariableProvider.layoutVariables);
+                const uniqueNames = new Set;
+                variables.forEach(variable => uniqueNames.add(variable));
+    
+                // Create a pair of regular and minus-prefixed variable names
+                for (const variable of uniqueNames) {
+                    suggestions.unshift(variable);
+                    suggestions.push('-' + variable);
+                }
+
+                return suggestions;
+            },
+
+            textFieldShouldShowSuggestions() {
+                return NO;
+            }
+        };
+
+        box.focus();
+
+        let popoverVisible = YES;
+        const popoverLayers = [popoverContainer, popoverBackground, popoverDropShadowContainer];
+
+        for (const layer of popoverLayers) {
+            layer.style.transformOrigin = ((knobPosition / frame.size.width) * 100) + '% 0%';
+            BMHook(layer, {scaleX: .75, scaleY: .75, opacity: 0});
+
+            __BMVelocityAnimate(layer, {scaleX: 1, scaleY: 1, opacity: 1}, {duration: 300, easing: [0,1.59,.49,1]});
+        }
+
+        // Add the click action to the overlay, which is to dismiss the popover and persist the layout variables
+        blocker.addEventListener('click', event => {
+            popoverVisible = NO;
+            
             blocker.remove();
             for (const layer of popoverLayers) {
                 layer.style.pointerEvents = 'none';
@@ -2947,6 +3149,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         constraintView.addEventListener('click', event => {
             this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView}); 
+
+            if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && !this._detailsToolWindow._visible) {
+                this._showConstantPopupWithEvent(event, {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
+            }
+
             event.stopPropagation();
         });
 
@@ -3000,7 +3207,12 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._view.node.appendChild(constraintView);
 
         constraintView.addEventListener('click', event => {
-            this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView}); 
+            this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView});  
+
+            if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && !this._detailsToolWindow._visible) {
+                this._showConstantPopupWithEvent(event, {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
+            }
+
             event.stopPropagation();
         });
 

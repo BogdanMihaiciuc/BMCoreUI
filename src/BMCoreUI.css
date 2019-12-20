@@ -1563,7 +1563,7 @@ BMLayoutEditorDetailsItemBadge {
 
 .BMLayoutEditorDetailsItemViewLink {
 	color: rgba(0, 0, 0, .33) !important;
-	font-size: 8px !important;
+	font-size: 16px !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2061,6 +2061,17 @@ BMLayoutEditorDetailsItemBadge {
 
 	overflow: auto;
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMPopoverContainerConstant {
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+
+	padding-bottom: 16px;
+	padding-top: 4px;
+	padding-left: 16px;
+	padding-right: 16px;
 }
 
 .BMPopoverContainerLayer {

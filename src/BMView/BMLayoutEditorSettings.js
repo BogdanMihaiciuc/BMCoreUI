@@ -1784,7 +1784,7 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         this._attributesTab._settingSections.push(secondView);
 
         const priority = BMLayoutEditorSettingsSection.section();
-        priority._settings[0] = BMLayoutEditorSetting.settingWithName('Priority', {kind: BMLayoutEditorSettingKind.Number, target: constraint, property: 'priority'});
+        priority._settings[0] = BMLayoutEditorSetting.settingWithName('Priority', {kind: BMLayoutEditorSettingKind.Number, target: constraint, variations: YES, property: 'priority'});
         priority._settings[1] = BMLayoutEditorSetting.settingWithName('Active', {kind: BMLayoutEditorSettingKind.Boolean, target: constraint, variations: YES, property: 'isActive'});
         priority._settings[1].automaticallyExpandsVariations = YES;
         this._attributesTab._settingSections.push(priority);
