@@ -22,6 +22,10 @@ When **jQuery** is available, the factory method for this class will now return 
 
 The `release` method can now be safely invoked on views that have superviews; it will now recursively invoke the `release` method on all of the view's descendants.
 
+## BMTextField
+
+`BMTextField` is a new subclass of view that encapsulates some of the functionality that was previously used by the layout editor in relation to input elements. The layout editor now uses this class for such cases and it is now available for use in other situations as well. The primary objective of the text field class in this release is to add support for suggestions and autocompleting text to input elements. This works in conjunction with a `BMTextFieldDelegate` object that supplies the suggestions to be used and can further customize the situations in which those suggestions are used or displayed.
+
 ## BMLayoutConstraint
 
 A new `descriptionRelativeToView(_)` method can now be invoked to obtain a string description of the constraint that is relative to the given view.

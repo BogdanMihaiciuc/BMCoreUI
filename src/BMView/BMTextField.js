@@ -96,6 +96,11 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
     _inputHandler: undefined, // <void ^(Event)>
 
     /**
+     * The paste event listener.
+     */
+    _pasteHandler: undefined, // <void ^(Event)>
+
+    /**
      * Sets up the event handlers for this text field to handle suggestions.
      */
     _setUpEventHandlers() {
@@ -134,7 +139,10 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                 options.push(this._menuItemWithLabel(option, {action: () => {
                     menu = undefined;
                     inputNode.value = option;
-                    inputNode.dispatchEvent(new Event('input'));
+
+                    if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                        this.delegate.textFieldContentsDidChange(this);
+                    }
 
                     // Remove focus from the text box upon selecting a value
                     inputNode.blur();
@@ -202,6 +210,16 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             }
 
             if (event.code == 'Enter') {
+                // Allow the delegate to supress the default action
+                let shouldReturn = YES;
+                if (this.delegate && this.delegate.textFieldShouldReturn) {
+                    shouldReturn = this.delegate.textFieldShouldReturn(this);
+                }
+
+                if (typeof shouldReturn == 'undefined') shouldReturn = YES;
+
+                if (!shouldReturn) return;
+
                 // Upon pressing the enter key, select the currently highlighted item, if available
                 // then remove focus from the constant box
                 let performAutocomplete = NO;
@@ -212,7 +230,10 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
                     if (performAutocomplete) {
                         inputNode.value = filteredSuggestions[highlightedItemIndex];
-                        inputNode.dispatchEvent(new Event('input'));
+
+                        if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                            this.delegate.textFieldContentsDidChange(this);
+                        }
                     }
                 }
 
@@ -227,7 +248,13 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
         inputNode.addEventListener('input', this._inputHandler = event => {
             // If suggestions are not enabled, no additional action is required
-            if (!this._usesSuggestions) return;
+            if (!this._usesSuggestions) {
+                if (!textFieldDidHighlightSuggestion) {
+                    if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                        this.delegate.textFieldContentsDidChange(this);
+                    }
+                }
+            }
 
             // Request new suggestions from the delegate for the new text
             if (this.delegate && this.delegate.textFieldSuggestionsForText) {
@@ -248,9 +275,15 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                 menu.appendChild(this.layoutEditor.constraintOptionWithLabel(option, {action: () => {
                     menu = undefined;
                     inputNode.value = option;
-                    inputNode.dispatchEvent(new Event('input'));
+
+                    if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                        this.delegate.textFieldContentsDidChange(this);
+                    }
                 }}));
             }
+
+            // Set to YES if the change event is fired due to autocompleting the text in the text field
+            let textFieldDidHighlightSuggestion = NO;
 
             // Highlight the first item
             if (filteredSuggestions.length) {
@@ -264,9 +297,15 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                 if (this._autoCompletes && !isBackspaceInput) {
                     const selectionStart = inputNode.selectionStart;
                     if (selectionStart == inputNode.value.length) {
+                        textFieldDidHighlightSuggestion = YES;
+
                         inputNode.value = filteredSuggestions[0];
                         // Select the remainder of the suggestion
                         inputNode.setSelectionRange(selectionStart, inputNode.value.length, "backward");
+
+                        if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                            this.delegate.textFieldContentsDidChange(this);
+                        }
                     }
                 }
 
@@ -278,6 +317,12 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             else {
                 if (menu) menu.style.display = 'none';
             }
+
+            if (!textFieldDidHighlightSuggestion) {
+                if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                    this.delegate.textFieldContentsDidChange(this);
+                }
+            }
         });
 
         // Upon the value box losing focus, dismiss the menu, if it was open
@@ -285,6 +330,12 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         inputNode.addEventListener('blur', this._blurHandler = event => {
             if (menu) {
                 menu.parentNode.dispatchEvent(new Event('click'));
+            }
+        });
+
+        inputNode.addEventListener('paste', this._pasteHandler = event => {
+            if (this.delegate && this.delegate.textFieldContentsDidChange) {
+                this.delegate.textFieldContentsDidChange(this);
             }
         });
     },
@@ -297,6 +348,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         this.node.removeEventListener('blur', this._blurHandler);
         this.node.removeEventListener('keydown', this._keydownHandler);
         this.node.removeEventListener('input', this._inputHandler);
+        this.node.removeEventListener('input', this._pasteHandler);
     },
 
     /**
