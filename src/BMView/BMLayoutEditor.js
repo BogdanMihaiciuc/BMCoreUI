@@ -1929,6 +1929,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             box.type = 'text';
             box.style.width = '50px';
             box.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemTextValue';
+            box.value = constraint.constant;
             popoverContainer.appendChild(box);
 
             const textField = BMTextField.textFieldForInputNode(box);
@@ -1951,6 +1952,34 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
                 textFieldShouldShowSuggestions() {
                     return NO;
+                },
+
+                textFieldContentsDidChange() {
+                    const number = parseFloat(box.value);
+                    const constantValue = isNaN(number) ? box.value : number;
+    
+                    if (!box.value) {
+                        constraint.constant = 0;
+                        return;
+                    }
+                    
+                    constraint.constant = constantValue;
+                        
+                    constraint._updateConfiguration();
+                    constraint._constraint = undefined;
+                    constraint._constituentConstraints = undefined;
+                    if (constraint._sourceView) {
+                        constraint._sourceView.needsLayout = YES;
+                    }
+                    else {
+                        constraint._views[0].needsLayout = YES;
+                    }
+                },
+
+                textFieldShouldReturn() {
+                    blocker.dispatchEvent(new Event('click'));
+                    editor.selectView(referenceView);
+                    return YES;
                 }
             };
 
@@ -1978,6 +2007,17 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         box.type = 'text';
         box.style.width = '50px';
         box.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemTextValue';
+        if (this.activeSizeClass) {
+            if (constraint._variations[this.activeSizeClass]) {
+                box.value = constraint._variations[this.activeSizeClass].constant;
+            }
+            else {
+                box.value = '';
+            }
+        }
+        else {
+            box.value = constraint.constant;
+        }
         popoverContainer.appendChild(box);
 
         const textField = BMTextField.textFieldForInputNode(box);
@@ -2000,6 +2040,45 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             textFieldShouldShowSuggestions() {
                 return NO;
+            },
+
+            textFieldContentsDidChange() {
+                const number = parseFloat(box.value);
+                const constantValue = isNaN(number) ? box.value : number;
+
+                if (!box.value) {
+                    if (editor.activeSizeClass) {
+                        constraint.removeConstantVariationForSizeClass(editor.activeSizeClass);
+                        constraint._updateConfiguration();
+                    }
+                    else {
+                        constraint.constant = 0;
+                    }
+                    return;
+                }
+                
+                if (editor.activeSizeClass) {
+                    constraint.setConstant(constantValue, {forSizeClass: editor.activeSizeClass});
+                }
+                else {
+                    constraint.constant = constantValue;
+                }
+                    
+                constraint._updateConfiguration();
+                constraint._constraint = undefined;
+                constraint._constituentConstraints = undefined;
+                if (constraint._sourceView) {
+                    constraint._sourceView.needsLayout = YES;
+                }
+                else {
+                    constraint._views[0].needsLayout = YES;
+                }
+            },
+
+            textFieldShouldReturn() {
+                blocker.dispatchEvent(new Event('click'));
+                editor.selectView(referenceView);
+                return YES;
             }
         };
 
