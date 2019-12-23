@@ -103,6 +103,8 @@ const DTSFiles = [
     'BMView/BMLayoutEditor.js', 
     'BMView/BMLayoutVariableProvider.js', 
     'BMView/BMMenu.js',
+    'BMView/BMTextField.js',
+    'BMView/BMTextFieldDelegate.js',
     'BMCollectionView/BMCollectionViewLayoutAttributes.js', 
     'BMCollectionView/BMCollectionViewCell.js', 
     'BMCollectionView/BMCollectionViewLayout.js', 
