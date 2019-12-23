@@ -847,12 +847,12 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
                 event.preventDefault();
                 event.stopPropagation();
                 if (input.indeterminate) {
-                    input.indeterminate = false;
-                    input.checked = false;
-                    this.inputValueDidChangeWithEvent(event, {toValue: false});
+                    input.indeterminate = NO;
+                    input.checked = NO;
+                    this.inputValueDidChangeWithEvent(event, {toValue: NO});
                 }
                 else {
-                    input.indeterminate = true;
+                    input.indeterminate = YES;
                     this.inputValueDidChangeWithEvent(event, {toValue: undefined});
                 }
             }
@@ -910,11 +910,12 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
             value = setting.target[setting.property];
         }
 
-        if (value === undefined) {
-            this._inputNode.indeterminate = true;
-            this._inputNode.checked = true;
+        if (value === undefined && setting.nullable) {
+            this._inputNode.indeterminate = YES;
+            this._inputNode.checked = YES;
         }
         else {
+            this._inputNode.indeterminate = NO;
             this._inputNode.checked = value;
         }
 
@@ -1437,8 +1438,8 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
 
             if (constraint) {
 
-                if (args.sizeClass) {
-                    constraint[`set${capitalizedPropertyName}`](constantValue, {forSizeClass: args.sizeClass});
+                if (this.setting.sizeClass) {
+                    constraint[`set${capitalizedPropertyName}`](constantValue, {forSizeClass: this.setting.sizeClass});
                 }
                 else {
                     constraint[property] = constantValue;
@@ -1454,8 +1455,8 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
                 }
             }
             else {
-                if (args.sizeClass) {
-                    view[`set${capitalizedPropertyName}`](number, {forSizeClass: args.sizeClass});
+                if (this.setting.sizeClass) {
+                    view[`set${capitalizedPropertyName}`](number, {forSizeClass: this.setting.sizeClass});
                 }
                 else {
                     view[property] = number;
