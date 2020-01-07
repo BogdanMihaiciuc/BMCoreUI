@@ -1824,6 +1824,7 @@ BMLayoutEditorDetailsItemBadge {
 
 	/* Sadly needed for Thingworx environment */
 	z-index: 10;
+	cursor: default;
 }
 
 .BMWindowDragHandle.BMLayoutEditorViewDragHandle {
@@ -1886,6 +1887,8 @@ BMLayoutEditorDetailsItemBadge {
 	top: 1px;
 
 	border-bottom: 1px solid rgba(0, 128, 255, 1);
+
+	cursor: pointer;
 }
 
 .BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorHorizontalConstraintLine {
@@ -2072,6 +2075,15 @@ BMLayoutEditorDetailsItemBadge {
 	padding-top: 4px;
 	padding-left: 16px;
 	padding-right: 16px;
+}
+
+.BMPopoverContainerConstantBelow {
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+
+	padding-bottom: 4px;
+	padding-top: 16px;
 }
 
 .BMPopoverContainerLayer {

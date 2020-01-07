@@ -1850,9 +1850,14 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // TODO Extract the popover code into a common method
         const popoverParentElement = document.body;
 
+        // Find out the location where the popover should be
+        const location = BMPointMake(event.clientX | 0, event.clientY | 0);
+
+        const appearsBelow = location.y < 160;
+
         // Create the popover container
         const popoverContainer = document.createElement('div');
-        popoverContainer.className = 'BMPopoverContainer BMPopoverContainerConstant';
+        popoverContainer.className = 'BMPopoverContainer BMPopoverContainerConstant' + (appearsBelow ? ' BMPopoverContainerConstantBelow' : '');
 
         // A second layer is used to draw the drop shadow, due to the unusual shape of the popover window
         const popoverDropShadowContainer = document.createElement('div');
@@ -1867,17 +1872,21 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         popoverBackground.innerHTML = '<div class="BMPopoverBackgroundDarkModeContainer"><div class="BMPopoverBackgroundDarkModeOutline"></div><div class="BMPopoverBackgroundDarkModeFill"></div></div>';
 
-        // Find out the location where the popover should be
-        const location = BMPointMake(event.clientX | 0, event.clientY | 0);
-
         const height = this.activeSizeClass ? 96 : 64;
 
         // Create the frame for the popover container and move it accordingly
-        const frame = BMRectMake(location.x - 120, location.y - height - 8, 240, height + 8);
-        const knobPosition = location.x - frame.origin.x;
+        const frame = BMRectMake(location.x - 120, appearsBelow ? location.y : location.y - height - 8, 240, height + 8);
+        if (frame.origin.x < -4) {
+            frame.origin.x = -4;
+        }
+        if (frame.right > window.innerWidth + 4) {
+            frame.origin.x = window.innerWidth - frame.size.width + 4;
+        }
 
-        const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition, gravity: 'Bottom'})}')`;
-        const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1, knobPosition, gravity: 'Bottom'})}')`;
+        const knobPosition = BMNumberByConstrainingNumberToBounds(location.x - frame.origin.x, 12, frame.size.width - 12);
+
+        const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}')`;
+        const outlinePath = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, inset: 1, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}')`;
 
         // Assign the frame to the window, and to the drop shadow container
         const positionStyle = {
@@ -2088,7 +2097,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const popoverLayers = [popoverContainer, popoverBackground, popoverDropShadowContainer];
 
         for (const layer of popoverLayers) {
-            layer.style.transformOrigin = ((knobPosition / frame.size.width) * 100) + '% 0%';
+            layer.style.transformOrigin = ((knobPosition / frame.size.width) * 100) + '% ' + (appearsBelow ? '100%' : '0%');
             BMHook(layer, {scaleX: .75, scaleY: .75, opacity: 0});
 
             __BMVelocityAnimate(layer, {scaleX: 1, scaleY: 1, opacity: 1}, {duration: 300, easing: [0,1.59,.49,1]});
