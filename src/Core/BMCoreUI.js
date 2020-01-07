@@ -388,7 +388,7 @@ export function BMUUIDMake() {
 // @type BMHTMLEntity
 
 /**
- * A dictionary containing HTML entities for various commonly used symbols.
+ * An enum containing HTML entities for various commonly used symbols.
  */
 export var BMHTMLEntity = Object.freeze({ // <enum>
 	/**

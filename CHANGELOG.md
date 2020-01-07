@@ -6,6 +6,10 @@ A new `BMStringByCapitalizingString(_)` function is now available that returns a
 
 The `BMAddSmoothMousewheelInteractionToNode()` method will now forward the modifier key properties from the original event when generating smooth scroll events.
 
+## BMKeyboardShortcutModifier
+
+A new `BMKeyboardShortcutModifier` enum contains the modifier keys that can be used when registering keyboard shortcuts.
+
 ## BMPoint
 
 Two new `multiplyWithScalar(_)` and `pointByMultiplyingWithScalar(_)` methods can be used to multiply all of a point's components with a given scalar.
@@ -63,6 +67,12 @@ A new `invalidate` method can now be overriden on collection view cells. This me
 ## BMWindow
 
 A new `toggleAnimated(_, {completionHandler})` method is now available. If the window is visible, it will invoke `dismissAnimated`; otherwise it will invoke `bringToFrontAnimated`.
+
+Preliminary support for keyboard shortcuts. The `registerKeyboardShortcut(_)` method can now be invoked by passing in a `BMKeyboardShortcut` object to set up a keyboard shortcut for the window. The `unregisterKeyboardShortcut(_)` method can be used to remove a previously registered keyboard shortcut.
+
+## BMKeyboardShortcut
+
+This new class can be used to define keyboard shortcuts and the actions that should be taken when the shortcut is triggered. An instance of this class can be obtained by invoking the static `keyboardShortcutWithKey` method.
 
 ## BMToolWindow
 

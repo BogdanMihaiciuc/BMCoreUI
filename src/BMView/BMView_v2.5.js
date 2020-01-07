@@ -2787,7 +2787,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // Cancel this operation if this view has moved from the root of its hierarchy
         if (this.superview) return;
 
-        if (BMViewDebug) console.error(`
+        if (BMViewDebug) console.log(`
         ***********************************************************************************************************
                                             [BMCoreUI] Layout pass began
         ***********************************************************************************************************

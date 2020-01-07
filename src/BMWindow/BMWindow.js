@@ -5,6 +5,7 @@ import {BMPointMake} from '../Core/BMPoint'
 import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
 import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
 import {BMView} from '../BMView/BMView_v2.5'
+import { BMKeyboardShortcutModifier } from './BMKeyboardShortcut'
 
 //@ts-check
 // @type BMWindowOverlay extends BMView
@@ -481,6 +482,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * An array containing the tool windows associated with this window.
 	 */
 	_toolWindows: undefined, // <[BMToolWindow]>
+
+	/**
+	 * The keyboard shortcuts that have been registered to this window.
+	 */
+	_keyboardShortcuts: undefined, // <[BMKeyboardShortcut]>
 	
 	/**
 	 * Initializes this window with the given screen area.
@@ -498,6 +504,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		let modal = (args && 'modal' in args) ? args.modal : YES;
 
 		this._toolWindows = [];
+		this._keyboardShortcuts = [];
 
 		this._overlay = (new BMWindowOverlay).initWithWindow(this, {modal});
 		this._blocker = this._overlay.node;
@@ -800,15 +807,95 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 	/**
 	 * Registers a keyboard shortcut that can be activated when this window is the key window.
-	 * @param key <String>												The keyboard shortcut key.
-	 * {
-	 * 	@param modifiers <[BMKeyboardShortcutModifier], nullable>		An optional array of keyboard modifiers that must be active
-	 * 																	for the keyboard shortcut to fire.
-	 * 	@param handler <void ^()>										A handler function that will be invoked when this keyboard shortcut fires.
-	 * }
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to register.
 	 */
-	registerKeyboardShortcutWithKey(key, args) {
+	registerKeyboardShortcut(shortcut) {
+		if (!this._keyboardShortcuts.length) this._enableKeyboardShortcuts();
 
+		this._keyboardShortcuts.push(shortcut);
+	},
+
+	/**
+	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+	 */
+	unregisterKeyboardShortcut(shortcut) {
+		for (let i = 0; i < this._keyboardShortcuts.length; i++) {
+			if (this._keyboardShortcuts[i] == shortcut) {
+				this._keyboardShortcuts.splice(i, 1);
+				break;
+			}
+		}
+
+		if (!this._keyboardShortcuts.length) this._disableKeyboardShortcuts();
+	},
+
+	/**
+	 * If keyboard shortcuts have been registered on this window, this method will be invoked to identify
+	 * and handle key presses. Subclasses that override this method should invoke the base implementation to allow
+	 * keyboard shortcuts to be handled correctly.
+	 * @param event <KeyboardEvent>			The event that triggered this action.
+	 */
+	keyPressedWithEvent(event) {
+		// Check if a shortcut key has been pressed.
+		for (const shortcut of this._keyboardShortcuts) {
+			if (event.code != shortcut.keyCode) continue;
+			
+			// Verify that the correct 
+			let hasModifiers = YES;
+			if (shortcut.modifiers.length) for (const modifier of shortcut.modifiers) {
+				if (modifier == BMKeyboardShortcutModifier.System) {
+					if (!event.ctrlKey && !event.metaKey) {
+						hasModifiers = NO;
+						break;
+					}
+				}
+				else if (!event[modifier]) {
+					hasModifiers = NO;
+					break;
+				}
+			}
+
+			if (hasModifiers) {
+				shortcut.target[shortcut.action](event);
+			}
+		}
+	},
+
+	/**
+	 * Set to `YES` if keyboard shortcuts are enabled.
+	 */
+	_keyboardShortcutsEnabled: NO, // <Boolean>
+
+	/**
+	 * Enables keyboard shortcut handling. This makes the window's `node` focusable and attaches
+	 * the relevant event handlers to it. If this window is the key window and the keyboard focus
+	 * is outside of this window, this window will acquire keyboard focus.
+	 */
+	_enableKeyboardShortcuts() {
+		this.node.tabIndex = -1;
+
+		if (document.activeElement && !this.node.contains(document.activeElement)) {
+			this.node.focus();
+		}
+		else if (!document.activeElement) {
+			this.node.focus();
+		}
+
+		this._keypressHandler = (event) => {
+			this.keyPressedWithEvent(event);
+		};
+
+		this.node.addEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = YES;
+	},
+
+	/**
+	 * Disables keyboard shortcut handling. This detaches the relevant event handlers from this window's `node`.
+	 */
+	_disableKeyboardShortcuts() {
+		this.node.removeEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = NO;
 	},
 
 	/**
