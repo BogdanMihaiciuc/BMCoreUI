@@ -1,8 +1,8 @@
 import { BMExtend, BMStringByCapitalizingString } from "../Core/BMCoreUI";
 import { BMCollectionViewCell } from "../BMCollectionView/BMCollectionViewCell";
-import { BMLayoutAttribute } from "./BMLayoutConstraint_v2.5";
+import { BMLayoutAttribute } from "../BMView/BMLayoutConstraint_v2.5";
 import { _BMURLOfImageAtPath } from "./BMLayoutEditorSettings";
-import { BMView } from "./BMView_v2.5";
+import { BMView } from "../BMView/BMView_v2.5";
 
 //@ts-check
 

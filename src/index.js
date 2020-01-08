@@ -20,6 +20,7 @@ export * from './BMView/BMMenu'
 
 export * from './BMWindow/BMWindow'
 export * from './BMWindow/BMToolWindow'
+export * from './BMWindow/BMKeyboardShortcut'
 
 export * from './BMCodeEditor/BMCodeEditor'
 
@@ -32,4 +33,6 @@ export * from './BMCollectionView/BMCollectionViewStackLayout'
 export * from './BMCollectionView/BMCollectionViewTileLayout'
 export * from './BMCollectionView/BMCollectionView'
 
-export * from './BMView/BMLayoutEditor'
+export * from './BMViewLayoutEditor/BMLayoutEditor'
+export * from './BMViewLayoutEditor/BMLayoutEditorSettings'
+export * from './BMViewLayoutEditor/BMLayoutEditorSettingCells'

@@ -710,6 +710,8 @@ export function BMView() {} // <constructor>
 
 BMView.prototype = BMExtend(BMView.prototype, {
 
+    // #region Base Properties
+
     /**
      * The DOM node managed by this view.
      */
@@ -825,6 +827,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
     set layoutQueue(queue) {
         this._layoutQueue = queue || _BMViewLayoutQueue;
     },
+
+    // #endregion
+
+    // #region Frame and Bounds
 
     /**
      * A promise that it is initialized upon this view starting a layout animation and resolved when
@@ -1011,6 +1017,74 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
         this.frame = localFrame;
     },
+
+    /**
+     * Invoked by CoreUI after a frame was assigned to this view.
+     * 
+     * Subclasses can override this method to perform any additional changes needed
+     * for their content to fit the given frame.
+     * 
+     * The default implementation does nothing.
+     * @param frame <BMRect>        The new frame.
+     */
+    didSetFrame(frame) {
+
+    },
+
+    /**
+     * A rectangle describing this view's size and position relative to its frame.
+     * 
+     * The default value for this property is a rect with the origin set to (0, 0)
+     * and the same size as this view's frame rectangle.
+     * 
+     * Modifying this rectangle will typically cause the view's frame to change accordingly.
+     */
+    get bounds() { // <BMRect>
+        let bounds = this._frame.copy();
+        bounds.origin = BMPointMake();
+
+        return bounds;
+    },
+    set bounds(bounds) {
+        let oldBounds = this.bounds;
+
+        if (oldBounds.size.width != bounds.size.width || oldBounds.size.height != bounds.size.height) {
+            let frame = this.frame.copy();
+            frame.size = bounds.size.copy();
+
+            this.frame = frame;
+        }
+    },
+
+    /**
+     * Invoked by CoreUI whenever this view's frame changes and its bounds are about to be updated as a result.
+     * Subclasses can override this method to prepare for the new size.
+     * The default implementation does nothing.
+     * @param bounds <BMRect>           The new bounds.
+     */
+    boundsWillChangeToBounds(bounds) {
+
+    },
+
+    /**
+     * Invoked by CoreUI whenever this view's frame has changed and its bounds have been updated as a result.
+     * Subclasses can override this method to adjust their content to the new size.
+     * The default implementation does nothing.
+     * @param bounds <BMRect>           The new bounds.
+     */
+    boundsDidChangeToBounds(bounds) {
+
+    },
+
+    /**
+     * Controls whether the layout managed by this view is in the left-to-right order.
+     * The default implementation returns the global CoreUI left-to-right status.
+     */
+    LTRLayout: YES, // <Boolean>
+
+    // #endregion
+
+    // #region Size Class Configuration
 
 	/**
 	 * Returns a variations object that can be serialized.
@@ -1532,71 +1606,11 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 */
 	hasIsVisibleVariationForSizeClass(sizeClass) {
 		return this._hasVariationForProperty('isVisible', {inSizeClass: sizeClass});
-	},
-
-    /**
-     * Invoked by CoreUI after a frame was assigned to this view.
-     * 
-     * Subclasses can override this method to perform any additional changes needed
-     * for their content to fit the given frame.
-     * 
-     * The default implementation does nothing.
-     * @param frame <BMRect>        The new frame.
-     */
-    didSetFrame(frame) {
-
     },
+    
+    // #endregion
 
-    /**
-     * A rectangle describing this view's size and position relative to its frame.
-     * 
-     * The default value for this property is a rect with the origin set to (0, 0)
-     * and the same size as this view's frame rectangle.
-     * 
-     * Modifying this rectangle will typically cause the view's frame to change accordingly.
-     */
-    get bounds() { // <BMRect>
-        let bounds = this._frame.copy();
-        bounds.origin = BMPointMake();
-
-        return bounds;
-    },
-    set bounds(bounds) {
-        let oldBounds = this.bounds;
-
-        if (oldBounds.size.width != bounds.size.width || oldBounds.size.height != bounds.size.height) {
-            let frame = this.frame.copy();
-            frame.size = bounds.size.copy();
-
-            this.frame = frame;
-        }
-    },
-
-    /**
-     * Invoked by CoreUI whenever this view's frame changes and its bounds are about to be updated as a result.
-     * Subclasses can override this method to prepare for the new size.
-     * The default implementation does nothing.
-     * @param bounds <BMRect>           The new bounds.
-     */
-    boundsWillChangeToBounds(bounds) {
-
-    },
-
-    /**
-     * Invoked by CoreUI whenever this view's frame has changed and its bounds have been updated as a result.
-     * Subclasses can override this method to adjust their content to the new size.
-     * The default implementation does nothing.
-     * @param bounds <BMRect>           The new bounds.
-     */
-    boundsDidChangeToBounds(bounds) {
-
-    },
-
-    /**
-     * Controls whether the layout managed by this view is in the left-to-right order.
-     * The default implementation returns the global CoreUI left-to-right status.
-     */
-    LTRLayout: YES, // <Boolean>
+    // #region Intrinsic Size
 
     /**
      * Used by CoreUI to determine if this view's intrinsic size should match the intrinsic size reported by its node element.
@@ -1805,6 +1819,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
         this.rootView._invalidatedConstraints = YES;
     },
 
+    // #endregion
+
+    // #region Size Classes
+
     /**
      * Set to `YES` if this view should update its internal size classes structure
      * during the next layout pass.
@@ -2010,6 +2028,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
         return this._layoutVariables[variable] || 0;
     },
+
+    // #endregion
+
+    // #region Constraints and Cassowary Variables
 
 
     /**
@@ -2593,6 +2615,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
         return variables;
     },
 
+    // #endregion
+
+    // #region Layout pass
+
     /**
      * Used internally.
      */
@@ -3124,6 +3150,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
         }
     },
 
+    // #endregion
+
+    // #region Subview Management
+
     /**
      * The topmost superview managing the layout for this hierarchy. This may be this view itself.
      * Note that a view hierarchy may have several root views each managing their own local layouts.
@@ -3341,6 +3371,21 @@ BMView.prototype = BMExtend(BMView.prototype, {
     },
 
     /**
+     * Returns a flat array containg all of the views within this view hierarchy.
+     */
+    get allSubviews() { // <[BMView]>
+        let result = [this];
+
+        this._subviews.forEach(subview => result = result.concat(subview.allSubviews));
+
+        return result;
+    },
+
+    // #endregion
+
+    // #region Cloning
+
+    /**
      * Prepares this view hierarchy for cloning.
      */
     _prepareForCloning() {
@@ -3350,17 +3395,6 @@ BMView.prototype = BMExtend(BMView.prototype, {
         this.node.id = this._BMTempID;
 
         this._subviews.each(subview => subview._prepareForCloning());
-    },
-
-    /**
-     * Returns a flat array containg all of the views within this view hierarchy.
-     */
-    get allSubviews() { // <[BMView]>
-        let result = [this];
-
-        this._subviews.forEach(subview => result = result.concat(subview.allSubviews));
-
-        return result;
     },
 
     /**
@@ -3391,6 +3425,8 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // Restore the node's original ID
         this.node.id = this._BMOriginalID;
     }
+
+    // #endregion
 
 });
 
