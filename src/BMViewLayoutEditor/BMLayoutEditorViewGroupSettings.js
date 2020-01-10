@@ -42,6 +42,48 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
     },
 
     /**
+     * Constructs and returns the DOM node for a readonly setting.
+     * @param name <String>                         The name of the setting.
+     * {
+     *  @param value <String>                       The readonly value to display.
+     *  @param action <void ^(Event), nullable>     An optional action that will take place
+     *                                              when the value is clicked.
+     * }
+     * @return <DOMNode>                            A DOM node.
+     */
+    readonlySettingWithName(name, args) {
+        let item = document.createElement('div');
+        item.className = 'BMLayoutEditorDetailsItemTitle';
+        item.innerText = name;
+        item.style.textAlign = 'left';
+        item.style.paddingLeft = '8px';
+        return item;
+
+        let title = document.createElement('div');
+        title.className = 'BMLayoutEditorDetailsItemTitle';
+        title.innerText = name;
+        item.appendChild(title);
+
+        let value;
+        if (args.value) {
+            value = document.createElement('div');
+            value.className = 'BMLayoutEditorDetailsItemReadonlyValue';
+            value.innerText = args.value;
+            item.appendChild(value);
+        }
+        else {
+            //title.style.width = '240px';
+        }
+
+        if (args.action) {
+            value.classList.add('BMLayoutEditorDetailsItemReadonlyValueClickable');
+            value.addEventListener('click', args.action);
+        }
+
+        return item;
+    },
+
+    /**
      * Constructs and returns a button with a handler that will be invoked when the button is pressed.
      * @param name <String>                 The text that will appear on this button.
      * {
@@ -51,12 +93,13 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
      * @return <DOMNode>                    A button.
      */
     buttonSettingWithName(name, args) {
+        let button;
         if (args.class) {
-            var button = document.createElement('div');
+            button = document.createElement('div');
             button.className = 'BMLayoutEditorImageButton ' + args.class;
         }
         else {
-            var button = document.createElement('button');
+            button = document.createElement('button');
             button.className = 'BMWindowButton';
             button.innerText = name;
         }
@@ -107,15 +150,14 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
 
     // @override - BMLayoutEditorSettingsPanel
     settingsPanelDidLoad() {
+        // TODO: Consider redoing this method; it works for now though
         const content = this.view.node;
 
         let constraintsTitle = this.readonlySettingWithName('Align Horizontal', {value: ''});
-        constraintsTitle.childNodes[0].style.textAlign = 'center';
-        constraintsTitle.childNodes[0].style.width = '100%';
         content.appendChild(constraintsTitle);
 
         let flexContainer = document.createElement('div');
-        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; padding-top: 8px; padding-bottom: 8px';
+        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; justify-content: center;';
         content.appendChild(flexContainer);
 
         flexContainer.appendChild(this.equalConstraintSettingWithName('Align Top', {class: 'BMLayoutEditorImageButtonAlignAlignTop', attribute: BMLayoutAttribute.Top}));
@@ -126,12 +168,10 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
         //---------------------------------------------------------------------------------------------------------
         content.appendChild(this.settingsDivider());
         let internalConstraintsTitle = this.readonlySettingWithName('Distribute Horizontal', {value: ''});
-        constraintsTitle.childNodes[0].style.textAlign = 'center';
-        constraintsTitle.childNodes[0].style.width = '100%';
         content.appendChild(internalConstraintsTitle);
 
         flexContainer = document.createElement('div');
-        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; padding-top: 8px; padding-bottom: 8px';
+        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; justify-content: center;';
         content.appendChild(flexContainer);
 
         flexContainer.appendChild(this.buttonSettingWithName('Equal Spacing', {class: 'BMLayoutEditorImageButtonEqualHorizontalSpacing', action: event => {
@@ -173,12 +213,10 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
         //---------------------------------------------------------------------------------------------------------
         content.appendChild(this.settingsDivider());
         internalConstraintsTitle = this.readonlySettingWithName('Align Vertical', {value: ''});
-        constraintsTitle.childNodes[0].style.textAlign = 'center';
-        constraintsTitle.childNodes[0].style.width = '100%';
         content.appendChild(internalConstraintsTitle);
 
         flexContainer = document.createElement('div');
-        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; padding-top: 8px; padding-bottom: 8px';
+        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; justify-content: center;';
         content.appendChild(flexContainer);
 
         flexContainer.appendChild(this.equalConstraintSettingWithName('Align Leading', {class: 'BMLayoutEditorImageButtonAlignLeading', attribute: BMLayoutAttribute.Leading}));
@@ -188,12 +226,10 @@ _BMLayoutEditorViewGroupSettingsPanel.prototype = BMExtend(Object.create(_BMLayo
         //---------------------------------------------------------------------------------------------------------
         content.appendChild(this.settingsDivider());
         internalConstraintsTitle = this.readonlySettingWithName('Distribute Vertical', {value: ''});
-        constraintsTitle.childNodes[0].style.textAlign = 'center';
-        constraintsTitle.childNodes[0].style.width = '100%';
         content.appendChild(internalConstraintsTitle);
 
         flexContainer = document.createElement('div');
-        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; padding-top: 8px; padding-bottom: 8px';
+        flexContainer.style.cssText = 'display: flex; flex-direction: row; align-self: center; justify-content: center;';
         content.appendChild(flexContainer);
 
         flexContainer.appendChild(this.buttonSettingWithName('Equal Spacing', {class: 'BMLayoutEditorImageButtonEqualVerticalSpacing', action: event => {

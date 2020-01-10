@@ -61,7 +61,7 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
 
         // Prepare the menu options
         const attributeOptions = [];
-        if (!constraint._isConstraintCollection) if (constraint._kind == BMLayoutConstraintKind.Horizontal) {
+        if (!constraint.isConstraintCollection) if (constraint._kind == BMLayoutConstraintKind.Horizontal) {
             if (constraint._sourceViewAttribute === BMLayoutAttribute.Width) {
                 attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
             }
@@ -84,8 +84,8 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
             }
         }
 
-        if (constraint._isConstraintCollection) {
-            if (constraint.hasEditableConstant) {
+        if (constraint.isConstraintCollection) {
+            if (constraint._hasEditableConstant) {
                 const constant = BMLayoutEditorSettingsSection.section();
                 constant._settings[0] = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
                 constant._settings[0].automaticallyExpandsVariations = YES;
@@ -99,6 +99,7 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
                 affectedViews._settings.push(BMLayoutEditorSetting.settingWithName('View ' + index, {kind: BMLayoutEditorSettingKind.View, target: constraint._views, property: index - 1}));
                 index++;
             }
+            this._attributesTab._settingSections.push(affectedViews);
         }
         else {
             const firstView = BMLayoutEditorSettingsSection.section();
@@ -285,7 +286,7 @@ _BMLayoutEditorConstraintSettingsTab.prototype = BMExtend(Object.create(BMLayout
                 return;
             }
 
-            if (!constraint._isConstraintCollection) {
+            if (!constraint.isConstraintCollection) {
                 // Push subview constraints into their own categories
                 if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
                     subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];

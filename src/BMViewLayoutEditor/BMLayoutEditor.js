@@ -1932,7 +1932,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             return this.selectView(this.selectedViews[0]);
         }
         else if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
-            return this._settingsView.layoutEditorDidSelectViews(this.selectedViews);
+            return this.detailsView.layoutEditorDidSelectViews(this.selectedViews);
         }
 
         // Create the settings screen for multi-selection
