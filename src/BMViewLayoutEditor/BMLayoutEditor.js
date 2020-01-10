@@ -1779,7 +1779,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * Draws the constraints affecting the given view.
      * @param view <BMView>                                         The view.
      * {
-     *  @param includesSubviewConstraints <Boolean, nullable>       Defaults to `NO`. Controls whether constraints affecting subviews are rendered.
+     *  @param includesSubviewConstraints <Boolean, nullable>       Maintained for compatibility. The value of this parameter is ignored.
      *  @param includesInactiveConstraints <Boolean, nullable>      Defaults to `NO`. Controls whether inactive constraints are drawn.
      * }
      */
@@ -1787,21 +1787,35 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         args = args || {};
         this._clearOffsets();
         this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+
+        const drawnConstraints = [];
+
         view.localConstraints.forEach(constraint => {
             if (!constraint.affectsLayout && !args.includesInactiveConstraints) return;
 
             if (!constraint._isConstraintCollection) {
                 // Push subview constraints into their own categories
-                if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
+                /*if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
                     if (!args.includesSubviewConstraints) return;
                 }
                 if (constraint._targetView == view && constraint._sourceView.isDescendantOfView(view)) {
                     if (!args.includesSubviewConstraints) return;
-                }
+                }*/
             }
 
-            this._drawConstraint(constraint, {withReferenceView: view});
+            const drawnConstraint = this._drawConstraint(constraint, {withReferenceView: view});
+            if (Array.isArray(drawnConstraint)) {
+                for (const constraint of drawnConstraint) {
+                    drawnConstraints.push(constraint);
+                }
+            }
+            else {
+                drawnConstraints.push(drawnConstraint);
+            }
         });
+
+        // Filter out constraints which aren't drawn with definitions
+        drawnConstraints.filter(constraint => constraint);
     },
 
     /**
@@ -3162,9 +3176,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         let sourceConstraint = args.sourceConstraint;
 
         if (constraint.isConstraintCollection) {
-            return constraint.constituentConstraints.forEach(subConstraint => {
-                this._drawConstraint(subConstraint, {withReferenceView: subConstraint._sourceView, sourceConstraint: constraint});
-            });
+            return constraint.constituentConstraints.map(subConstraint => this._drawConstraint(subConstraint, {withReferenceView: subConstraint._sourceView, sourceConstraint: constraint}));
         }
 
         // Do not draw static constraints
@@ -5424,8 +5436,6 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
 
         window.removeEventListener('resize', this.resizeListener);
-
-		this._visible = NO;
 		
 		animated = (animated === undefined ? YES : animated);
 		
@@ -5527,6 +5537,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             }});
 
+
+            this._visible = NO;
 			
 		}
 		else {
@@ -5535,6 +5547,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 			
 			this._window.style.opacity = 0;
 			this._window.style.display = 'none';
+
+            this._visible = NO;
 
             this._view.layoutEditor = undefined;
             this._rootNode.appendChild(this._view.node);

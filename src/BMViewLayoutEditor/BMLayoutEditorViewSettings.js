@@ -123,7 +123,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
     /**
      * Controls whether subview constraints are displayed.
      */
-    _showsSubviewConstraints: NO, // <Boolean>
+    _showsSubviewConstraints: YES, // <Boolean>
 
     /**
      * The categories of the view's own constraints.
@@ -236,10 +236,10 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
         constraintViewPicker.name = 'Show';
         constraintViewPicker._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Show', {kind: BMLayoutEditorSettingKind.Segment, target: this, property: '_displayMode'});
         constraintViewPicker._settings[0].options = [
-            BMMenuItem.menuItemWithName('Own Constraints', {icon: _BMURLOfImageAtPath('images/OwnConstraints.png'), userInfo: 'own'}),
-            BMMenuItem.menuItemWithName('Subview Constraints', {icon: _BMURLOfImageAtPath('images/SubviewConstraints.png'), userInfo: 'subview'}),
-            BMMenuItem.menuItemWithName('Inactive Constraints', {icon: _BMURLOfImageAtPath('images/InactiveConstraints.png'), userInfo: 'inactive'}),
-            BMMenuItem.menuItemWithName('All Constraints', {icon: _BMURLOfImageAtPath('images/AllConstraints.png'), userInfo: 'all'})
+            BMMenuItem.menuItemWithName('This Size Class', {icon: _BMURLOfImageAtPath('images/OwnConstraints.png'), userInfo: 'subview'}),
+            //BMMenuItem.menuItemWithName('Subview Constraints', {icon: _BMURLOfImageAtPath('images/SubviewConstraints.png'), userInfo: 'subview'}),
+            BMMenuItem.menuItemWithName('All Size Classes', {icon: _BMURLOfImageAtPath('images/InactiveConstraints.png'), userInfo: 'inactive'}),
+            //BMMenuItem.menuItemWithName('All Constraints', {icon: _BMURLOfImageAtPath('images/AllConstraints.png'), userInfo: 'all'})
         ];
         this._settingSections.push(constraintViewPicker);
 

@@ -1095,7 +1095,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * }
 	 */
 	dismissAnimated: function (animated, args) {
-		this._visible = NO;
 		
 		animated = (animated === undefined ? YES : animated);
 		
@@ -1110,6 +1109,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		if (self.delegate && self.delegate.windowWillClose) {
 			self.delegate.windowWillClose(self);
 		}
+		this._visible = NO;
 
 		for (let window of this._toolWindows) {
 			window.dismissAnimated(animated);

@@ -70,6 +70,8 @@ A new `toggleAnimated(_, {completionHandler})` method is now available. If the w
 
 Preliminary support for keyboard shortcuts. The `registerKeyboardShortcut(_)` method can now be invoked by passing in a `BMKeyboardShortcut` object to set up a keyboard shortcut for the window. The `unregisterKeyboardShortcut(_)` method can be used to remove a previously registered keyboard shortcut.
 
+Window will no longer perform layout operations while it is invisible. All pending layout passes will be condensed into a single layout pass that occurs as soon as the window becomes visible.
+
 ## BMKeyboardShortcut
 
 This new class can be used to define keyboard shortcuts and the actions that should be taken when the shortcut is triggered. An instance of this class can be obtained by invoking the static `keyboardShortcutWithKey` method.
