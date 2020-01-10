@@ -1,21 +1,6 @@
 // @ts-check
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
-import {BMInsetMakeWithEqualInsets, BMInsetMake} from '../Core/BMInset'
-import {BMPointMake} from '../Core/BMPoint'
-import {BMSizeMake} from '../Core/BMSize'
-import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
-import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
+import {YES, NO, BMExtend} from '../Core/BMCoreUI'
 import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationApplyBlocking, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
-import {BMLayoutOrientation, BMLayoutSizeClass} from '../BMView/BMLayoutSizeClass'
-import {BMViewport} from '../BMView/BMViewport'
-import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
-import {BMView} from '../BMView/BMView_v2.5'
-import {BMMenuKind, BMMenuItem} from '../BMView/BMMenu'
-import {BMWindow} from '../BMWindow/BMWindow'
-import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
-import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
-import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
-import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
 import { _BMLayoutEditorCollectionSettingsPanel, BMLayoutEditorSettingsTab, _BMLayoutEditorSettingsPanel, _BMURLOfImageAtPath, BMLayoutEditorSettingKind, BMLayoutEditorSettingsSection, BMLayoutEditorSetting, BMLayoutEditorEnumSetting } from './BMLayoutEditorSettings'
 
 // @type _BMLayoutEditorViewGroupSettingsPanel
