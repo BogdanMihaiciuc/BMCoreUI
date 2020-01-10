@@ -15,6 +15,7 @@ import { BMKeyboardShortcutModifier } from './BMKeyboardShortcut'
  * and allow clicking outside a window to close it.
  */
 class BMWindowOverlay extends BMView {
+
 	/**
 	 * Initializes this window overlay for the given window.
 	 * @param window <BMWindow>			The window.
@@ -75,6 +76,27 @@ class BMWindowOverlay extends BMView {
 	// @override - BMView
 	frameForDescendant(descendant) {
 		return this._window.frameForDescendant(descendant);
+	}
+
+	// @override - BMView
+	_registerLayout() {
+		if (this._window._visible) {
+			super._registerLayout();
+		}
+		else {
+			this._awaitsLayout = YES;
+		}
+	}
+
+	/**
+	 * Invoked when this overlay's window will become visible.
+	 */
+	_windowWillAppear() {
+		if (this._awaitsLayout) {
+			this._awaitsLayout = NO;
+			super._registerLayout();
+			this.layoutQueue.dequeue;
+		}
 	}
 
 }
@@ -1034,6 +1056,12 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				}, YES);
 				
 			}
+
+
+			this._blocker.style.display = 'block';
+			this._window.style.display = 'block';
+
+			this._overlay._windowWillAppear();
 		
 		}
 		else {
@@ -1043,6 +1071,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			this._window.style.opacity = 1;
 			BMHook(this._window, {scaleX: 1, scaleY: 1});
 			this._window.style.display = 'block';
+
+			this._overlay._windowWillAppear();
 
 			this._blocker.style.pointerEvents = '';
 			this._window.style.pointerEvents = '';

@@ -459,6 +459,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.detailsView.bottom.equalTo(detailsToolWindow.bottom).isActive = YES;
 
             this.detailsView._window = detailsToolWindow;
+            detailsToolWindow.delegate = this.detailsView;
 
             detailsToolWindow.node.classList.add('BMLayoutEditorDetailsWindow');
 

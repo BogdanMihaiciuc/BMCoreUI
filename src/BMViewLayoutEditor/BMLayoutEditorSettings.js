@@ -93,6 +93,17 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
         return this;
     },
 
+    // @override - BMWindowDelegate
+    async windowWillAppear(window) {
+        if (this._panels.length && this._panels[this._panels.length - 1]._awaitsLayout) {
+            await 0;
+            const panel = this._panels[this._panels.length - 1];
+            panel.view.needsLayout = YES;
+            panel.view.layoutIfNeeded();
+            panel.settingsPanelDidLayoutView();
+        }
+    },
+
     /**
      * Prepares the given settings panel for display.
      * @param panel <_BMLayoutEditorSettingsPanel>      The panel to display.
@@ -148,9 +159,14 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
         // Instruct the panel to set up its contents
         panel.settingsPanelDidLoad();
 
-        // Perform layout
-        this.layoutIfNeeded();
-        panel.settingsPanelDidLayoutView();
+        if (this._window && !this._window._visible) {
+            panel._awaitsLayout = YES;
+        }
+        else {
+            // Perform layout
+            this.layoutIfNeeded();
+            panel.settingsPanelDidLayoutView();
+        }
     },
 
     /**
@@ -454,6 +470,15 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
             // Animate the incoming panel
             previousPanel._container.frame = initialFrame;
             previousPanel._container.opacity = 1;
+
+            if (previousPanel._awaitsLayout) {
+                BMAnimationContextBeginStatic();
+                previousPanel._titleView.invalidateIntrinsicSize();
+                previousPanel.view.needsLayout = YES;
+                previousPanel.view.layoutIfNeeded();
+                previousPanel.settingsPanelDidLayoutView();
+                BMAnimationApply();
+            }
         }
 
         await BMAnimationApply();

@@ -2642,6 +2642,13 @@ BMView.prototype = BMExtend(BMView.prototype, {
     },
 
     /**
+     * Enqueues this view in its layout queue.
+     */
+    _registerLayout() {
+        this._layoutQueue._enqueueView(this);
+    },
+
+    /**
      * Schedules a layout pass before the next animation frame.
      */
     async _scheduleLayout() {
@@ -2653,7 +2660,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // If an immediate or regular layout pass was already pending, do nothing
         if (this._layoutAnimationFrameIdentifier || this._layoutIntrisicSizeInvalidationIdentifier) return;
 
-        this._layoutQueue._enqueueView(this);
+        this._registerLayout();
         //_BMViewLayoutQueue.add(this);
         this._layoutAnimationFrameIdentifier = window.requestAnimationFrame(_ => {
             this._layoutAnimationFrameIdentifier = undefined;
@@ -2693,7 +2700,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         this._layoutIntrisicSizeInvalidationIdentifier = BMUUIDMake();
         var identifier = this._layoutIntrisicSizeInvalidationIdentifier;
 
-        this._layoutQueue._enqueueView(this);
+        this._registerLayout();
 
         // Await 0 will move this into the next event tick and should be faster than `window.postMessage` or `window.setTimeout`
         await 0;
@@ -2750,7 +2757,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
             await this._layoutAnimator;
         }
 
-        this._layoutQueue._enqueueView(this);
+        this._registerLayout();
         this._layoutQueue.dequeue();
         //_BMViewLayoutQueue.add(this);
         //_BMViewDequeueLayoutQueue();
