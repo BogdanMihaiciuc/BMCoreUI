@@ -1314,7 +1314,7 @@ BMLayoutEditorSetting.prototype = {
 
         this.variations = variations;
         this.nullable = nullable;
-        if (property) this.property = property;
+        if (property !== undefined) this.property = property;
 
         return this;
     },
