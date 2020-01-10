@@ -19,6 +19,7 @@ import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
 import { _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
 import { _BMLayoutEditorConstraintSettingsPanel } from './BMLayoutEditorConstraintSettings'
+import { _BMLayoutEditorViewGroupSettingsPanel } from './BMLayoutEditorViewGroupSettings'
 
 /**
  * Returns the URL to the given image based on whether CoreUI is running within thingworx or standalone.
@@ -197,7 +198,22 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
      * @param views <[BMView]>          The views that were selected.
      */
     layoutEditorDidSelectViews(views) {
-        
+        if (this._panels[0] instanceof _BMLayoutEditorViewGroupSettingsPanel) {
+            this._panels[0].views = views;
+            return;
+        }
+        if (this._ignoresSelection) return;
+
+        let animated = YES;
+
+        if (this._window && !this._window._visible) {
+            animated = NO;
+        }
+
+        const panel = (new _BMLayoutEditorViewGroupSettingsPanel).initWithSettingsView(this, {forViews: views});
+        this._provisionPanel(panel);
+
+        this.resetToPanel(panel, {animated});
     },
 
     /**
@@ -541,7 +557,7 @@ _BMLayoutEditorSettingsPanel.prototype = {
      * The default implementation does nothing.
      */
     settingsPanelDidLoad() {
-
+        
     },
 
     /**
