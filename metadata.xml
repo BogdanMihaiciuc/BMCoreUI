@@ -34,11 +34,14 @@
         <FileResource type="JS" file="BMCollectionView/BMCollectionView.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMWindow/BMWindow.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMWindow/BMToolWindow.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMWindow/BMKeyboardShortcut.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMCodeEditor/BMCodeEditor.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditor.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorVariablesController.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorSettings.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorSettingCells.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorViewSettings.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorConstraintSettings.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMView/BMMenu.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="velocity.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="iScroll/iscroll-probe.js" description="" isDevelopment="true" isRuntime="true"/>

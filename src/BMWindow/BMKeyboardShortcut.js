@@ -1,3 +1,5 @@
+import { NO } from "../Core/BMCoreUI";
+
 // @ts-check
 
 // @type BMKeyboardShortcutModifier
@@ -10,23 +12,23 @@ export const BMKeyboardShortcutModifier = Object.freeze({ // <enum>
 	/**
 	 * Represents the command key on macOS and iOS, windows key on Windows and meta key on Linux.
 	 */
-	Command: 'metaKey', // <enum>
+	Command: {key: 'metaKey', value: 1}, // <enum>
 	/**
 	 * Represents the option key on macOS and alt on other systems.
 	 */
-	Option: 'altKey', // <enum>
+	Option: {key: 'altKey', value: 2}, // <enum>
 	/**
 	 * Represents the shit key.
 	 */
-	Shift: 'shiftKey', // <enum>
+	Shift: {key: 'shiftKey', value: 4}, // <enum>
 	/**
 	 * Represents the control key.
 	 */
-	Control: 'ctrlKey', // <enum>
+	Control: {key: 'ctrlKey', value: 8}, // <enum>
 	/**
 	 * Represents the command key on macOS and iOS and control key on other systems.
 	 */
-	System: 'systemKey', // <enum>
+	System: {key: 'systemKey', value: (navigator.platform.startsWith('Mac') || /iPhone|iPad|iPod/.test(navigator.platform)) ? 1 : 8}, // <enum>
 
 });
 
@@ -60,11 +62,19 @@ BMKeyboardShortcut.prototype = {
     },
 
     /**
+     * A bitmap describing the modifiers that should be active.
+     */
+    _modifierBitmap: 0, // <Number>
+
+    /**
      * The object which will handle this keyboard shortcut.
      */
     _target: undefined, // <AnyObject>
     get target() {
         return this._target;
+    },
+    set target(target) {
+        this._target = target;
     },
 
     /**
@@ -76,6 +86,14 @@ BMKeyboardShortcut.prototype = {
     get action() {
         return this._action;
     },
+    set action(action) {
+        this._action = action;
+    },
+
+    /**
+     * When set to `YES`, the default action of the event that triggers this keyboard shortcut will be prevented.
+     */
+    preventsDefault: NO, // <Boolean>
 
     /**
      * Initializes this keyboard shortcut with the given key and optional modifiers, as well as
@@ -90,14 +108,20 @@ BMKeyboardShortcut.prototype = {
      * 	@param target <AnyObject>										The object that will handle this keyboard shortcut action.
      * 	@param action <String>											The name of a method on the target object that will be invoked when this 
      * 																	keyboard shortcut is triggered. That method will receive the keyboard event as its single parameter.
+     *  @param preventsDefault <Boolean, nullable>                      Defaults to `NO`. When set to `YES`, the default action of the event that triggers this keyboard shortcut will be prevented.
      * }
      * @return <BMKeyboardShortcut>                                     This keyboard shortcut.
      */
-    initWithKeyCode(key, {modifiers, target, action} = {modifiers: []}) {
+    initWithKeyCode(key, {modifiers, target, action, preventsDefault} = {modifiers: []}) {
         this._key = key;
         this._modifiers = modifiers || [];
         this._target = target;
         this._action = action;
+        this.preventsDefault = preventsDefault || NO;
+
+        for (const modifier of this._modifiers) {
+            this._modifierBitmap = this._modifierBitmap | modifier.value;
+        }
 
         return this;
     }
@@ -121,7 +145,7 @@ BMKeyboardShortcut.prototype = {
  * @return <BMKeyboardShortcut>                                     A keyboard shortcut.
  */
 BMKeyboardShortcut.keyboardShortcutWithKeyCode = function (key, args) {
-    return (new BMKeyboardShortcut).initWithKey(key, args);
+    return (new BMKeyboardShortcut).initWithKeyCode(key, args);
 };
 
 // @endtype

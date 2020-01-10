@@ -29,6 +29,14 @@ var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
 // Uses the new settings view when set to `YES`.
 export let BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW = YES;
 
+// The smallest distance allowed between two view edges to be considered
+// when creating automatic constraint that link the same attributes (e.g. leading to leading)
+const BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_MARGIN = 16;
+
+// The smallest ideal distance allowed between two view frames to be prioritised
+// when creating automatic constraint that link spacing attributes (e.g. trailing to leading)
+const BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_SPACING = 64;
+
 // The height to use for the toolbar
 const _BMLayoutEditorToolbarHeight = 32;
 
@@ -789,10 +797,26 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * Initializes the keyboard shortcuts that the editor responds to.
      */
     _initKeyboardShortcuts() {
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) return;
+
+        // Constraint selectors
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'selectLeftConstraintWithEvent'}));
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'selectTopConstraintWithEvent'}));
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'selectRightConstraintWithEvent'}));
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'selectBottomConstraintWithEvent'}));
+
+        // Tool window toggle
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('KeyI', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'toggleDetailsToolWindow', preventsDefault: YES}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('KeyI', {modifiers: [BMKeyboardShortcutModifier.System, BMKeyboardShortcutModifier.Shift], target: this, action: 'toggleNavigationToolWindow', preventsDefault: YES}));
+
+        // Backspace actions
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Backspace', {modifiers: [BMKeyboardShortcutModifier.System], target: this, action: 'commandBackspacePressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Backspace', {modifiers: [], target: this, action: 'backspacePressedWithEvent'}));
+
+        // Equality actions
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Digit0', {modifiers: [BMKeyboardShortcutModifier.System, BMKeyboardShortcutModifier.Option], target: this, action: 'setConstraintToEqualWithEvent', preventsDefault: YES}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Minus', {modifiers: [BMKeyboardShortcutModifier.System, BMKeyboardShortcutModifier.Option], target: this, action: 'setConstraintToLessThanWithEvent', preventsDefault: YES}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Equal', {modifiers: [BMKeyboardShortcutModifier.System, BMKeyboardShortcutModifier.Option], target: this, action: 'setConstraintToGreaterThanWithEvent', preventsDefault: YES}));
     },
 
     /**
@@ -1085,6 +1109,14 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         toggleSettingsButton.addEventListener('click', BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? event => this.detailsView._window.toggleAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)}) : event => this.toggleSettingsPaneWithEvent(event));
         toolbar.appendChild(toggleSettingsButton);
 
+    },
+
+    toggleDetailsToolWindow() {
+        this.detailsView._window.toggleAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)});
+    },
+
+    toggleNavigationToolWindow() {
+        this._treeWindow.toggleAnimated(YES);
     },
 
     /**
@@ -1408,6 +1440,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     
                 __BMVelocityAnimate(layer, {scaleX: .9, scaleY: .9, opacity: 0}, {duration: 200, easing: 'easeInOutQuart', complete() {layer.remove(); }});
             }
+
+            this.node.focus();
         });
     },
 
@@ -1686,6 +1720,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     
                 __BMVelocityAnimate(layer, {scaleX: .9, scaleY: .9, opacity: 0}, {duration: 200, easing: 'easeInOutQuart', complete() {layer.remove(); }});
             }
+
+            this.node.focus();
         });
     },
 
@@ -1890,6 +1926,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.selectedViews.splice(index, 1);
             view._selector.classList.remove('BMLayoutEditorViewSelectorSelected');
             this.tree.deselectView(view);
+        }
+
+        if (this.selectedViews.length == 1) {
+            return this.selectView(this.selectedViews[0]);
+        }
+        else if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) {
+            return this._settingsView.layoutEditorDidSelectViews(this.selectedViews);
         }
 
         // Create the settings screen for multi-selection
@@ -2278,6 +2321,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 });
                 delay += 16;
             }
+
+            this.node.focus();
         });
 
         return constraintPopup;
@@ -2590,7 +2635,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // and the values are the matching constraints for that attribute
         const potentialConstraintsPerAttribute = {};
         for (const attribute of list) {
-            potentialConstraintsPerAttribute[attribute] = {};
+            potentialConstraintsPerAttribute[attribute] = [];
         }
 
         for (const constraint of constraints) {
@@ -2606,14 +2651,89 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
 
         for (const attribute in potentialConstraintsPerAttribute) {
-            if (potentialConstraintsPerAttribute[attribute].length) return potentialConstraintsPerAttribute[attribute];
+            if (potentialConstraintsPerAttribute[attribute].length) return potentialConstraintsPerAttribute[attribute][0];
+        }
+    },
+
+    /**
+     * Invoked upon the backspace key being pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    backspacePressedWithEvent(event) {
+        // Don't process this keyboard shortcut if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        event.preventDefault();
+
+        if (this.selectedConstraint) {
+            if (this._activeSizeClass) {
+                const isActive = this.selectedConstraint._variations[this._activeSizeClass].isActive;
+                if (typeof isActive === 'undefined') {
+                    this.selectedConstraint.setIsActive(NO, {forSizeClass: this._activeSizeClass});
+                }
+                else if (isActive === NO) {
+                    this.selectedConstraint.setIsActive(YES, {forSizeClass: this._activeSizeClass});
+                }
+                else {
+                    this.selectedConstraint.removeIsActiveVariationForSizeClass(this._activeSizeClass);
+                }
+            }
+            else {
+                this.selectedConstraint.isActive = !this.selectedConstraint.isActive;
+            }
+        }
+    },
+
+    /**
+     * Invoked upon the command+backspace keys being pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    commandBackspacePressedWithEvent(event) {
+        // Don't process this keyboard shortcut if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        event.preventDefault();
+        
+        if (this.selectedConstraint) {
+            this.selectedConstraint.remove();
+            this.selectView(this.selectedConstraintReferenceView);
+        }
+    },
+
+    /**
+     * Sets the selected constraint's equality sign to equal. If no constraint is selected, this method does nothing.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    setConstraintToEqualWithEvent(event) {
+        if (this.selectedConstraint) {
+            this.selectedConstraint._relation = BMLayoutConstraintRelation.Equals;
+        }
+    },
+
+    /**
+     * Sets the selected constraint's equality sign to less than or equal to. If no constraint is selected, this method does nothing.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    setConstraintToLessThanWithEvent(event) {
+        if (this.selectedConstraint) {
+            this.selectedConstraint._relation = BMLayoutConstraintRelation.LessThanOrEquals;
+        }
+    },
+
+    /**
+     * Sets the selected constraint's equality sign to greater than or equal to. If no constraint is selected, this method does nothing.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    setConstraintToGreaterThanWithEvent(event) {
+        if (this.selectedConstraint) {
+            this.selectedConstraint._relation = BMLayoutConstraintRelation.GreaterThanOrEquals;
         }
     },
 
     /**
      * If a view or constraint is selected, this method will select the view's first active leading, left, centerX, or width constraint,
-     * depending on which is available. If no such constraint is available, a leading constraint will be created between this view and the closest sibling or superview.
-     * The constraint will be created depending on 
+     * depending on which is available. The width constraint will only be selected if this view has a trailing or right constraint. 
+     * 
+     * If no such constraint is available, a leading constraint will be created between this view and the closest sibling or superview.
+     * The constraint will be created depending on the position of this view relative to other views in the hierarchy.
      * 
      * If no view or constraint is selected, this method will have no effect.
      * @param event <KeyboardEvent>             The event that triggered this action.
@@ -2623,11 +2743,102 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         if (!view) return;
 
-        const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Leading, BMLayoutAttribute.Left, BMLayoutAttribute.CenterX, BMLayoutAttribute.Width], {forView: view});
+        if (view == this._view) return;
+
+        // Don't process this keyboard shortcuts if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        // Prevent the default action (typically to go back)
+        event.preventDefault();
+
+        let constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Leading, BMLayoutAttribute.Left, BMLayoutAttribute.CenterX], {forView: view});
 
         if (constraint) {
             this.selectConstraint(constraint, {withReferenceView: view});
+            return;
         }
+        else {
+            // If a leading or center constraint was not found, select the width constraint if this view has at least one trailing constraint
+            const rightConstraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Trailing, BMLayoutAttribute.Right], {forView: view});
+            if (rightConstraint) {
+                constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Width], {forView: view});
+            }
+
+            if (constraint) {
+                this.selectConstraint(constraint, {withReferenceView: view});
+                return;
+            }
+        }
+
+        // NOTE: This section of code is duplicated between the four similar selection methods with small changes. Consider looking into consolidating them into a single separate method
+
+        // Otherwise find an appropriate view to create a leading constraint to. 
+        let closestHorizontalView;
+        let closestVerticalView;
+        for (const subview of this._view.allSubviews) {
+            if (subview == view) continue;
+
+            // Ignore ancestors of this view
+            if (view.isDescendantOfView(subview)) continue;
+
+            // In a first instance, find a view that is relatively close to this view horizontally
+            // and attempt to create a horizontal spacing constraint to it. The views must "intersect" vertically in order to be considered
+            if (!(subview.frame.top > view.frame.bottom || subview.frame.bottom < view.frame.top)) {
+                const distance = view.frame.origin.x - subview.frame.right;
+
+                if (distance >= 0) {
+                    if (!closestHorizontalView) {
+                        closestHorizontalView = subview;
+                    }
+                    else if (distance < (view.frame.origin.x - closestHorizontalView.frame.right)) {
+                        closestHorizontalView = subview;
+                    }
+                }
+            }
+
+            // Then find views that have approximately the same leading position as this view
+            {
+                const distance = Math.abs(view.frame.origin.x - subview.frame.origin.x);
+
+                if (distance < BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_MARGIN) {
+                    if (!closestVerticalView) {
+                        closestVerticalView = subview;
+                    }
+                    else {
+                        const minDistance = Math.min(Math.abs(view.frame.origin.y - subview.frame.bottom), Math.abs(view.frame.bottom - subview.frame.origin.y));
+                        const currentMinDistance = Math.min(Math.abs(view.frame.origin.y - closestVerticalView.frame.bottom), Math.abs(view.frame.bottom - closestVerticalView.frame.origin.y));
+    
+                        if (minDistance < currentMinDistance) {
+                            closestVerticalView = subview;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Determine which type of constraint to select. Prioritize the horizontal spacing whenever possible.
+        if (closestHorizontalView) {
+            const distance = view.frame.origin.x - closestHorizontalView.frame.right;
+
+            if (distance <= BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_SPACING && closestHorizontalView.superview == view.superview) {
+                return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Leading, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Trailing, constant: distance}));
+            }
+        }
+
+        // Otherwise find the closest view and create a constraint to it.
+        const distanceToSuperview = view.frame.origin.x - view.superview.frame.origin.x;
+        const distanceToHorizontalView = closestHorizontalView ? view.frame.origin.x - closestHorizontalView.frame.right : Number.MAX_SAFE_INTEGER;
+        const distanceToVerticalView = closestVerticalView ? Math.min(Math.abs(view.frame.origin.y - closestVerticalView.frame.bottom), Math.abs(view.frame.bottom - closestVerticalView.frame.origin.y)) : Number.MAX_SAFE_INTEGER;
+
+        if (distanceToHorizontalView < distanceToSuperview && distanceToHorizontalView < distanceToVerticalView) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Leading, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Trailing, constant: distanceToHorizontalView}));
+        }
+        if (distanceToVerticalView < distanceToHorizontalView && distanceToVerticalView < distanceToSuperview) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Leading, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Leading, constant: view.frame.origin.x - closestVerticalView.frame.origin.x}));
+        }
+        else {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Leading, toView: view.superview, secondAttribute: BMLayoutAttribute.Leading, constant: distanceToSuperview}));
+        }
+
     },
 
     /**
@@ -2642,10 +2853,96 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         if (!view) return;
 
-        const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Top, BMLayoutAttribute.Height], {forView: view});
+        // Don't process this keyboard shortcuts if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        event.preventDefault();
+
+        let constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Top, BMLayoutAttribute.CenterY], {forView: view});
 
         if (constraint) {
             this.selectConstraint(constraint, {withReferenceView: view});
+            return;
+        }
+        else {
+            // If a leading or center constraint was not found, select the width constraint if this view has at least one trailing constraint
+            const bottomConstraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Bottom], {forView: view});
+            if (bottomConstraint) {
+                constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Height], {forView: view});
+            }
+
+            if (constraint) {
+                this.selectConstraint(constraint, {withReferenceView: view});
+                return;
+            }
+        }
+
+
+        // Otherwise find an appropriate view to create a leading constraint to. 
+        let closestVerticalView;
+        let closestHorizontalView;
+        for (const subview of this._view.allSubviews) {
+            if (subview == view) continue;
+
+            // Ignore ancestors of this view
+            if (view.isDescendantOfView(subview)) continue;
+
+            // In a first instance, find a view that is relatively close to this view horizontally
+            // and attempt to create a horizontal spacing constraint to it. The views must "intersect" vertically in order to be considered
+            if (!(subview.frame.left > view.frame.right || subview.frame.right < view.frame.left)) {
+                const distance = view.frame.origin.y - subview.frame.bottom;
+
+                if (distance >= 0) {
+                    if (!closestVerticalView) {
+                        closestVerticalView = subview;
+                    }
+                    else if (distance < (view.frame.origin.y - closestVerticalView.frame.bottom)) {
+                        closestVerticalView = subview;
+                    }
+                }
+            }
+
+            // Then find views that have approximately the same leading position as this view
+            {
+                const distance = Math.abs(view.frame.origin.y - subview.frame.origin.y);
+
+                if (distance < BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_MARGIN) {
+                    if (!closestHorizontalView) {
+                        closestHorizontalView = subview;
+                    }
+                    else {
+                        const minDistance = Math.min(Math.abs(view.frame.origin.x - subview.frame.right), Math.abs(view.frame.right - subview.frame.origin.x));
+                        const currentMinDistance = Math.min(Math.abs(view.frame.origin.x - closestHorizontalView.frame.right), Math.abs(view.frame.right - closestHorizontalView.frame.origin.x));
+    
+                        if (minDistance < currentMinDistance) {
+                            closestHorizontalView = subview;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Determine which type of constraint to select. Prioritize the horizontal spacing whenever possible.
+        if (closestVerticalView) {
+            const distance = view.frame.origin.y - closestVerticalView.frame.bottom;
+
+            if (distance <= BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_SPACING && closestVerticalView.superview == view.superview) {
+                return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Top, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Bottom, constant: distance}));
+            }
+        }
+
+        // Otherwise find the closest view and create a constraint to it.
+        const distanceToSuperview = view.frame.origin.y - view.superview.frame.origin.y;
+        const distanceToHorizontalView = closestVerticalView ? view.frame.origin.y - closestVerticalView.frame.bottom : Number.MAX_SAFE_INTEGER;
+        const distanceToVerticalView = closestHorizontalView ? Math.min(Math.abs(view.frame.origin.x - closestHorizontalView.frame.right), Math.abs(view.frame.right - closestHorizontalView.frame.origin.x)) : Number.MAX_SAFE_INTEGER;
+
+        if (distanceToHorizontalView < distanceToSuperview && distanceToHorizontalView < distanceToVerticalView) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Top, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Bottom, constant: distanceToHorizontalView}));
+        }
+        if (distanceToVerticalView < distanceToHorizontalView && distanceToVerticalView < distanceToSuperview) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Top, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Top, constant: view.frame.origin.y - closestHorizontalView.frame.origin.y}));
+        }
+        else {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Top, toView: view.superview, secondAttribute: BMLayoutAttribute.Top, constant: distanceToSuperview}));
         }
     },
 
@@ -2661,10 +2958,85 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         if (!view) return;
 
+        // Don't process this keyboard shortcuts if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        // Prevent the default action (typically to go forward)
+        event.preventDefault();
+
         const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Trailing, BMLayoutAttribute.Right, BMLayoutAttribute.Width, BMLayoutAttribute.CenterX], {forView: view});
 
         if (constraint) {
             this.selectConstraint(constraint, {withReferenceView: view});
+            return;
+        }
+        
+
+        // Otherwise find an appropriate view to create a leading constraint to. 
+        let closestHorizontalView;
+        let closestVerticalView;
+        for (const subview of this._view.allSubviews) {
+            if (subview == view) continue;
+
+            // Ignore ancestors of this view
+            if (view.isDescendantOfView(subview)) continue;
+
+            // In a first instance, find a view that is relatively close to this view horizontally
+            // and attempt to create a horizontal spacing constraint to it. The views must "intersect" vertically in order to be considered
+            if (!(subview.frame.top > view.frame.bottom || subview.frame.bottom < view.frame.top)) {
+                const distance = subview.frame.origin.x - view.frame.right;
+
+                if (distance >= 0) {
+                    if (!closestHorizontalView) {
+                        closestHorizontalView = subview;
+                    }
+                    else if (distance < (closestVerticalView.frame.origin.x - view.frame.right)) {
+                        closestHorizontalView = subview;
+                    }
+                }
+            }
+
+            // Then find views that have approximately the same leading position as this view
+            {
+                const distance = Math.abs(view.frame.right - subview.frame.right);
+
+                if (distance < BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_MARGIN) {
+                    if (!closestVerticalView) {
+                        closestVerticalView = subview;
+                    }
+                    else {
+                        const minDistance = Math.min(Math.abs(view.frame.origin.y - subview.frame.bottom), Math.abs(view.frame.bottom - subview.frame.origin.y));
+                        const currentMinDistance = Math.min(Math.abs(view.frame.origin.y - closestVerticalView.frame.bottom), Math.abs(view.frame.bottom - closestVerticalView.frame.origin.y));
+    
+                        if (minDistance < currentMinDistance) {
+                            closestVerticalView = subview;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Determine which type of constraint to select. Prioritize the horizontal spacing whenever possible.
+        if (closestHorizontalView) {
+            const distance = closestHorizontalView.frame.origin.x - view.frame.right;
+
+            if (distance <= BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_SPACING && closestHorizontalView.superview == view.superview) {
+                return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Trailing, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Trailing, constant: -distance}));
+            }
+        }
+
+        // Otherwise find the closest view and create a constraint to it.
+        const distanceToSuperview = view.superview.frame.right - view.frame.right;
+        const distanceToHorizontalView = closestHorizontalView ? closestHorizontalView.frame.origin.x - view.frame.right : Number.MAX_SAFE_INTEGER;
+        const distanceToVerticalView = closestVerticalView ? Math.min(Math.abs(view.frame.origin.y - closestVerticalView.frame.bottom), Math.abs(view.frame.bottom - closestVerticalView.frame.origin.y)) : Number.MAX_SAFE_INTEGER;
+
+        if (distanceToHorizontalView < distanceToSuperview && distanceToHorizontalView < distanceToVerticalView) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Trailing, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Leading, constant: -distanceToHorizontalView}));
+        }
+        if (distanceToVerticalView < distanceToHorizontalView && distanceToVerticalView < distanceToSuperview) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Trailing, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Trailing, constant: view.frame.right - closestVerticalView.frame.right}));
+        }
+        else {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Trailing, toView: view.superview, secondAttribute: BMLayoutAttribute.Trailing, constant: -distanceToSuperview}));
         }
     },
 
@@ -2680,10 +3052,83 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         if (!view) return;
 
-        const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Bottom, BMLayoutAttribute.Height], {forView: view});
+        // Don't process this keyboard shortcuts if it originates from an input element
+        if (event.target.tagName == 'INPUT') return;
+        event.preventDefault();
+
+        const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Bottom, BMLayoutAttribute.Height, BMLayoutAttribute.CenterY], {forView: view});
 
         if (constraint) {
             this.selectConstraint(constraint, {withReferenceView: view});
+            return;
+        }
+
+        // Otherwise find an appropriate view to create a leading constraint to. 
+        let closestVerticalView;
+        let closestHorizontalView;
+        for (const subview of this._view.allSubviews) {
+            if (subview == view) continue;
+
+            // Ignore ancestors of this view
+            if (view.isDescendantOfView(subview)) continue;
+
+            // In a first instance, find a view that is relatively close to this view horizontally
+            // and attempt to create a horizontal spacing constraint to it. The views must "intersect" vertically in order to be considered
+            if (!(subview.frame.left > view.frame.right || subview.frame.right < view.frame.left)) {
+                const distance = subview.frame.origin.y - view.frame.bottom;
+
+                if (distance >= 0) {
+                    if (!closestVerticalView) {
+                        closestVerticalView = subview;
+                    }
+                    else if (distance < (closestVerticalView.frame.origin.y - view.frame.bottom)) {
+                        closestVerticalView = subview;
+                    }
+                }
+            }
+
+            // Then find views that have approximately the same leading position as this view
+            {
+                const distance = Math.abs(view.frame.bottom - subview.frame.bottom);
+
+                if (distance < BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_MARGIN) {
+                    if (!closestHorizontalView) {
+                        closestHorizontalView = subview;
+                    }
+                    else {
+                        const minDistance = Math.min(Math.abs(view.frame.origin.x - subview.frame.right), Math.abs(view.frame.right - subview.frame.origin.x));
+                        const currentMinDistance = Math.min(Math.abs(view.frame.origin.x - closestHorizontalView.frame.right), Math.abs(view.frame.right - closestHorizontalView.frame.origin.x));
+    
+                        if (minDistance < currentMinDistance) {
+                            closestHorizontalView = subview;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Determine which type of constraint to select. Prioritize the horizontal spacing whenever possible.
+        if (closestVerticalView) {
+            const distance = closestVerticalView.frame.origin.y - view.frame.bottom;
+
+            if (distance <= BM_LAYOUT_EDITOR_AUTO_CONSTRAINT_SPACING && closestVerticalView.superview == view.superview) {
+                return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Bottom, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Top, constant: -distance}));
+            }
+        }
+
+        // Otherwise find the closest view and create a constraint to it.
+        const distanceToSuperview = view.superview.frame.bottom - view.frame.bottom;
+        const distanceToHorizontalView = closestVerticalView ? closestVerticalView.frame.origin.y - view.frame.bottom : Number.MAX_SAFE_INTEGER;
+        const distanceToVerticalView = closestHorizontalView ? Math.min(Math.abs(view.frame.origin.x - closestHorizontalView.frame.right), Math.abs(view.frame.right - closestHorizontalView.frame.origin.x)) : Number.MAX_SAFE_INTEGER;
+
+        if (distanceToHorizontalView < distanceToSuperview && distanceToHorizontalView < distanceToVerticalView) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Bottom, toView: closestVerticalView, secondAttribute: BMLayoutAttribute.Top, constant: -distanceToHorizontalView}));
+        }
+        if (distanceToVerticalView < distanceToHorizontalView && distanceToVerticalView < distanceToSuperview) {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Bottom, toView: closestHorizontalView, secondAttribute: BMLayoutAttribute.Bottom, constant: closestHorizontalView.frame.bottom - view.frame.bottom}));
+        }
+        else {
+            return this.addConstraint(BMLayoutConstraint.constraintWithView(view, {attribute: BMLayoutAttribute.Bottom, toView: view.superview, secondAttribute: BMLayoutAttribute.Bottom, constant: -distanceToSuperview}));
         }
     },
 
@@ -2789,7 +3234,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._drawHorizontalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
             }
 
-            sourcePoint.y = sourceCoordinates.center.y + offset * 8 - referenceCoordinates.origin.y;
+            const sourcePointOrigin = Math.max(sourceCoordinates.origin.y, targetCoordinates.origin.y);
+            sourcePoint.y = BMNumberByConstrainingNumberToBounds(sourcePointOrigin + (Math.min(sourceCoordinates.bottom, targetCoordinates.bottom) - sourcePointOrigin) / 2 | 0, sourceCoordinates.origin.y + 2, sourceCoordinates.bottom - 2) - referenceCoordinates.origin.y;//sourceCoordinates.center.y + offset * 8 - referenceCoordinates.origin.y;
 
             switch (constraint[targetViewAttribute]) {
                 case BMLayoutAttribute.Left:
@@ -2811,6 +3257,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._drawHorizontalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
                     return;
             }
+
+            targetPoint.y = BMNumberByConstrainingNumberToBounds(sourcePointOrigin + (Math.min(sourceCoordinates.bottom, targetCoordinates.bottom) - sourcePointOrigin) / 2 | 0, targetCoordinates.origin.y + 2, targetCoordinates.bottom - 2) - referenceCoordinates.origin.y;
 
             return this._drawHorizontalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
 
@@ -2849,7 +3297,11 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._drawVerticalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
             }
 
-            sourcePoint.x = sourceCoordinates.center.x - referenceCoordinates.origin.x + offset * 8;
+            //sourcePoint.x = sourceCoordinates.center.x - referenceCoordinates.origin.x + offset * 8;
+
+            const sourcePointOrigin = Math.max(sourceCoordinates.origin.x, targetCoordinates.origin.x);
+            sourcePoint.x = BMNumberByConstrainingNumberToBounds(sourcePointOrigin + (Math.min(sourceCoordinates.right, targetCoordinates.right) - sourcePointOrigin) / 2 | 0, sourceCoordinates.origin.x + 2, sourceCoordinates.right - 2) - referenceCoordinates.origin.x;//sourceCoordinates.center.y + offset * 8 - referenceCoordinates.origin.y;
+
 
             switch (constraint[targetViewAttribute]) {
                 case BMLayoutAttribute.Top:
@@ -2869,6 +3321,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     this._drawVerticalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
                     return;
             }
+
+            targetPoint.x = BMNumberByConstrainingNumberToBounds(sourcePointOrigin + (Math.min(sourceCoordinates.right, targetCoordinates.right) - sourcePointOrigin) / 2 | 0, targetCoordinates.origin.x + 2, targetCoordinates.right - 2) - referenceCoordinates.origin.x;
 
             return this._drawVerticalConstraint(constraint, {fromSourcePoint: sourcePoint, toPoint: targetPoint, withReferenceView: referenceView, sourceConstraint: sourceConstraint});
         }

@@ -1,10 +1,15 @@
-import { BMExtend, BMStringByCapitalizingString } from "../Core/BMCoreUI";
+//@ts-check
+
+import { BMExtend, BMStringByCapitalizingString, YES, NO } from "../Core/BMCoreUI";
 import { BMCollectionViewCell } from "../BMCollectionView/BMCollectionViewCell";
 import { BMLayoutAttribute } from "../BMView/BMLayoutConstraint_v2.5";
 import { _BMURLOfImageAtPath } from "./BMLayoutEditorSettings";
 import { BMView } from "../BMView/BMView_v2.5";
+import { BMLayoutSizeClass, BMLayoutOrientation } from "../BMView/BMLayoutSizeClass";
+import { BMPointMake } from "../Core/BMPoint";
+import { BMMenuKind } from "../BMView/BMMenu";
+import { BMRectMakeWithNodeFrame } from "../Core/BMRect";
 
-//@ts-check
 
 const BMLayoutEdittorSettingCellRowSpacing = 2;
 
@@ -56,6 +61,8 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
         return this._setting;
     },
     set setting(setting) {
+        this._setting = setting;
+
         if (setting.sizeClass) {
             switch (setting.sizeClass) {
                 case BMLayoutSizeClass.phoneSizeClass():
@@ -78,7 +85,7 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
                     break;
                 default:
                     this._badge.node.className = 'BMLayoutEditorDetailsItemBadge';
-                    this._badge.node.innerText = sizeClass._hashString;
+                    this._badge.node.innerText = setting.sizeClass._hashString;
             }
             this._button.node.innerHTML = '<i class="material-icons">remove_circle</i>';
             this._button.isVisible = YES;
@@ -141,7 +148,33 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
         this._buttonWidthConstraint.isActive = YES;
         button.height.equalTo(24).isActive = YES;
 
+        button.node.addEventListener('click', e => this.variationsButtonClickedWithEvent(e));
+
         return this;
+    },
+
+    /**
+     * Invoked when the user clicks on the variations button.
+     * @param event <Event>             The event that triggered this action.
+     */
+    variationsButtonClickedWithEvent(event) {
+        if (this.setting.sizeClass) {
+            this.setting.target[`remove${BMStringByCapitalizingString(this.setting.property)}VariationForSizeClass`](this.setting.sizeClass);
+            // This is necessary in the case of removing variations for constant or isActive in the case of selected constraint for the currently selected size class
+            this.rootView.setting = this.rootView.setting;
+            this.rootView.tab.updateSettings();
+        }
+        else {
+            // TODO check if a variation already exists for this size class; ideally filter the menu
+            this.rootView.layoutEditor._showSizeClassMenuAtPoint(BMPointMake(event.clientX, event.clientY), {kind: BMMenuKind.Menu, action: sizeClass => {
+                // Skip adding a new variation for a size class when it has already been defined
+                if (this.setting.target._variations && this.setting.target._variations[sizeClass] && this.setting.property in this.setting.target._variations[sizeClass]) return;
+
+                // Create the variation, then reload the tab contents
+                this.setting.target[`set${BMStringByCapitalizingString(this.setting.property)}`](this.setting.target[this.setting.property], {forSizeClass: sizeClass});
+                this.rootView.tab.updateSettings();
+            }});
+        }
     }
 });
 
@@ -535,6 +568,55 @@ BMLayoutEditorSettingsDeactivateConstraintsCell.prototype = BMExtend(Object.crea
                 buttonView.node.innerText = 'Deactivate Constraints';
             }
         };
+
+        return this;
+    },
+
+    // @override - BMCollectionViewCell
+    cellDidBindToSetting(setting) {
+    }
+})
+
+// @endtype
+
+// @type BMLayoutEditorSettingsDeleteConstraintCell extends BMLayoutEditorSettingsCell
+
+/**
+ * A cell type specialized for displaying constraints.
+ */
+export function BMLayoutEditorSettingsDeleteConstraintCell() {} // <constructor>
+
+BMLayoutEditorSettingsDeleteConstraintCell.prototype = BMExtend(Object.create(BMLayoutEditorSettingsCell.prototype), {
+    constructor: BMLayoutEditorSettingsDeleteConstraintCell,
+
+    _buttonView: undefined,
+
+    initWithCollectionView() {
+        BMLayoutEditorSettingsCell.prototype.initWithCollectionView.apply(this, arguments);
+
+        const buttonView = BMView.view();
+        this._buttonView = buttonView;
+        this.contentView.addSubview(buttonView);
+        buttonView.supportsAutomaticIntrinsicSize = YES;
+
+        buttonView.leading.equalTo(this.contentView.leading, {plus: 32}).isActive = YES;
+        buttonView.trailing.equalTo(this.contentView.trailing, {plus: -32}).isActive = YES;
+        buttonView.top.equalTo(this.contentView.top, {plus: 8}).isActive = YES;
+        buttonView.bottom.equalTo(this.contentView.bottom, {plus: -8}).isActive = YES;
+
+        buttonView.node.className = 'BMWindowButton BMCollectionViewCellEventHandler';
+        buttonView.node.style.boxSizing = 'border-box';
+        buttonView.node.style.textAlign = 'center';
+        buttonView.node.style.pointer = 'default';
+        buttonView.node.style.margin = 0;
+        buttonView.node.innerText = 'Delete Constraint';
+
+        buttonView.node.addEventListener('click', event => {
+            this.setting.target.remove();
+            this.layoutEditor.selectView(this.tab._settingsPanel._referenceView);
+        });
+
+        buttonView.node.addEventListener('contextmenu', event => event.preventDefault());
 
         return this;
     },
@@ -1159,7 +1241,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
         const setting = this.setting;
         if (setting.sizeClass) {
             const value = this.value;
-            if (value === undefined || value === '') {
+            if (value === undefined || value === '' || value === this.nullValue) {
                 setting.target[`remove${BMStringByCapitalizingString(setting.property)}VariationForSizeClass`](setting.sizeClass);
             }
             else {
@@ -1175,7 +1257,12 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
     cellDidBindToSetting(setting) {
         if (setting.sizeClass) {
             if (setting.target._variations[setting.sizeClass]) {
-                this._inputView.node.value = setting.target._variations[setting.sizeClass][setting.property];
+                if (!(setting.property in setting.target._variations)) {
+                    this._inputView.node.value = this.nullValue;
+                }
+                else {
+                    this._inputView.node.value = setting.target._variations[setting.sizeClass][setting.property];
+                }
             }
             else {
                 this._inputView.node.value = this.nullValue;
@@ -1274,6 +1361,10 @@ export function BMLayoutEditorSettingsConstantCell() {} // <constructor>
 
 BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEditorSettingsInputCell.prototype), {
     constructor: BMLayoutEditorSettingsConstantCell,
+
+    get nullValue() {
+        return '';
+    },
 
     initWithCollectionView(collectionView, args) {
         args.inputKind = 'text';

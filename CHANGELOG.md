@@ -100,8 +100,15 @@ The following keyboard shortcuts are now available when a view is selected:
  * `⌘↑`: Selects the first active constraint that affects the view's `Top` attribute. If such a constraint isn't available but the view has a constraints that affect its `Height` and `Bottom` attributes, the `Height` constraint will be selected. If no such constraints are available, an appropriate `Top` constraint is created and selected.
  * `⌘→`: Selects the first active constraint that affects the view's `Trailing`, `Right` or `Width` attribute. If no such constraint is available, an appropriate `Trailing` or `Width` constraint is created.
  * `⌘↓`: Selects the first active constraint that affects the view's `Bottom` or `Height` attribute. If no such constraint is available, an appropriate `Bottom` or `Height` constraint is created.
- * `⌘A`: Creates missing constraints for the selected view.
+ * `⌘⌥C`: Creates missing constraints for the selected view.
 In all of the above cases, if a size class is selected, the newly created constraints will only be activated for the given size class.
+
+The following keyboard shortcuts are now available when a constraint is selected:
+ * `⌫`: Toggles activation of the constraint for the current size class.
+ * `⌘⌫`: Deletes the constraint.
+ * `⌘⌥-`: Sets the constraint equality sign to less than or equal to.
+ * `⌘⌥=`: Sets the constraint equality sign to greater than or equal to.
+ * `⌘⌥0`: Sets the constraint equality sign to equal to.
 
 The manner in which custom settings can be added and the structure and organization of the settings panel has changed. In this release, the change is opt-in and the previous method is still available and enabled by default.
 The new method can be enabled by setting the global `BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW` flag to `YES`. In addition to the changes above, when enabling the settings view, the layout editor will also have the following changes:

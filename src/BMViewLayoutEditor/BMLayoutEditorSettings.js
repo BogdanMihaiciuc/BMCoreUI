@@ -16,7 +16,9 @@ import {BMWindow} from '../BMWindow/BMWindow'
 import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
-import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell } from './BMLayoutEditorSettingCells'
+import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
+import { _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
+import { _BMLayoutEditorConstraintSettingsPanel } from './BMLayoutEditorConstraintSettings'
 
 /**
  * Returns the URL to the given image based on whether CoreUI is running within thingworx or standalone.
@@ -179,8 +181,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
 
         let animated = YES;
 
-        if (this._window && !this._window._visible && !this._dismissedByUser) {
-            this._window.bringToFrontAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._editor._inspectorButton)});
+        if (this._window && !this._window._visible) {
             animated = NO;
         }
 
@@ -188,6 +189,15 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
         this._provisionPanel(panel);
 
         this.resetToPanel(panel, {animated});
+    },
+
+    /**
+     * Invoked upon the layout editor selecting a goup views. Clears the current settings stack, then creates a settings
+     * panel for multiple views and pushes it onto the stack.
+     * @param views <[BMView]>          The views that were selected.
+     */
+    layoutEditorDidSelectViews(views) {
+        
     },
 
     /**
@@ -226,8 +236,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
 
         let animated = YES;
 
-        if (this._window && !this._window._visible && !this._dismissedByUser) {
-            this._window.bringToFrontAnimated(YES);
+        if (this._window && !this._window._visible) {
             animated = NO;
         }
 
@@ -285,7 +294,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
         if (currentPanel) {
             // Animate the outgoing panel, if it exists
             currentPanel.settingsPanelWillDisappear(YES);
-            if (animated) BMAnimationBeginWithDuration(300, {easing: 'easeOutQuad'});
+            if (animated) BMAnimationBeginWithDuration(200, {easing: 'easeInOutQuad'});
             
             //const frame = currentPanel._container.frame.copy();
             //frame.offsetWithX(0, {y: 128});
@@ -300,7 +309,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
             }
         }
         else {
-            if (panel && animated) BMAnimationBeginWithDuration(300, {easing: 'easeOutQuad'});
+            if (panel && animated) BMAnimationBeginWithDuration(200, {easing: 'easeInOutQuad'});
         }
 
         if (panel) {
@@ -309,10 +318,10 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
             this._ignoresSelection = YES;
             panel.settingsPanelWillAppear(YES);
             this._ignoresSelection = NO;
-            const initialFrame = panel._container.frame.copy();
+            /*const initialFrame = panel._container.frame.copy();
             const animationFrame = initialFrame.copy();
             animationFrame.offsetWithX(0, {y: 256});
-            panel._container.frame = animationFrame;
+            panel._container.frame = animationFrame;*/
             panel._container.opacity = 0;
 
             BMHook(panel._container.node, {scaleX: 1.23, scaleY: 1.23});
@@ -326,7 +335,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
             else {
                 BMHook(panel._container.node, {scaleX: 1, scaleY: 1});
             }
-            panel._container.frame = initialFrame;
+            //panel._container.frame = initialFrame;
             panel._container.opacity = 1;
         }
 
@@ -462,7 +471,7 @@ _BMLayoutEditorSettingsView.settingsViewWithNode = function (node, {forEditor: e
  * A settings panel controls the settings that are available on the settings view.
  * A different subclass of the settings panel is typically used depending on the selected item.
  */
-function _BMLayoutEditorSettingsPanel() {} // <constructor>
+export function _BMLayoutEditorSettingsPanel() {} // <constructor>
 
 _BMLayoutEditorSettingsPanel.prototype = {
     constructor: _BMLayoutEditorSettingsPanel,
@@ -596,7 +605,7 @@ _BMLayoutEditorSettingsPanel.prototype = {
 
 // @type _BMLayoutEditorCollectionSettingsPanel
 
-function _BMLayoutEditorCollectionSettingsPanel() {} // <constructor>
+export function _BMLayoutEditorCollectionSettingsPanel() {} // <constructor>
 
 /**
  * A subclass of settings panel that manages a list of settings tabs, associating a collection
@@ -651,6 +660,7 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         collectionView.registerCellClass(BMLayoutEditorSettingsStringCell, {forReuseIdentifier: BMLayoutEditorSettingKind.String});
         collectionView.registerCellClass(BMLayoutEditorSettingsBooleanCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Boolean});
         collectionView.registerCellClass(BMLayoutEditorSettingsReadonlyCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Info});
+        collectionView.registerCellClass(BMLayoutEditorSettingsDeleteConstraintCell, {forReuseIdentifier: BMLayoutEditorSettingKind.DeleteConstraintButton})
         collectionView.registerCellClass(BMLayoutEditorSettingsDeactivateConstraintsCell, {forReuseIdentifier: BMLayoutEditorSettingKind.DeactivateConstraintsButton});
         collectionView.registerCellClass(BMLayoutEditorSettingsSegmentCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Segment});
         collectionView.registerCellClass(BMLayoutEditorSettingsViewCell, {forReuseIdentifier: BMLayoutEditorSettingKind.View});
@@ -833,6 +843,14 @@ BMLayoutEditorSettingsTab.prototype = {
         this._compiledSettingSections = [];
 
         return this;
+    },
+
+    /**
+     * Should be invoked to cause this tab to reload its settings whenever a setting is added or removed.
+     */
+    updateSettings() {
+        this.beginUpdates();
+        this.commitUpdates();
     },
 
     // @override - BMCollectionViewDataSet
@@ -1183,6 +1201,11 @@ export var BMLayoutEditorSettingKind = Object.freeze({ // <enum>
      * A setting kind that represents the deactivate constraint button.
      */
     DeactivateConstraintsButton: '_DeactivateConstraintsButton', // <enum>
+    
+    /**
+     * A setting kind that represents the delete constraint button.
+     */
+    DeleteConstraintButton: '_DeleteConstraintButton', // <enum>
 
 });
 
@@ -1345,680 +1368,3 @@ BMLayoutEditorEnumSetting.prototype = BMExtend(Object.create(BMLayoutEditorSetti
 BMLayoutEditorEnumSetting.settingWithName = BMLayoutEditorSetting.settingWithName;
 
 // @endtype BMLayoutEditorEnumSetting
-
-// @type _BMLayoutEditorViewSettingsPanel
-
-/**
- * A class that controls the settings for a view.
- */
-function _BMLayoutEditorViewSettingsPanel() {} // <constructor>
-
-_BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEditorCollectionSettingsPanel.prototype), {
-    constructor: _BMLayoutEditorViewSettingsPanel,
-
-    /**
-     * The view whose settings are displayed.
-     */
-    _displayedView: undefined, // <BMView>
-
-    /**
-     * The visual attributes tab.
-     */
-    _attributesTab: undefined, // <BMLayoutEditorSettingsTab>
-
-    /**
-     * The layout tab.
-     */
-    _layoutTab: undefined, // <BMLayoutEditorSettingsTab>
-
-    /**
-     * Designated initializer. Initializes this settings panel with the given settings view.
-     * @param view <_BMLayoutSettingsView>          The settings view.
-     * @return <_BMLayoutEditorSettingsPanel>       This setttings panel.
-     */
-    initWithSettingsView(settingsView, {forView: view}) {
-        _BMLayoutEditorSettingsPanel.prototype.initWithSettingsView.call(this, settingsView);
-
-        this._displayedView = view;
-
-        // Create the default tabs
-        this._attributesTab = BMLayoutEditorSettingsTab.tabWithName('Attributes', {icon: _BMURLOfImageAtPath('images/Properties.png')});
-        this._attributesTab._settingsPanel = this;
-
-        // Add the attribute settings
-        const attributesSection = BMLayoutEditorSettingsSection.section();
-        attributesSection._settings[0] = BMLayoutEditorSetting.settingWithName('Opacity', {kind: BMLayoutEditorSettingKind.Number, target: view, variations: YES, property: 'opacity'});
-        attributesSection._settings[1] = BMLayoutEditorSetting.settingWithName('Visible', {kind: BMLayoutEditorSettingKind.Boolean, target: view, variations: YES, property: 'isVisible'});
-        attributesSection._settings[2] = BMLayoutEditorSetting.settingWithName('CSS Class', {kind: BMLayoutEditorSettingKind.String, target: view, variations: YES, property: 'CSSClass'});
-        this._attributesTab._settingSections.push(attributesSection);
-
-        const edgeInsetsSection = BMLayoutEditorSettingsSection.section();
-        edgeInsetsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Content Insets', {kind: BMLayoutEditorSettingKind.Insets, target: view, variations: YES, nullable: YES, property: 'contentInsets'});
-
-        this._layoutTab = _BMLayoutEditorViewLayoutSettingsTab.viewLayoutTabForView(view);
-        this._layoutTab._settingsPanel = this;
-
-        this._currentTab = this._layoutTab;
-
-        this._tabs = [this._attributesTab, this._layoutTab];
-
-        this.title = view.debuggingName;
-
-        // TODO: Custom tabs
-
-        return this;
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelWillAppear(animated) {
-        this.layoutEditor.selectView(this._displayedView);
-        //this.layoutEditor._drawConstraintsForView(this._displayedView, {includesInactiveConstraints: this._layoutTab._showsInactiveConstraints, includesSubviewConstraints: this._layoutTab._showsSubviewConstraints});
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelDidAppear(animated) {
-
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelWillDisappear(animated) {
-
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelDidDisappear(animated) {
-
-    },
-});
-
-// @endtype
-
-// @type _BMLayoutEditorViewLayoutSettingsTab
-
-/**
- * A specialized settings tab used for displaying view layout settings.
- */
-function _BMLayoutEditorViewLayoutSettingsTab() {} // <constructor>
-
-_BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayoutEditorSettingsTab.prototype), {
-    constructor: _BMLayoutEditorViewLayoutSettingsTab,
-
-    /**
-     * The view whose constraints are displayed.
-     */
-    _displayedView: undefined, // <BMView>
-
-    /**
-     * Controls whether subview constraints are displayed.
-     */
-    _showsSubviewConstraints: NO, // <Boolean>
-
-    /**
-     * The categories of the view's own constraints.
-     */
-    _constraintCategories: undefined, // <Object<String, [BMLayoutConstraint]>
-
-    get showsSubviewConstraints() {
-        return this._showsSubviewConstraints;
-    },
-    set showsSubviewConstraints(shows) {
-        this._showsSubviewConstraints = shows;
-        this._updateSettings();
-    },
-
-    /**
-     * Controls whether inactive constraints are displayed.
-     */
-    _showsInactiveConstraints: NO, // <Boolean>
-
-    get showsInactiveConstraints() {
-        return this._showsInactiveConstraints;
-    },
-    set showsInactiveConstraints(shows) {
-        this._showsInactiveConstraints = shows;
-        this._updateSettings();
-    },
-
-    /**
-     * Controls which types of constraints are displayed by this tab.
-     */
-    get _displayMode() { // <String>
-        if (this._showsInactiveConstraints && this._showsSubviewConstraints) return 'all';
-        if (this._showsInactiveConstraints) return 'inactive';
-        if (this._showsSubviewConstraints) return 'subview';
-        return 'own';
-    },
-    set _displayMode(mode) {
-        if (mode == 'all') {
-            this._showsSubviewConstraints = YES;
-            this.showsInactiveConstraints = YES;
-        }
-        else if (mode == 'subview') {
-            this._showsInactiveConstraints = NO;
-            this.showsSubviewConstraints = YES;
-        }
-        else if (mode == 'inactive') {
-            this._showsInactiveConstraints = YES;
-            this.showsSubviewConstraints = NO;
-        }
-        else {
-            this._showsSubviewConstraints = NO;
-            this.showsInactiveConstraints = NO;
-        }
-    },
-
-    /**
-     * Initializes this view layout tab for the specified view.
-     * @param view <BMView>     The view whose constraints will be displayed.
-     */
-    initWithView(view) {
-        BMLayoutEditorSettingsTab.prototype.initWithName.call(this, 'Layout', {icon: _BMURLOfImageAtPath('images/Layout.png')});
-        this._displayedView = view;
-
-        this._updateSettings();
-
-        return this;
-    },
-
-    /**
-     * Updates the visible constraints.
-     * If this tab is visible, it also updates the displayed constraints.
-     */
-    _updateSettings() {
-        const view = this._displayedView;
-
-        this.beginUpdates();
-
-        this._settingSections.length = 0;
-
-        if (this._intrinsicResistanceSection) {
-            if (view.supportsIntrinsicSize) this._settingSections.push(this._intrinsicResistanceSection);
-        }
-        else {
-            const intrinsicResistanceSection = BMLayoutEditorSettingsSection.section();
-            this._intrinsicResistanceSection = intrinsicResistanceSection;
-            intrinsicResistanceSection.name = 'Intrinsic Size Resistance';
-            intrinsicResistanceSection._settings[0] = BMLayoutEditorSetting.settingWithName('Compression', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'compressionResistance'});
-            intrinsicResistanceSection._settings[1] = BMLayoutEditorSetting.settingWithName('Expansion', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'expansionResistance'});
-            if (view.supportsIntrinsicSize) this._settingSections.push(intrinsicResistanceSection);
-        }
-
-        /*
-        if (this._intrinsicSizeSection) {
-            if (view.supportsIntrinsicSize) this._settingSections.push(this._intrinsicSizeSection);
-        }
-        else {
-            const intrinsicSizeSection = BMLayoutEditorSettingsSection.section();
-            this._intrinsicSizeSection = intrinsicSizeSection;
-            intrinsicSizeSection._settings[0] = BMLayoutEditorSetting.settingWithName('Intrinsic Size', {kind: BMLayoutEditorSettingKind.Info, target: view, property: 'supportsIntrinsicSize'});
-            if (view.supportsIntrinsicSize) this._settingSections.push(intrinsicSizeSection);
-        }
-        */
-
-        const constraintViewPicker = this._constraintViewPickerSection || BMLayoutEditorSettingsSection.section();
-        this._constraintViewPickerSection = constraintViewPicker;
-        constraintViewPicker.name = 'Show';
-        constraintViewPicker._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Show', {kind: BMLayoutEditorSettingKind.Segment, target: this, property: '_displayMode'});
-        constraintViewPicker._settings[0].options = [
-            BMMenuItem.menuItemWithName('Own Constraints', {icon: _BMURLOfImageAtPath('images/OwnConstraints.png'), userInfo: 'own'}),
-            BMMenuItem.menuItemWithName('Subview Constraints', {icon: _BMURLOfImageAtPath('images/SubviewConstraints.png'), userInfo: 'subview'}),
-            BMMenuItem.menuItemWithName('Inactive Constraints', {icon: _BMURLOfImageAtPath('images/InactiveConstraints.png'), userInfo: 'inactive'}),
-            BMMenuItem.menuItemWithName('All Constraints', {icon: _BMURLOfImageAtPath('images/AllConstraints.png'), userInfo: 'all'})
-        ];
-        this._settingSections.push(constraintViewPicker);
-
-
-        // View constraints will be split into four groups:
-        //
-        // 1. Visible by default and non-collapsible will be the constraints that directly affect the view,
-        // or link the view to its siblings or ancestors
-        //
-        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants
-        //
-        // 3. A third, collapsed by default group, will show the inactive constraints
-        //
-        // 4. A final group shows the view's internal constraints in a read-only mode
-        let constraintCategoryMap = {};
-        let subviewConstraintCategoryMap = {};
-        let inactiveConstraintsMap = {};
-        let hasSubviewConstraints = NO;
-        let hasInactiveConstraints = NO;
-
-        // Split up the constraints into the various categories
-        view.localConstraints.forEach(constraint => {
-            let category = constraint.categoryKind;
-
-            if (!constraint._configuration.isActive) {
-                hasInactiveConstraints = YES;
-                inactiveConstraintsMap[category] = inactiveConstraintsMap[category] || [];
-                inactiveConstraintsMap[category].push(constraint);
-                return;
-            }
-
-            if (!constraint._isConstraintCollection) {
-                // Push subview constraints into their own categories
-                if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
-                    subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];
-                    subviewConstraintCategoryMap[category].push(constraint);
-                    hasSubviewConstraints = YES;
-                    return;
-                }
-                if (constraint._targetView == view && constraint._sourceView.isDescendantOfView(view)) {
-                    subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];
-                    subviewConstraintCategoryMap[category].push(constraint);
-                    hasSubviewConstraints = YES;
-                    return;
-                }
-            }
-
-            constraintCategoryMap[category] = constraintCategoryMap[category] || [];
-            constraintCategoryMap[category].push(constraint);
-        });
-
-        for (const category of Object.keys(constraintCategoryMap).sort()) {
-            const section = this[`_${category}`] || BMLayoutEditorSettingsSection.section();
-            this[`_${category}`] = section;
-            section.length = 0;
-            section.name = category + ' Constraints';
-            section._settings = constraintCategoryMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-
-            this._settingSections.push(section);
-        }
-
-        this._constraintCategories = constraintCategoryMap;
-
-        //---------------------------------------------------------------------------------------------------------
-        if (hasSubviewConstraints && this._showsSubviewConstraints) {
-            for (const category of Object.keys(subviewConstraintCategoryMap).sort()) {
-                const categoryName = '_subview' + category;
-                const section = this[categoryName] || BMLayoutEditorSettingsSection.section();
-                this[categoryName] = section;
-                section.length = 0;
-                section.name = 'Subview ' + category + ' Constraints';
-                section._settings = subviewConstraintCategoryMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-    
-                this._settingSections.push(section);
-            }
-        }
-
-        //---------------------------------------------------------------------------------------------------------
-        if (hasInactiveConstraints && this._showsInactiveConstraints) {
-            for (const category of Object.keys(inactiveConstraintsMap).sort()) {
-                const categoryName = '_inactive' + category;
-                const section = this[category] || BMLayoutEditorSettingsSection.section();
-                this[category] = section;
-                section.length = 0;
-                section.name = 'Inactive ' + category + ' Constraints';
-                section._settings = inactiveConstraintsMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-    
-                this._settingSections.push(section);
-            }
-        }
-
-        //---------------------------------------------------------------------------------------------------------
-        let internalConstraints = view.internalConstraints();
-        if (internalConstraints.length) {
-            const section = this._internalConstraintsSection || BMLayoutEditorSettingsSection.section();
-            this._internalConstraintsSection = section;
-            section.length = 0;
-            section.name = 'Internal Constraints';
-            section._settings = internalConstraints.map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-
-            this._settingSections.push(section);
-        }
-
-        if (this.layoutEditor) this.layoutEditor._drawConstraintsForView(this._displayedView, {includesInactiveConstraints: this._showsInactiveConstraints, includesSubviewConstraints: this._showsSubviewConstraints});
-
-        const deactivateConstraintsSection = BMLayoutEditorSettingsSection.section();
-        deactivateConstraintsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Deactivate Constraints', {kind: BMLayoutEditorSettingKind.DeactivateConstraintsButton, target: this});
-        this._settingSections.push(deactivateConstraintsSection);
-
-        this.commitUpdates();
-    }
-});
-
-/**
- * Constructs and returns a view layout settings tab for the given view.
- * @param view <BMView>                                 The view whose constraints will be displayed.
- * @return <_BMLayoutEditorViewLayoutSettingsTab>       A view layout settings tab.
- */
-_BMLayoutEditorViewLayoutSettingsTab.viewLayoutTabForView = function (view) {
-    return (new _BMLayoutEditorViewLayoutSettingsTab).initWithView(view);
-}
-
-// @endtype
-
-
-
-// @type _BMLayoutEditorConstraintSettingsPanel
-
-/**
- * A class that controls the settings for a view.
- */
-function _BMLayoutEditorConstraintSettingsPanel() {} // <constructor>
-
-_BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEditorCollectionSettingsPanel.prototype), {
-    constructor: _BMLayoutEditorConstraintSettingsPanel,
-
-    /**
-     * The view whose settings are displayed.
-     */
-    _displayedConstraint: undefined, // <BMLayoutConstraint>
-
-    /**
-     * The view from which this constraint settings panel was opened.
-     */
-    _referenceView: undefined, // <BMView>
-
-    /**
-     * The visual attributes tab.
-     */
-    _attributesTab: undefined, // <BMLayoutEditorSettingsTab>
-
-    /**
-     * Designated initializer. Initializes this settings panel with the given settings view.
-     * @param view <_BMLayoutSettingsView>          The settings view.
-     * @return <_BMLayoutEditorSettingsPanel>       This setttings panel.
-     */
-    initWithSettingsView(settingsView, {forConstraint: constraint, withReferenceView: view}) {
-        _BMLayoutEditorSettingsPanel.prototype.initWithSettingsView.call(this, settingsView);
-
-        this._displayedConstraint = constraint;
-        this._referenceView = view;
-
-        // Create the default tabs
-        this._attributesTab = BMLayoutEditorSettingsTab.tabWithName('Attributes', {icon: _BMURLOfImageAtPath('images/Properties.png')});
-        this._attributesTab._settingsPanel = this;
-
-        // Prepare the menu options
-        const attributeOptions = [];
-        if (constraint._kind == BMLayoutConstraintKind.Horizontal) {
-            if (constraint._sourceViewAttribute === BMLayoutAttribute.Width) {
-                attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
-            }
-            else {
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Leading, {userInfo: BMLayoutAttribute.Leading}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterX, {userInfo: BMLayoutAttribute.CenterX}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Trailing, {userInfo: BMLayoutAttribute.Trailing}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Left, {userInfo: BMLayoutAttribute.Left}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Right, {userInfo: BMLayoutAttribute.Right}));
-            }
-        }
-        else {
-            if (constraint._sourceViewAttribute === BMLayoutAttribute.Height) {
-                attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
-            }
-            else {
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Top, {userInfo: BMLayoutAttribute.Top}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterY, {userInfo: BMLayoutAttribute.CenterY}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Bottom, {userInfo: BMLayoutAttribute.Bottom}));
-            }
-        }
-
-        const firstView = BMLayoutEditorSettingsSection.section();
-        firstView._settings[0] = BMLayoutEditorSetting.settingWithName('First View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_sourceView'});
-        firstView._settings[1] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_sourceViewAttribute'});
-        firstView._settings[1].options = attributeOptions;
-        this._attributesTab._settingSections.push(firstView);
-
-        const relation = BMLayoutEditorSettingsSection.section();
-        relation._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Relation', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_relation'});
-        relation._settings[0].options = [
-            BMMenuItem.menuItemWithName('=', {userInfo: BMLayoutConstraintRelation.Equals}),
-            BMMenuItem.menuItemWithName('\u2265', {userInfo: BMLayoutConstraintRelation.GreaterThanOrEquals}),
-            BMMenuItem.menuItemWithName('\u2264', {userInfo: BMLayoutConstraintRelation.LessThanOrEquals})
-        ];
-        this._attributesTab._settingSections.push(relation);
-
-        const secondView = BMLayoutEditorSettingsSection.section();
-        if (constraint._targetView) {
-            secondView._settings[0] = BMLayoutEditorSetting.settingWithName('Multiplier', {kind: BMLayoutEditorSettingKind.Number, target: constraint, property: '_multiplier'});
-            secondView._settings[1] = BMLayoutEditorSetting.settingWithName('Second View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_targetView'});
-            secondView._settings[2] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_targetViewAttribute'});
-            secondView._settings[2].options = attributeOptions;
-        }
-        let constantSetting;
-        secondView._settings[secondView._settings.length] = constantSetting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
-        constantSetting.automaticallyExpandsVariations = YES;
-        this._attributesTab._settingSections.push(secondView);
-
-        const priority = BMLayoutEditorSettingsSection.section();
-        priority._settings[0] = BMLayoutEditorSetting.settingWithName('Priority', {kind: BMLayoutEditorSettingKind.Number, target: constraint, variations: YES, property: 'priority'});
-        priority._settings[1] = BMLayoutEditorSetting.settingWithName('Active', {kind: BMLayoutEditorSettingKind.Boolean, target: constraint, variations: YES, property: 'isActive'});
-        priority._settings[1].automaticallyExpandsVariations = YES;
-        this._attributesTab._settingSections.push(priority);
-
-        this._currentTab = this._attributesTab;
-
-        this._tabs = [this._attributesTab];
-
-        this.title = 'Constraint';
-
-        // TODO: Custom tabs
-
-        return this;
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelWillAppear(animated) {
-        this.layoutEditor.selectConstraint(this._displayedConstraint, {withReferenceView: this._referenceView});
-        //this.layoutEditor._drawConstraint(this._displayedConstraint, {withReferenceView: this._referenceView});
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelDidAppear(animated) {
-
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelWillDisappear(animated) {
-
-    },
-
-    // @override - BMLayoutEditorSettingsPanel
-    settingsPanelDidDisappear(animated) {
-
-    },
-});
-
-// @endtype
-
-// @type _BMLayoutEditorConstraintSettingsTab
-
-/**
- * A specialized settings tab used for displaying view layout settings.
- */
-function _BMLayoutEditorConstraintSettingsTab() {} // <constructor>
-
-_BMLayoutEditorConstraintSettingsTab.prototype = BMExtend(Object.create(BMLayoutEditorSettingsTab.prototype), {
-    constructor: _BMLayoutEditorConstraintSettingsTab,
-
-    /**
-     * The view whose constraints are displayed.
-     */
-    _displayedView: undefined, // <BMView>
-
-    /**
-     * Controls whether subview constraints are displayed.
-     */
-    _showsSubviewConstraints: NO, // <Boolean>
-
-    /**
-     * The categories of the view's own constraints.
-     */
-    _constraintCategories: undefined, // <Object<String, [BMLayoutConstraint]>
-
-    /**
-     * Initializes this view layout tab for the specified view.
-     * @param view <BMView>     The view whose constraints will be displayed.
-     */
-    initWithView(view) {
-        BMLayoutEditorSettingsTab.prototype.initWithName.call(this, 'Layout', {icon: _BMURLOfImageAtPath('images/Layout.png')});
-
-        return this;
-    },
-
-    /**
-     * Updates the visible constraints.
-     * If this tab is visible, it also updates the displayed constraints.
-     */
-    _updateSettings() {
-        const view = this._displayedView;
-
-        this.beginUpdates();
-
-        this._settingSections.length = 0;
-
-        if (this._intrinsicResistanceSection) {
-            this._settingSections.push(this._intrinsicResistanceSection);
-        }
-        else {
-            const intrinsicResistanceSection = BMLayoutEditorSettingsSection.section();
-            this._intrinsicResistanceSection = intrinsicResistanceSection;
-            intrinsicResistanceSection._settings[0] = BMLayoutEditorSetting.settingWithName('Compression Resistance', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'compressionResistance'});
-            intrinsicResistanceSection._settings[1] = BMLayoutEditorSetting.settingWithName('Expansion Resistance', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'expansionResistance'});
-            this._settingSections.push(intrinsicResistanceSection);
-        }
-
-        if (this._intrinsicSizeSection) {
-            this._settingSections.push(this._intrinsicSizeSection);
-        }
-        else {
-            const intrinsicSizeSection = BMLayoutEditorSettingsSection.section();
-            this._intrinsicSizeSection = intrinsicSizeSection;
-            intrinsicSizeSection._settings[0] = BMLayoutEditorSetting.settingWithName('Intrinsic Size', {kind: BMLayoutEditorSettingKind.Info, target: view, property: 'supportsIntrinsicSize'});
-            this._settingSections.push(intrinsicSizeSection);
-        }
-
-        const constraintViewPicker = this._constraintViewPickerSection || BMLayoutEditorSettingsSection.section();
-        this._constraintViewPickerSection = constraintViewPicker;
-        constraintViewPicker.name = 'Show';
-        constraintViewPicker._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Show', {kind: BMLayoutEditorSettingKind.Segment, target: this, property: '_displayMode'});
-        constraintViewPicker._settings[0].options = [
-            BMMenuItem.menuItemWithName('Own Constraints', {icon: _BMURLOfImageAtPath('images/OwnConstraints.png'), userInfo: 'own'}),
-            BMMenuItem.menuItemWithName('Subview Constraints', {icon: _BMURLOfImageAtPath('images/SubviewConstraints.png'), userInfo: 'subview'}),
-            BMMenuItem.menuItemWithName('Inactive Constraints', {icon: _BMURLOfImageAtPath('images/InactiveConstraints.png'), userInfo: 'inactive'}),
-            BMMenuItem.menuItemWithName('All Constraints', {icon: _BMURLOfImageAtPath('images/AllConstraints.png'), userInfo: 'all'})
-        ];
-        this._settingSections.push(constraintViewPicker);
-
-
-        // View constraints will be split into four groups:
-        //
-        // 1. Visible by default and non-collapsible will be the constraints that directly affect the view,
-        // or link the view to its siblings or ancestors
-        //
-        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants
-        //
-        // 3. A third, collapsed by default group, will show the inactive constraints
-        //
-        // 4. A final group shows the view's internal constraints in a read-only mode
-        let constraintCategoryMap = {};
-        let subviewConstraintCategoryMap = {};
-        let inactiveConstraintsMap = {};
-        let hasSubviewConstraints = NO;
-        let hasInactiveConstraints = NO;
-
-        // Split up the constraints into the various categories
-        view.localConstraints.forEach(constraint => {
-            let category = constraint.categoryKind;
-
-            if (!constraint._configuration.isActive) {
-                hasInactiveConstraints = YES;
-                inactiveConstraintsMap[category] = inactiveConstraintsMap[category] || [];
-                inactiveConstraintsMap[category].push(constraint);
-                return;
-            }
-
-            if (!constraint._isConstraintCollection) {
-                // Push subview constraints into their own categories
-                if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
-                    subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];
-                    subviewConstraintCategoryMap[category].push(constraint);
-                    hasSubviewConstraints = YES;
-                    return;
-                }
-                if (constraint._targetView == view && constraint._sourceView.isDescendantOfView(view)) {
-                    subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];
-                    subviewConstraintCategoryMap[category].push(constraint);
-                    hasSubviewConstraints = YES;
-                    return;
-                }
-            }
-
-            constraintCategoryMap[category] = constraintCategoryMap[category] || [];
-            constraintCategoryMap[category].push(constraint);
-        });
-
-        for (const category of Object.keys(constraintCategoryMap).sort()) {
-            const section = this[`_${category}`] || BMLayoutEditorSettingsSection.section();
-            this[`_${category}`] = section;
-            section.length = 0;
-            section.name = category + ' Constraints';
-            section._settings = constraintCategoryMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-
-            this._settingSections.push(section);
-        }
-
-        this._constraintCategories = constraintCategoryMap;
-
-        //---------------------------------------------------------------------------------------------------------
-        if (hasSubviewConstraints && this._showsSubviewConstraints) {
-            for (const category of Object.keys(subviewConstraintCategoryMap).sort()) {
-                const categoryName = '_subview' + category;
-                const section = this[categoryName] || BMLayoutEditorSettingsSection.section();
-                this[categoryName] = section;
-                section.length = 0;
-                section.name = 'Subview ' + category + ' Constraints';
-                section._settings = subviewConstraintCategoryMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-    
-                this._settingSections.push(section);
-            }
-        }
-
-        //---------------------------------------------------------------------------------------------------------
-        if (hasInactiveConstraints && this._showsInactiveConstraints) {
-            for (const category of Object.keys(inactiveConstraintsMap).sort()) {
-                const categoryName = '_inactive' + category;
-                const section = this[category] || BMLayoutEditorSettingsSection.section();
-                this[category] = section;
-                section.length = 0;
-                section.name = 'Inactive ' + category + ' Constraints';
-                section._settings = inactiveConstraintsMap[category].map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-    
-                this._settingSections.push(section);
-            }
-        }
-
-        //---------------------------------------------------------------------------------------------------------
-        let internalConstraints = view.internalConstraints();
-        if (internalConstraints.length) {
-            const section = this._internalConstraintsSection || BMLayoutEditorSettingsSection.section();
-            this._internalConstraintsSection = section;
-            section.length = 0;
-            section.name = 'Internal Constraints';
-            section._settings = internalConstraints.map(constraint => BMLayoutEditorSetting.settingWithName(constraint.toString(), {kind: BMLayoutEditorSettingKind.Constraint, target: constraint}));
-
-            this._settingSections.push(section);
-        }
-
-        if (this.layoutEditor) this.layoutEditor._drawConstraintsForView(this._displayedView, {includesInactiveConstraints: this._showsInactiveConstraints, includesSubviewConstraints: this._showsSubviewConstraints});
-
-        const deactivateConstraintsSection = BMLayoutEditorSettingsSection.section();
-        deactivateConstraintsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Deactivate Constraints', {kind: BMLayoutEditorSettingKind.DeactivateConstraintsButton, target: this});
-        this._settingSections.push(deactivateConstraintsSection);
-
-        this.commitUpdates();
-    }
-});
-
-/**
- * Constructs and returns a view layout settings tab for the given view.
- * @param view <BMView>                                 The view whose constraints will be displayed.
- * @return <_BMLayoutEditorConstraintSettingsTab>       A view layout settings tab.
- */
-_BMLayoutEditorConstraintSettingsTab.viewLayoutTabForView = function (view) {
-    return (new _BMLayoutEditorConstraintSettingsTab).initWithView(view);
-}
-
-// @endtype

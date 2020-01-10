@@ -840,23 +840,17 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		// Check if a shortcut key has been pressed.
 		for (const shortcut of this._keyboardShortcuts) {
 			if (event.code != shortcut.keyCode) continue;
-			
-			// Verify that the correct 
-			let hasModifiers = YES;
-			if (shortcut.modifiers.length) for (const modifier of shortcut.modifiers) {
-				if (modifier == BMKeyboardShortcutModifier.System) {
-					if (!event.ctrlKey && !event.metaKey) {
-						hasModifiers = NO;
-						break;
-					}
-				}
-				else if (!event[modifier]) {
-					hasModifiers = NO;
-					break;
+
+			// Build the modifier bitmap for this event
+			let bitmap = 0;
+			for (const modifier in BMKeyboardShortcutModifier) {
+				if (event[BMKeyboardShortcutModifier[modifier].key]) {
+					bitmap = bitmap | BMKeyboardShortcutModifier[modifier].value;
 				}
 			}
 
-			if (hasModifiers) {
+			if (bitmap == shortcut._modifierBitmap) {
+				if (shortcut.preventsDefault) event.preventDefault();
 				shortcut.target[shortcut.action](event);
 			}
 		}
