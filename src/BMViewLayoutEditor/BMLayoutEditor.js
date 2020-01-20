@@ -1788,7 +1788,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._clearOffsets();
         this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
 
-        const drawnConstraints = [];
+        let drawnConstraints = [];
 
         view.localConstraints.forEach(constraint => {
             if (!constraint.affectsLayout && !args.includesInactiveConstraints) return;
@@ -1815,7 +1815,85 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         });
 
         // Filter out constraints which aren't drawn with definitions
-        drawnConstraints.filter(constraint => constraint);
+        drawnConstraints = drawnConstraints.filter(constraint => constraint);
+
+        // Adjust the constraints that overlap
+        let hasOverlaps = NO;
+        for (let k = 0; k < 500; k++) {
+            for (const sourceConstraint of drawnConstraints) {
+                for (const targetConstraint of drawnConstraints) {
+                    if (targetConstraint == sourceConstraint || targetConstraint.kind != sourceConstraint.kind) continue;
+
+                    let mainAxisAttribute = 'x';
+                    let secondaryAxisAttribute = 'y';
+                    if (sourceConstraint.kind !== BMLayoutConstraintKind.Horizontal) {
+                        mainAxisAttribute = 'y';
+                        secondaryAxisAttribute = 'x';
+                    }
+
+                    if (sourceConstraint.sourcePoint[mainAxisAttribute] == targetConstraint.sourcePoint[mainAxisAttribute]) {
+
+                        // Two horizontal constraints overlap if they originate on the same size and their Y positions are within 5 pixels of eachother
+                        // A similar reasoning is used for vertical constraints, but with the coordinates swapped
+                        if (Math.abs(sourceConstraint.sourcePoint[secondaryAxisAttribute] - targetConstraint.sourcePoint[secondaryAxisAttribute]) < 5) {
+                            // If the constraints overlap directly, the first constraint will move up and the second will move down
+                            // Otherwise the topmost constraint will move up and the second will move down
+                            const sourceDisplacement = 3 * (Math.sign(sourceConstraint.sourcePoint[secondaryAxisAttribute] - targetConstraint.sourcePoint[secondaryAxisAttribute]) || -1);
+                            const targetDisplacement = 3 * (Math.sign(targetConstraint.sourcePoint[secondaryAxisAttribute] - sourceConstraint.sourcePoint[secondaryAxisAttribute]) || 1);
+
+                            // Also modify the target points in the cases where they are on the same axis as the source points
+                            if (sourceConstraint.sourcePoint[secondaryAxisAttribute] == sourceConstraint.targetPoint[secondaryAxisAttribute]) {
+                                sourceConstraint.targetPoint[secondaryAxisAttribute] += sourceDisplacement;
+                            }
+
+                            if (targetConstraint.sourcePoint[secondaryAxisAttribute] == targetConstraint.targetPoint[secondaryAxisAttribute]) {
+                                targetConstraint.targetPoint[secondaryAxisAttribute] += targetDisplacement;
+                            }
+
+                            sourceConstraint.sourcePoint[secondaryAxisAttribute] += sourceDisplacement;
+                            targetConstraint.sourcePoint[secondaryAxisAttribute] += targetDisplacement;
+
+                            sourceConstraint.displaced = YES;
+                            targetConstraint.displaced = YES;
+                            hasOverlaps = YES;
+                        }
+
+                    }
+                }
+            }
+
+            if (!hasOverlaps) break;
+        }
+
+        // Update the adjusted constraints
+        for (const constraint of drawnConstraints.filter(constraint => constraint.displaced)) {
+
+            // TODO This portion is copy-pased from the draw methods; extract this piece into its own method
+            if (constraint.kind == BMLayoutConstraintKind.Horizontal) {
+                BMCopyProperties(constraint.node.style, {
+                    left: Math.min(constraint.sourcePoint.x, constraint.targetPoint.x) + 'px',
+                    top: constraint.sourcePoint.y + 'px'
+                });
+        
+                BMCopyProperties(constraint.leadLine.style, {
+                    height: Math.abs(constraint.sourcePoint.y - constraint.targetPoint.y) + 'px',
+                    left: (constraint.targetPoint.x < constraint.sourcePoint.x ? (constraint.targetPoint.x) : (constraint.targetPoint.x - 1)) + 'px',
+                    top: Math.min(constraint.targetPoint.y, constraint.sourcePoint.y) + 'px'
+                });
+            }
+            else {
+                BMCopyProperties(constraint.node.style, {
+                    left: constraint.sourcePoint.x + 'px',
+                    top: Math.min(constraint.sourcePoint.y, constraint.targetPoint.y) + 'px'
+                });
+        
+                BMCopyProperties(constraint.leadLine.style, {
+                    width: Math.abs(constraint.sourcePoint.x - constraint.targetPoint.x) + 'px',
+                    top: (constraint.targetPoint.y < constraint.sourcePoint.y ? (constraint.targetPoint.y) : (constraint.targetPoint.y - 1)) + 'px',
+                    left: Math.min(constraint.targetPoint.x, constraint.sourcePoint.x) + 'px'
+                });
+            }
+        }
     },
 
     /**
@@ -3398,6 +3476,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             event.stopPropagation();
         });
 
+        return {sourcePoint, targetPoint, kind: BMLayoutConstraintKind.Horizontal, node: constraintView, leadLine, displaced: NO};
+
     },
 
     /**
@@ -3456,6 +3536,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             event.stopPropagation();
         });
+
+        return {sourcePoint, targetPoint, kind: BMLayoutConstraintKind.Vertical, node: constraintView, leadLine, displaced: NO};
 
     },
 

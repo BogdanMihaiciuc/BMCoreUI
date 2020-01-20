@@ -93,6 +93,8 @@ It is now possible to freely pan the edited view hierarchy using the touchpad, m
 It is now possible to zoom the edited view hierarchy by using the mousewheel or touchpad scrolling while holding the ⌥ key or by pinch zooming on touch devices. 
 There is also a slider control and precise zoom input box available in the toolbar to control the zoom level.
 
+Constraints are now drawn in such a way that whenever possible they will touch the edges of the affected views instead of defaulting to originate from the center of the selected view.
+
 A new **Reset** button is now available in the toolbar that can be used to reset the zoom level and pan position.
 
 The height of the toolbar and the various settings controls has been reduced.
