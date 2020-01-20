@@ -3446,6 +3446,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             top: sourcePoint.y + 'px'
         });
 
+        if (constraint._relation == BMLayoutConstraintRelation.GreaterThanOrEquals) {
+            constraintView.classList.add('BMLayoutEditorConstraintGreater');
+        }
+        else if (constraint._relation == BMLayoutConstraintRelation.LessThanOrEquals) {
+            constraintView.classList.add('BMLayoutEditorConstraintLess');
+        }
+
         let constraintLine = document.createElement('div');
         constraintLine.className = 'BMLayoutEditorHorizontalConstraintLine';
         constraintView.appendChild(constraintLine);
@@ -3506,6 +3513,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             left: sourcePoint.x + 'px',
             top: origin + 'px'
         });
+
+        if (constraint._relation == BMLayoutConstraintRelation.GreaterThanOrEquals) {
+            constraintView.classList.add('BMLayoutEditorConstraintGreater');
+        }
+        else if (constraint._relation == BMLayoutConstraintRelation.LessThanOrEquals) {
+            constraintView.classList.add('BMLayoutEditorConstraintLess');
+        }
 
         let constraintLine = document.createElement('div');
         constraintLine.className = 'BMLayoutEditorVerticalConstraintLine';

@@ -1849,7 +1849,7 @@ BMLayoutEditorDetailsItemBadge {
 }
 
 .BMLayoutEditorViewSelector.BMLayoutEditorViewSelectorSelected {
-	border: 2px solid rgba(0, 128, 255, 1);
+	border: 1px solid rgba(0, 128, 255, 1);
 }
 
 .BMLayoutEditorViewSelectorSelected > .BMWindowDragHandle.BMLayoutEditorViewDragHandle {
@@ -1969,6 +1969,27 @@ BMLayoutEditorDetailsItemBadge {
 	background-color: rgba(0, 128, 255, 1);
 }
 
+.BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintLess::before, .BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintGreater::after {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 3px 4px 3px 0;
+    border-color: transparent rgba(0, 128, 255, 1) transparent transparent;
+	background-color: transparent;
+}
+
+.BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintGreater::before, .BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintLess::after {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 3px 0 3px 4px;
+    border-color: transparent transparent transparent rgba(0, 128, 255, 1);
+	background-color: transparent;
+}
+
+.BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintGreater::before, .BMLayoutEditorHorizontalConstraint.BMLayoutEditorConstraintLess::before {
+	left: calc(100% - 4px);
+}
 
 .BMLayoutEditorVerticalConstraint::after {
 	content: '';
@@ -1990,6 +2011,30 @@ BMLayoutEditorDetailsItemBadge {
 	left: 0px;
 
 	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintLess::before, .BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintGreater::after {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 3px 4px 3px;
+    border-color: transparent transparent rgba(0, 128, 255, 1) transparent;
+	background-color: transparent;
+	left: -0.5px;
+}
+
+.BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintGreater::before, .BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintLess::after {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 4px 3px 0 3px;
+    border-color: rgba(0, 128, 255, 1) transparent transparent transparent;
+	background-color: transparent;
+	left: -0.5px;
+}
+
+.BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintGreater::before, .BMLayoutEditorVerticalConstraint.BMLayoutEditorConstraintLess::before {
+	top: calc(100% - 4px);
 }
 
 .BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorConstraint::after, .BMLayoutEditorWorkspaceInvalidLayout .BMLayoutEditorConstraint::before {
