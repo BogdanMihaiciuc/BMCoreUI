@@ -34,6 +34,10 @@ The `release` method can now be safely invoked on views that have superviews; it
 
 A new `descriptionRelativeToView(_)` method can now be invoked to obtain a string description of the constraint that is relative to the given view.
 
+## BMMenu
+
+When opened towards the right side of the page, if the menu doesn't fit to the right of the event source point, it will now open towards the left.
+
 ## BMCollectionViewFlowLayout
 
 Resolved a crash that could occur in certain situations when using footers and automatic cell sizes.

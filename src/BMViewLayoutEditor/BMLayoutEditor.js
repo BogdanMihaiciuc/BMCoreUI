@@ -2355,19 +2355,24 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         document.body.appendChild(constraintPopupContainer);
 
-        let height = constraintPopup.offsetHeight;
+        const height = constraintPopup.offsetHeight;
+        const width = constraintPopup.offsetWidth;
 
-        constraintPopup.style.transformOrigin = '0% 0%';
+        let transformOriginX = '0%';
+        let transformOriginY = ' 0%';
+
         if (args.kind == BMMenuKind.PullDownMenu) {
-            constraintPopup.style.transformOrigin = '50% 0%';
+            transformOriginX = '50%';
+        }
+        else if (width + point.x > document.documentElement.clientWidth) {
+            transformOriginX = '100%';
+            point.x -= width;
         }
         if (height + point.y > document.documentElement.clientHeight) {
-            constraintPopup.style.transformOrigin = '0% 100%';
-            if (args.kind == BMMenuKind.PullDownMenu) {
-                constraintPopup.style.transformOrigin = '50% 100%';
-            }
+            transformOriginY = ' 100%';
             point.y -= height;
         }
+        constraintPopup.style.transformOrigin = transformOriginX + transformOriginY;
 
         constraintPopup.style.left = point.x + 'px';
         constraintPopup.style.top = point.y + 'px';
@@ -2476,13 +2481,21 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         document.body.appendChild(constraintPopupContainer);
 
-        let height = constraintPopup.offsetHeight;
+        const height = constraintPopup.offsetHeight;
+        const width = constraintPopup.offsetWidth;
 
-        constraintPopup.style.transformOrigin = '0% 0%';
+        let transformOriginX = '0%';
+        let transformOriginY = ' 0%';
+
+        if (width + args.atPoint.x > document.documentElement.clientWidth) {
+            transformOriginX = '100%';
+            args.atPoint.x -= width;
+        }
         if (height + args.atPoint.y > document.documentElement.clientHeight) {
-            constraintPopup.style.transformOrigin = '0% 100%';
+            transformOriginY = ' 100%';
             args.atPoint.y -= height;
         }
+        constraintPopup.style.transformOrigin = transformOriginX + transformOriginY;
 
         constraintPopup.style.left = args.atPoint.x + 'px';
         constraintPopup.style.top = args.atPoint.y + 'px';

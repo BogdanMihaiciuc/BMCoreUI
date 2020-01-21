@@ -402,19 +402,24 @@ BMMenu.prototype = {
 
         document.body.appendChild(menuContainer);
 
-        let height = menuNode.offsetHeight;
+        const height = menuNode.offsetHeight;
+        const width = menuNode.offsetWidth;
 
-        menuNode.style.transformOrigin = '0% 0%';
+        let transformOriginX = '0%';
+        let transformOriginY = ' 0%';
+
         if (kind == BMMenuKind.PullDownMenu) {
-            menuNode.style.transformOrigin = '50% 0%';
+            transformOriginX = '50%';
+        }
+        else if (width + point.x > document.documentElement.clientWidth) {
+            transformOriginX = '100%';
+            point.x -= width;
         }
         if (height + point.y > document.documentElement.clientHeight) {
-            menuNode.style.transformOrigin = '0% 100%';
-            if (kind == BMMenuKind.PullDownMenu) {
-                menuNode.style.transformOrigin = '50% 100%';
-            }
+            transformOriginY = ' 100%';
             point.y -= height;
         }
+        menuNode.style.transformOrigin = transformOriginX + transformOriginY;
 
         menuNode.style.left = point.x + 'px';
         menuNode.style.top = point.y + 'px';
