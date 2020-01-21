@@ -171,10 +171,10 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
         }
         else if (mode == 'inactive') {
             this._showsInactiveConstraints = YES;
-            this.showsSubviewConstraints = NO;
+            this.showsSubviewConstraints = YES;
         }
         else {
-            this._showsSubviewConstraints = NO;
+            this._showsSubviewConstraints = YES;
             this.showsInactiveConstraints = NO;
         }
     },
@@ -249,7 +249,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
         // 1. Visible by default and non-collapsible will be the constraints that directly affect the view,
         // or link the view to its siblings or ancestors
         //
-        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants
+        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants - This is currently no longer active
         //
         // 3. A third, collapsed by default group, will show the inactive constraints
         //
@@ -271,7 +271,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
                 return;
             }
 
-            if (!constraint._isConstraintCollection) {
+            /*if (!constraint._isConstraintCollection) {
                 // Push subview constraints into their own categories
                 if (constraint._sourceView == view && constraint._targetView && constraint._targetView.isDescendantOfView(view)) {
                     subviewConstraintCategoryMap[category] = subviewConstraintCategoryMap[category] || [];
@@ -285,7 +285,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
                     hasSubviewConstraints = YES;
                     return;
                 }
-            }
+            }*/
 
             constraintCategoryMap[category] = constraintCategoryMap[category] || [];
             constraintCategoryMap[category].push(constraint);
