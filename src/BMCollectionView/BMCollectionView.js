@@ -5671,8 +5671,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 BMCollectionView.collectionViewForNode = function (node, args) {
 	let collectionView = BMCollectionViewMakeWithContainer(BMJQueryShim.shimWithDOMNode(node), args);
 
-	collectionView.initWithDOMNode(node);
-
 	return collectionView;
 }
 
@@ -5727,6 +5725,8 @@ export function BMCollectionViewMakeWithContainer(container, options) {
 	collectionView._measuredIndexPaths = [];
 
 	collectionView._cellLayoutQueue = BMViewLayoutQueue.layoutQueue();
+
+	collectionView.initWithDOMNode(container[0]);
 	
 	return collectionView;
 }
