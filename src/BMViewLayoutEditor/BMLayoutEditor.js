@@ -5,15 +5,13 @@ import {BMInsetMakeWithEqualInsets} from '../Core/BMInset'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
 import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
-import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationContextAddCompletionHandler} from '../Core/BMAnimationContext'
+import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2} from '../Core/BMAnimationContext'
 import {BMLayoutOrientation, BMLayoutSizeClass} from '../BMView/BMLayoutSizeClass'
 import {BMViewport} from '../BMView/BMViewport'
 import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
 import {BMView} from '../BMView/BMView_v2.5'
-import {BMMenuKind, BMMenuItem} from '../BMView/BMMenu'
+import {BMMenuKind} from '../BMView/BMMenu'
 import {BMWindow} from '../BMWindow/BMWindow'
-import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { _BMLayoutEditorSettingsView } from './BMLayoutEditorSettings'
@@ -161,6 +159,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this.layoutVariableProvider = (args && args.layoutVariableProvider) || BMView;
         this.layoutVariableProvider.prepareLayoutVariables();
+
+        this._settingCellClasses = {};
 
         this.resizeListener = event => view.needsLayout = YES;
         window.addEventListener('resize', this.resizeListener);
@@ -416,7 +416,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
         var workspaceToolbar = document.createElement('div');
-        workspaceToolbar.className = 'BMLayoutEditorWorkspaceToolbar BMWindowToolbarMini';
+        workspaceToolbar.className = 'BMLayoutEditorWorkspaceToolbar' + (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? ' BMWindowToolbarMini' : '');
         workspaceArea.appendChild(workspaceToolbar);
         this._initToolbar(workspaceToolbar);
         this.workspaceToolbar = workspaceToolbar;
@@ -513,13 +513,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.workspaceView.leading.equalTo(this.leading).isActive = YES;
         }
         this.workspaceView.trailing.equalTo(BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? this.trailing : this.detailsView.leading).isActive = YES;
-        if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsView.trailing.equalTo(this.trailing).isActive = YES;
+        if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsView.trailing.equalTo(this.trailing).isActive = YES;
 
-        //BMEqualSpacingLayoutConstraint.constraintOfKind(BMLayoutConstraintKind.Horizontal, {forViews: [this.tree, this.workspaceView, this.detailsView], withSuperview: YES}).isActive = YES;
+        //if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) BMEqualSpacingLayoutConstraint.constraintOfKind(BMLayoutConstraintKind.Horizontal, {forViews: [this.tree, this.workspaceView, this.detailsView], withSuperview: YES}).isActive = YES;
         this.treeWidthConstraint = this.tree.width.equalTo(256);
         if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.treeWidthConstraint.isActive = YES;
 
-        this.detailsWidthConstraint = this.detailsView.width.equalTo(344, {priority: 1});
+        this.detailsWidthConstraint = this.detailsView.width.equalTo(344, {priority: 1000});
         if (!BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW) this.detailsWidthConstraint.isActive = YES;
 
         // Set up constraints for the workspace layout
@@ -532,7 +532,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.workspaceWrapperView.leading.equalTo(this.workspaceView.leading).isActive = YES;
         this.workspaceWrapperView.trailing.equalTo(this.workspaceView.trailing).isActive = YES;
 
-        this.workspaceToolbarHeightConstraint = this.workspaceToolbarView.height.equalTo(_BMLayoutEditorToolbarHeight);
+        this.workspaceToolbarHeightConstraint = this.workspaceToolbarView.height.equalTo(BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? _BMLayoutEditorToolbarHeight : _BMLayoutEditorToolbarHeight * 2);
         this.workspaceToolbarHeightConstraint.isActive = YES;
 
         // Set up constraints for the workspace
@@ -711,6 +711,22 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * If this property is not set, the layout editor will manipulate the globally available layout variables.
      */
     layoutVariableProvider: BMView, // <BMLayoutVariableProvider>
+
+    /**
+     * The registered setting cell classes.
+     */
+    _settingCellClasses: undefined, // <Object<String, typeof BMLayoutEditorSettingsCell>>
+
+    /**
+     * Registers the given cell class to be used when creating settings of the given kind.
+     * @param cellClass <typeof BMLayoutEditorSettingsCell>     The cell class to register.
+     * {
+     *  @param forSettingOfKind <String>                        The kind of setting that will use the given cell class.
+     * }
+     */
+    registerCellClass(cellClass, {forSettingOfKind}) {
+        this._settingCellClasses[forSettingOfKind] = cellClass;
+    },
 
     /**
      * Brings up the size class menu at the specified point.
@@ -1336,6 +1352,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         // Create the frame for the popover container and move it accordingly
         const frame = BMRectMake(window.innerWidth - 320 - 16, location.y + 16, 320, 380 + 8);
+        frame.origin.x = Math.min(frame.origin.x, location.x - frame.width / 2);
         const knobPosition = location.x - frame.origin.x;
 
         const path = `path('${this._pathForPopoverWithFrame(frame, {widthIndicatorSize: 16, knobPosition})}')`;
@@ -1626,7 +1643,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         box.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemTextValue';
         if (this.activeSizeClass) {
             if (constraint._variations[this.activeSizeClass]) {
-                box.value = constraint._variations[this.activeSizeClass].constant;
+                box.value = constraint._variations[this.activeSizeClass].constant || '';
             }
             else {
                 box.value = '';
@@ -2732,7 +2749,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * {
      *  @param forView <BMView>                 The view whose constraints to search.
      * }
-     * @return <BMLayoutConsstraint, nullable>  The first matching layout constraint, if it was found, `undefined` otherwise.
+     * @return <BMLayoutConstraint, nullable>   The first matching layout constraint, if it was found, `undefined` otherwise.
      */
     _constraintAffectingAttributeInList(list, {forView: view}) {
         const constraints = view.localConstraints;
@@ -5478,7 +5495,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
                 this.treeWidthConstraint.constant = 256;
                 this.detailsWidthConstraint.constant = 344;
-                this.workspaceToolbarHeightConstraint.constant = _BMLayoutEditorToolbarHeight;
+                this.workspaceToolbarHeightConstraint.constant = BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW ? _BMLayoutEditorToolbarHeight : _BMLayoutEditorToolbarHeight * 2;
                 this.layout();
 
                 BMCopyProperties(this.node.style, {

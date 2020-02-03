@@ -103,7 +103,7 @@ const DTSFiles = [
     'BMViewLayoutEditor/BMLayoutEditor.js', 
     'BMViewLayoutEditor/BMLayoutEditorVariablesController.js', 
     'BMViewLayoutEditor/BMLayoutEditorSettings.js', 
-    'BMViewLayoutEditor/BMLayoutEditorSettingsDelegate.js', 
+    'BMViewLayoutEditor/BMLayoutEditorDelegate.js', 
     'BMViewLayoutEditor/BMLayoutEditorSettingCells.js', 
     'BMViewLayoutEditor/BMLayoutVariableProvider.js', 
     'BMView/BMMenu.js',

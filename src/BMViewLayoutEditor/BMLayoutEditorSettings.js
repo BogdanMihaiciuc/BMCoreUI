@@ -1,19 +1,11 @@
 // @ts-check
 
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
-import {BMInsetMakeWithEqualInsets, BMInsetMake} from '../Core/BMInset'
+import {YES, NO, BMExtend} from '../Core/BMCoreUI'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
-import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
 import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationApplyBlocking, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
-import {BMLayoutOrientation, BMLayoutSizeClass} from '../BMView/BMLayoutSizeClass'
-import {BMViewport} from '../BMView/BMViewport'
-import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
+import {__BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
 import {BMView} from '../BMView/BMView_v2.5'
-import {BMMenuKind, BMMenuItem} from '../BMView/BMMenu'
-import {BMWindow} from '../BMWindow/BMWindow'
-import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
@@ -101,6 +93,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
             panel.view.needsLayout = YES;
             panel.view.layoutIfNeeded();
             panel.settingsPanelDidLayoutView();
+            panel._awaitsLayout = NO;
         }
     },
 
@@ -477,6 +470,7 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
                 previousPanel.view.needsLayout = YES;
                 previousPanel.view.layoutIfNeeded();
                 previousPanel.settingsPanelDidLayoutView();
+                previousPanel._awaitsLayout = NO;
                 BMAnimationApply();
             }
         }
@@ -520,7 +514,7 @@ _BMLayoutEditorSettingsPanel.prototype = {
     /**
      * The settings view to which this panel belongs.
      */
-    _settingsView: undefined, // <_BMLayoutSettingsView>
+    _settingsView: undefined, // <_BMLayoutEditorSettingsView>
 
     /**
      * This panel's title.
@@ -566,7 +560,7 @@ _BMLayoutEditorSettingsPanel.prototype = {
 
     /**
      * Designated initializer. Initializes this settings panel with the given settings view.
-     * @param view <_BMLayoutSettingsView>          The settings view.
+     * @param view <_BMLayoutEditorSettingsView>    The settings view.
      * @return <_BMLayoutEditorSettingsPanel>       This setttings panel.
      */
     initWithSettingsView(view) {
@@ -668,7 +662,7 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
 
     /**
      * Configures the layout settings of the given collection view.
-     * @param collectionView 
+     * @param collectionView <BMCollectionView>     The collection view.
      */
     _configureCollectionViewLayout(collectionView) {
         collectionView.node.style.position = 'absolute';
@@ -707,6 +701,11 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         collectionView.registerCellClass(BMLayoutEditorSettingsViewCell, {forReuseIdentifier: BMLayoutEditorSettingKind.View});
         collectionView.registerCellClass(BMLayoutEditorSettingsDropdownCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Enum});
         collectionView.registerSupplementaryViewClass(BMLayoutEditorSettingsFooter, {forReuseIdentifier: BMCollectionViewFlowLayoutSupplementaryView.Footer});
+
+        // Register the custom cell classes
+        for (const key in this.layoutEditor._settingCellClasses) {
+            collectionView.registerCellClass(this.layoutEditor._settingCellClasses[key], {forReuseIdentifier: key});
+        }
     },
 
     // @override - BMLayoutEditorSettingsPanel
@@ -824,6 +823,22 @@ BMLayoutEditorSettingsTab.prototype = {
     icon: undefined, // <String>
 
     /**
+     * The constraint to which this tab applies.
+     */
+    _constraint: undefined, // <BMLayoutConstraint, nullable>
+    get constraint() {
+        return this._constraint;
+    },
+
+    /**
+     * The view to which this tab applies.
+     */
+    _view: undefined, // <BMView, nullable>
+    get view() {
+        return this._view;
+    },
+
+    /**
      * An array of sections making up this settings tab.
      */
     _settingSections: undefined, // <[BMLayoutEditorSettingsSection]>
@@ -844,6 +859,8 @@ BMLayoutEditorSettingsTab.prototype = {
         return this._collectionView;
     },
     set collectionView(view) {
+        this._compiledSettingSections.length = 0;
+
         // Compile the settings when first being assigned a collection view, as the layout editor
         // will not have been available the first time `commitUpdates` was invoked
         for (const section of this._settingSections) {
@@ -858,7 +875,7 @@ BMLayoutEditorSettingsTab.prototype = {
     /**
      * The settings panel to which this tab was added.
      */
-    _settingsPanel: undefined, // <BMLayoutEditorSettingsPanel, nullable>
+    _settingsPanel: undefined, // <_BMLayoutEditorSettingsPanel, nullable>
 
     /**
      * The layout editor to which this tab was added.
@@ -891,6 +908,7 @@ BMLayoutEditorSettingsTab.prototype = {
      */
     updateSettings() {
         this.beginUpdates();
+        this._settingsPanel._updateSettingsForTab(this);
         this.commitUpdates();
     },
 
@@ -988,11 +1006,11 @@ BMLayoutEditorSettingsTab.prototype = {
     async commitUpdates() {
         if (!this.layoutEditor) return;
 
+        if (!this._collectionView) return;
+
         for (const section of this._settingSections) {
             this._compiledSettingSections.push(section._compiledSectionForSizeClass(this.layoutEditor.activeSizeClass));
         }
-
-        if (!this._collectionView) return;
 
         // Await for any current data update
         while (this._collectionView.isUpdatingData) {
@@ -1093,6 +1111,12 @@ BMLayoutEditorSettingsSection.prototype = {
      * An array of settings belonging to this section.
      */
     _settings: undefined, // <[BMLayoutEditorSetting]>
+    get settings() {
+        return this._settings.slice();
+    },
+    set settings(settings) {
+        this._settings = settings.slice();
+    },
 
     /**
      * Returns a copy of this section that contains additional settings for all defined and
@@ -1269,7 +1293,7 @@ BMLayoutEditorSetting.prototype = {
     /**
      * The data kind.
      */
-    kind: BMLayoutEditorSettingKind.String, // <BMLayoutEditorSettingKind>
+    kind: BMLayoutEditorSettingKind.String, // <BMLayoutEditorSettingKind or String>
 
     /**
      * Should be set to `YES` for settings that support null values.
@@ -1311,7 +1335,7 @@ BMLayoutEditorSetting.prototype = {
     /**
      * The object that represents the target of this setting.
      */
-    target: undefined, // <BMLayoutEditorSettingsDelegate>
+    target: undefined, // <AnyObject>
 
     /**
      * The property that this setting manages. The value of this property
@@ -1321,14 +1345,14 @@ BMLayoutEditorSetting.prototype = {
 
     /**
      * Initializes this setting with the given name, data kind and target object.
-     * @param name <String>                     The name of the setting.
+     * @param name <String>                                 The name of the setting.
      * {
-     *  @param kind <BMLayoutEditorSettingKind> The data kind.
-     *  @param target <AnyObject>               The target object of the setting.
-     *  @param variations <Boolean, nullable>   Defaults to `NO`. Controls whether this setting supports variations.
-     *  @param nullable <Boolean, nullable>     Defaults to `NO`. Controls whether this setting supports null value.
-     *  @param property <String, nullable>      If specified, this represents the property on the target object which is controlled by this
-     *                                          setting. This value is not directly by the layout editor but can be used by the target object.
+     *  @param kind <BMLayoutEditorSettingKind or String>   The data kind.
+     *  @param target <AnyObject>                           The target object of the setting.
+     *  @param variations <Boolean, nullable>               Defaults to `NO`. Controls whether this setting supports variations.
+     *  @param nullable <Boolean, nullable>                 Defaults to `NO`. Controls whether this setting supports null value.
+     *  @param property <String, nullable>                  If specified, this represents the property on the target object which is controlled by this
+     *                                                      setting. This value is not directly by the layout editor but can be used by the target object.
      * }
      * @return <BMLayoutEditorSetting>          This setting.
      */

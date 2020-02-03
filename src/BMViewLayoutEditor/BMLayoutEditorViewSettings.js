@@ -1,21 +1,7 @@
 // @ts-check
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
-import {BMInsetMakeWithEqualInsets, BMInsetMake} from '../Core/BMInset'
-import {BMPointMake} from '../Core/BMPoint'
-import {BMSizeMake} from '../Core/BMSize'
-import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
-import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationApplyBlocking, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
-import {BMLayoutOrientation, BMLayoutSizeClass} from '../BMView/BMLayoutSizeClass'
-import {BMViewport} from '../BMView/BMViewport'
-import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
-import {BMView} from '../BMView/BMView_v2.5'
-import {BMMenuKind, BMMenuItem} from '../BMView/BMMenu'
-import {BMWindow} from '../BMWindow/BMWindow'
-import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
-import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
-import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
-import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
+import {YES, NO, BMExtend} from '../Core/BMCoreUI'
+import {__BMVelocityAnimate} from '../Core/BMAnimationContext'
+import {BMMenuItem} from '../BMView/BMMenu'
 import { _BMLayoutEditorCollectionSettingsPanel, BMLayoutEditorSettingsTab, _BMLayoutEditorSettingsPanel, _BMURLOfImageAtPath, BMLayoutEditorSettingKind, BMLayoutEditorSettingsSection, BMLayoutEditorSetting, BMLayoutEditorEnumSetting } from './BMLayoutEditorSettings'
 
 // @type _BMLayoutEditorViewSettingsPanel
@@ -55,30 +41,59 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
 
         // Create the default tabs
         this._attributesTab = BMLayoutEditorSettingsTab.tabWithName('Attributes', {icon: _BMURLOfImageAtPath('images/Properties.png')});
-        this._attributesTab._settingsPanel = this;
-
-        // Add the attribute settings
-        const attributesSection = BMLayoutEditorSettingsSection.section();
-        attributesSection._settings[0] = BMLayoutEditorSetting.settingWithName('Opacity', {kind: BMLayoutEditorSettingKind.Number, target: view, variations: YES, property: 'opacity'});
-        attributesSection._settings[1] = BMLayoutEditorSetting.settingWithName('Visible', {kind: BMLayoutEditorSettingKind.Boolean, target: view, variations: YES, property: 'isVisible'});
-        attributesSection._settings[2] = BMLayoutEditorSetting.settingWithName('CSS Class', {kind: BMLayoutEditorSettingKind.String, target: view, variations: YES, property: 'CSSClass'});
-        this._attributesTab._settingSections.push(attributesSection);
-
-        const edgeInsetsSection = BMLayoutEditorSettingsSection.section();
-        edgeInsetsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Content Insets', {kind: BMLayoutEditorSettingKind.Insets, target: view, variations: YES, nullable: YES, property: 'contentInsets'});
 
         this._layoutTab = _BMLayoutEditorViewLayoutSettingsTab.viewLayoutTabForView(view);
-        this._layoutTab._settingsPanel = this;
 
         this._currentTab = this._layoutTab;
 
-        this._tabs = [this._attributesTab, this._layoutTab];
+        this._tabs = [this._attributesTab, this._layoutTab, ...view.additionalSettingTabsForLayoutEditor(this.layoutEditor)];
 
         this.title = view.debuggingName;
 
-        // TODO: Custom tabs
+        if (this.layoutEditor.delegate && this.layoutEditor.delegate.layoutEditorAdditionalSettingTabsForView) {
+            const additionalTabs = this.layoutEditor.delegate.layoutEditorAdditionalSettingTabsForView(this.layoutEditor, view);
+            this._tabs = this._tabs.concat(additionalTabs);
+        }
+
+        for (const tab of this._tabs) {
+            tab._settingsPanel = this;
+            tab._view = view;
+            tab.updateSettings();
+        }
 
         return this;
+    },
+
+    /**
+     * Invoked by tabs when their settings have been invalidated and should be updated.
+     * @param tab <BMLayoutEditorSettingsTab>       The tab whose settings have been invalidated.
+     */
+    _updateSettingsForTab(tab) {
+        if (tab == this._attributesTab) {
+            const view = this._displayedView;
+
+            tab._settingSections = [];
+
+            // Add the attribute settings
+            const attributesSection = BMLayoutEditorSettingsSection.section();
+            attributesSection._settings[0] = BMLayoutEditorSetting.settingWithName('Opacity', {kind: BMLayoutEditorSettingKind.Number, target: view, variations: YES, property: 'opacity'});
+            attributesSection._settings[1] = BMLayoutEditorSetting.settingWithName('Visible', {kind: BMLayoutEditorSettingKind.Boolean, target: view, variations: YES, property: 'isVisible'});
+            attributesSection._settings[2] = BMLayoutEditorSetting.settingWithName('CSS Class', {kind: BMLayoutEditorSettingKind.String, target: view, variations: YES, property: 'CSSClass'});
+            this._attributesTab._settingSections.push(attributesSection);
+    
+            const edgeInsetsSection = BMLayoutEditorSettingsSection.section();
+            edgeInsetsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Content Insets', {kind: BMLayoutEditorSettingKind.Insets, target: view, variations: YES, nullable: YES, property: 'contentInsets'});
+        }
+
+        for (const section of this._displayedView.additionalSettingSectionsForTab(tab, {layoutEditor: this.layoutEditor})) {
+            tab._settingSections.push(section);
+        }
+
+        if (this.layoutEditor.delegate && this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab) {
+            for (const section of this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab(this.layoutEditor, tab)) {
+                tab._settingSections.push(section);
+            }
+        }
     },
 
     // @override - BMLayoutEditorSettingsPanel
@@ -180,18 +195,17 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
     },
 
     /**
-     * Initializes this view layout tab for the specified view.
+     * Designated initializer. Initializes this view layout tab for the specified view.
      * @param view <BMView>     The view whose constraints will be displayed.
      */
     initWithView(view) {
         BMLayoutEditorSettingsTab.prototype.initWithName.call(this, 'Layout', {icon: _BMURLOfImageAtPath('images/Layout.png')});
         this._displayedView = view;
 
-        this._updateSettings();
-
         return this;
     },
 
+    // @override - BMLayoutEditorSettingsTab
     updateSettings() {
         this._updateSettings();
     },
@@ -218,6 +232,8 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
             intrinsicResistanceSection._settings[1] = BMLayoutEditorSetting.settingWithName('Expansion', {kind: BMLayoutEditorSettingKind.Integer, target: view, property: 'expansionResistance'});
             if (view.supportsIntrinsicSize) this._settingSections.push(intrinsicResistanceSection);
         }
+
+        this._settingsPanel._updateSettingsForTab(this);
 
         /*
         if (this._intrinsicSizeSection) {
@@ -249,7 +265,7 @@ _BMLayoutEditorViewLayoutSettingsTab.prototype = BMExtend(Object.create(BMLayout
         // 1. Visible by default and non-collapsible will be the constraints that directly affect the view,
         // or link the view to its siblings or ancestors
         //
-        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants - This is currently no longer active
+        // 2. A second, collapsed by default group, will show the constraints that link the view to its descendants - This is currently no longer active and subview constraints are now merged into group 1
         //
         // 3. A third, collapsed by default group, will show the inactive constraints
         //

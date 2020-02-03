@@ -3431,6 +3431,41 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
         // Restore the node's original ID
         this.node.id = this._BMOriginalID;
+    },
+
+    // #endregion
+
+    // #region Layout Editor
+
+    /**
+     * When this view is edited by a layout editor, this method will be invoked when constructing the settings panel for this view.
+     * View subclasses can override this method to provide additional tabs to add to this view's settings panel.
+     * 
+     * Subclasses should not add setting sections through this method. After this method returns, the layout editor will subsequently
+     * invoke `additionalSettingSectionsForTab(_, {layoutEditor})` for each standard tab as well as each tab that has been returned by this method.
+     * 
+     * The default implementation returns an empty array.
+     * @param editor <BMLayoutEditor>           The caller.
+     * @return <[BMLayoutEditorSettingsTab]>    An array of settings tabs to add.
+     */
+    additionalSettingTabsForLayoutEditor(editor) {
+        return [];
+    },
+
+    /**
+     * When this view is edited by a layout editor, this method will be invoked when constructing the settings panel for this view.
+     * This method will also be invoked whenever the settings for the given tab have been invalidated.
+     * View subclasses can override this method to provide additional settings to specific tabs.
+     * 
+     * The default implementation returns an empty array for all tabs.
+     * @param tab <BMLayoutEditorSettingsTab>       The tab for which to supply additional settings.
+     * {
+     *  @param layoutEditor <BMLayoutEditor>         The caller.
+     * }
+     * @return <[BMLayoutEditorSettingsSection]>    An array of settings tabs to add.
+     */
+    additionalSettingSectionsForTab(tab, {layoutEditor}) {
+        return [];
     }
 
     // #endregion

@@ -1,7 +1,7 @@
 // @ts-check
 import {YES, NO, BMExtend} from '../Core/BMCoreUI'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationApplyBlocking, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
-import { _BMLayoutEditorCollectionSettingsPanel, BMLayoutEditorSettingsTab, _BMLayoutEditorSettingsPanel, _BMURLOfImageAtPath, BMLayoutEditorSettingKind, BMLayoutEditorSettingsSection, BMLayoutEditorSetting, BMLayoutEditorEnumSetting } from './BMLayoutEditorSettings'
+import { __BMVelocityAnimate} from '../Core/BMAnimationContext'
+import { _BMLayoutEditorCollectionSettingsPanel, _BMLayoutEditorSettingsPanel, _BMURLOfImageAtPath} from './BMLayoutEditorSettings'
 import { BMEqualSpacingLayoutConstraint, BMLayoutConstraintKind, BMLayoutAttribute, BMEqualAttributeLayoutConstraint } from '../BMView/BMLayoutConstraint_v2.5';
 
 // @type _BMLayoutEditorViewGroupSettingsPanel

@@ -1,21 +1,8 @@
 // @ts-check
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice} from '../Core/BMCoreUI'
-import {BMInsetMakeWithEqualInsets, BMInsetMake} from '../Core/BMInset'
-import {BMPointMake} from '../Core/BMPoint'
-import {BMSizeMake} from '../Core/BMSize'
-import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
-import {BMIndexPathMakeWithRow} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, __BMVelocityAnimate, BMAnimationContextGetCurrent, BMHook, BM_USE_VELOCITY2, BMAnimationBeginWithDuration, BMAnimationApply, BMAnimationApplyBlocking, BMAnimationContextBeginStatic} from '../Core/BMAnimationContext'
-import {BMLayoutOrientation, BMLayoutSizeClass} from '../BMView/BMLayoutSizeClass'
-import {BMViewport} from '../BMView/BMViewport'
-import {BMLayoutConstraint, BMEqualAttributeLayoutConstraint, BMEqualSpacingLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintPriorityRequired, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
-import {BMView} from '../BMView/BMView_v2.5'
-import {BMMenuKind, BMMenuItem} from '../BMView/BMMenu'
-import {BMWindow} from '../BMWindow/BMWindow'
-import {BMCollectionViewCell} from '../BMCollectionView/BMCollectionViewCell'
-import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
-import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
-import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
+import {YES, NO, BMExtend} from '../Core/BMCoreUI'
+import {__BMVelocityAnimate} from '../Core/BMAnimationContext'
+import {BMLayoutAttribute, BMLayoutConstraintKind, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
+import {BMMenuItem} from '../BMView/BMMenu'
 import { _BMLayoutEditorCollectionSettingsPanel, BMLayoutEditorSettingsTab, _BMLayoutEditorSettingsPanel, _BMURLOfImageAtPath, BMLayoutEditorSettingKind, BMLayoutEditorSettingsSection, BMLayoutEditorSetting, BMLayoutEditorEnumSetting } from './BMLayoutEditorSettings'
 
 
@@ -59,96 +46,135 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         this._attributesTab = BMLayoutEditorSettingsTab.tabWithName('Attributes', {icon: _BMURLOfImageAtPath('images/Properties.png')});
         this._attributesTab._settingsPanel = this;
 
-        // Prepare the menu options
-        const attributeOptions = [];
-        if (!constraint.isConstraintCollection) if (constraint._kind == BMLayoutConstraintKind.Horizontal) {
-            if (constraint._sourceViewAttribute === BMLayoutAttribute.Width) {
-                attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
-            }
-            else {
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Leading, {userInfo: BMLayoutAttribute.Leading}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterX, {userInfo: BMLayoutAttribute.CenterX}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Trailing, {userInfo: BMLayoutAttribute.Trailing}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Left, {userInfo: BMLayoutAttribute.Left}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Right, {userInfo: BMLayoutAttribute.Right}));
-            }
-        }
-        else {
-            if (constraint._sourceViewAttribute === BMLayoutAttribute.Height) {
-                attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
-            }
-            else {
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Top, {userInfo: BMLayoutAttribute.Top}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterY, {userInfo: BMLayoutAttribute.CenterY}));
-                attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Bottom, {userInfo: BMLayoutAttribute.Bottom}));
-            }
-        }
-
-        if (constraint.isConstraintCollection) {
-            if (constraint._hasEditableConstant) {
-                const constant = BMLayoutEditorSettingsSection.section();
-                constant._settings[0] = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
-                constant._settings[0].automaticallyExpandsVariations = YES;
-                this._attributesTab._settingSections.push(constant);
-            }
-
-            const affectedViews = BMLayoutEditorSettingsSection.section();
-            affectedViews.title = 'Affected Views';
-            let index = 1;
-            for (const view of constraint._views) {
-                affectedViews._settings.push(BMLayoutEditorSetting.settingWithName('View ' + index, {kind: BMLayoutEditorSettingKind.View, target: constraint._views, property: index - 1}));
-                index++;
-            }
-            this._attributesTab._settingSections.push(affectedViews);
-        }
-        else {
-            const firstView = BMLayoutEditorSettingsSection.section();
-            firstView._settings[0] = BMLayoutEditorSetting.settingWithName('First View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_sourceView'});
-            firstView._settings[1] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_sourceViewAttribute'});
-            firstView._settings[1].options = attributeOptions;
-            this._attributesTab._settingSections.push(firstView);
-    
-            const relation = BMLayoutEditorSettingsSection.section();
-            relation._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Relation', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_relation'});
-            relation._settings[0].options = [
-                BMMenuItem.menuItemWithName('=', {userInfo: BMLayoutConstraintRelation.Equals}),
-                BMMenuItem.menuItemWithName('\u2265', {userInfo: BMLayoutConstraintRelation.GreaterThanOrEquals}),
-                BMMenuItem.menuItemWithName('\u2264', {userInfo: BMLayoutConstraintRelation.LessThanOrEquals})
-            ];
-            this._attributesTab._settingSections.push(relation);
-    
-            const secondView = BMLayoutEditorSettingsSection.section();
-            if (constraint._targetView) {
-                secondView._settings[0] = BMLayoutEditorSetting.settingWithName('Multiplier', {kind: BMLayoutEditorSettingKind.Number, target: constraint, property: '_multiplier'});
-                secondView._settings[1] = BMLayoutEditorSetting.settingWithName('Second View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_targetView'});
-                secondView._settings[2] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_targetViewAttribute'});
-                secondView._settings[2].options = attributeOptions;
-            }
-            let constantSetting;
-            secondView._settings[secondView._settings.length] = constantSetting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
-            constantSetting.automaticallyExpandsVariations = YES;
-            this._attributesTab._settingSections.push(secondView);
-        }
-
-        const priority = BMLayoutEditorSettingsSection.section();
-        priority._settings[0] = BMLayoutEditorSetting.settingWithName('Priority', {kind: BMLayoutEditorSettingKind.Number, target: constraint, variations: YES, property: 'priority'});
-        priority._settings[1] = BMLayoutEditorSetting.settingWithName('Active', {kind: BMLayoutEditorSettingKind.Boolean, target: constraint, variations: YES, property: 'isActive'});
-        priority._settings[1].automaticallyExpandsVariations = YES;
-        this._attributesTab._settingSections.push(priority);
-
-        const deleteSection = BMLayoutEditorSettingsSection.section();
-        deleteSection._settings[0] = BMLayoutEditorSetting.settingWithName('Delete', {kind: BMLayoutEditorSettingKind.DeleteConstraintButton, target: constraint, variations: NO});
-        this._attributesTab._settingSections.push(deleteSection);
-
         this._currentTab = this._attributesTab;
 
         this._tabs = [this._attributesTab];
 
         this.title = 'Constraint';
 
+        if (this.layoutEditor.delegate && this.layoutEditor.delegate.layoutEditorAdditionalSettingTabsForConstraint) {
+            const additionalTabs = this.layoutEditor.delegate.layoutEditorAdditionalSettingTabsForConstraint(this.layoutEditor, constraint);
+            this._tabs = this._tabs.concat(additionalTabs);
+        }
+
+        for (const tab of this._tabs) {
+            tab._settingsPanel = this;
+            tab._constraint = constraint;
+            tab.updateSettings();
+        }
+
         // TODO: Custom tabs
 
         return this;
+    },
+
+
+    /**
+     * Invoked by tabs when their settings have been invalidated and should be updated.
+     * @param tab <BMLayoutEditorSettingsTab>       The tab whose settings have been invalidated.
+     */
+    _updateSettingsForTab(tab) {
+        if (tab == this._attributesTab) {
+            tab._settingSections.length = 0;
+
+            const constraint = this._displayedConstraint;
+            
+            // Prepare the menu options
+            const attributeOptions = [];
+            if (!constraint.isConstraintCollection) if (constraint._kind == BMLayoutConstraintKind.Horizontal) {
+                if (constraint._sourceViewAttribute === BMLayoutAttribute.Width) {
+                    attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
+                }
+                else {
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Leading, {userInfo: BMLayoutAttribute.Leading}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterX, {userInfo: BMLayoutAttribute.CenterX}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Trailing, {userInfo: BMLayoutAttribute.Trailing}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Left, {userInfo: BMLayoutAttribute.Left}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Right, {userInfo: BMLayoutAttribute.Right}));
+                }
+            }
+            else {
+                if (constraint._sourceViewAttribute === BMLayoutAttribute.Height) {
+                    attributeOptions.push(BMMenuItem.menuItemWithName(constraint._sourceViewAttribute, {userInfo: constraint._sourceViewAttribute}));
+                }
+                else {
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Top, {userInfo: BMLayoutAttribute.Top}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.CenterY, {userInfo: BMLayoutAttribute.CenterY}));
+                    attributeOptions.push(BMMenuItem.menuItemWithName(BMLayoutAttribute.Bottom, {userInfo: BMLayoutAttribute.Bottom}));
+                }
+            }
+    
+            if (constraint.isConstraintCollection) {
+                if (constraint._hasEditableConstant) {
+                    const constant = BMLayoutEditorSettingsSection.section();
+                    constant._settings[0] = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
+                    constant._settings[0].automaticallyExpandsVariations = YES;
+                    this._attributesTab._settingSections.push(constant);
+                }
+    
+                const affectedViews = BMLayoutEditorSettingsSection.section();
+                affectedViews.title = 'Affected Views';
+                let index = 1;
+                for (const view of constraint._views) {
+                    affectedViews._settings.push(BMLayoutEditorSetting.settingWithName('View ' + index, {kind: BMLayoutEditorSettingKind.View, target: constraint._views, property: index - 1}));
+                    index++;
+                }
+                this._attributesTab._settingSections.push(affectedViews);
+            }
+            else {
+                const firstView = BMLayoutEditorSettingsSection.section();
+                firstView._settings[0] = BMLayoutEditorSetting.settingWithName('First View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_sourceView'});
+                firstView._settings[1] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_sourceViewAttribute'});
+                firstView._settings[1].options = attributeOptions;
+                this._attributesTab._settingSections.push(firstView);
+        
+                const relation = BMLayoutEditorSettingsSection.section();
+                relation._settings[0] = BMLayoutEditorEnumSetting.settingWithName('Relation', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_relation'});
+                relation._settings[0].options = [
+                    BMMenuItem.menuItemWithName('=', {userInfo: BMLayoutConstraintRelation.Equals}),
+                    BMMenuItem.menuItemWithName('\u2265', {userInfo: BMLayoutConstraintRelation.GreaterThanOrEquals}),
+                    BMMenuItem.menuItemWithName('\u2264', {userInfo: BMLayoutConstraintRelation.LessThanOrEquals})
+                ];
+                this._attributesTab._settingSections.push(relation);
+        
+                const secondView = BMLayoutEditorSettingsSection.section();
+                if (constraint._targetView) {
+                    secondView._settings[0] = BMLayoutEditorSetting.settingWithName('Multiplier', {kind: BMLayoutEditorSettingKind.Number, target: constraint, property: '_multiplier'});
+                    secondView._settings[1] = BMLayoutEditorSetting.settingWithName('Second View', {kind: BMLayoutEditorSettingKind.View, target: constraint, property: '_targetView'});
+                    secondView._settings[2] = BMLayoutEditorEnumSetting.settingWithName('Attribute', {kind: BMLayoutEditorSettingKind.Enum, target: constraint, property: '_targetViewAttribute'});
+                    secondView._settings[2].options = attributeOptions;
+                }
+                let constantSetting;
+                secondView._settings[secondView._settings.length] = constantSetting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: constraint, variations: YES, property: 'constant'});
+                constantSetting.automaticallyExpandsVariations = YES;
+                this._attributesTab._settingSections.push(secondView);
+            }
+    
+            const priority = BMLayoutEditorSettingsSection.section();
+            priority._settings[0] = BMLayoutEditorSetting.settingWithName('Priority', {kind: BMLayoutEditorSettingKind.Number, target: constraint, variations: YES, property: 'priority'});
+            priority._settings[1] = BMLayoutEditorSetting.settingWithName('Active', {kind: BMLayoutEditorSettingKind.Boolean, target: constraint, variations: YES, property: 'isActive'});
+            priority._settings[1].automaticallyExpandsVariations = YES;
+            this._attributesTab._settingSections.push(priority);
+
+            if (this.layoutEditor.delegate && this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab) {
+                for (const section of this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab(this.layoutEditor, tab)) {
+                    tab._settingSections.push(section);
+                }
+            }
+    
+            const deleteSection = BMLayoutEditorSettingsSection.section();
+            deleteSection._settings[0] = BMLayoutEditorSetting.settingWithName('Delete', {kind: BMLayoutEditorSettingKind.DeleteConstraintButton, target: constraint, variations: NO});
+            this._attributesTab._settingSections.push(deleteSection);
+        }
+        else {
+            tab._settingSections.length = 0;
+
+            if (this.layoutEditor.delegate && this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab) {
+                for (const section of this.layoutEditor.delegate.layoutEditorAdditionalSettingSectionsForTab(this.layoutEditor, tab)) {
+                    tab._settingSections.push(section);
+                }
+            }
+        }
     },
 
     // @override - BMLayoutEditorSettingsPanel

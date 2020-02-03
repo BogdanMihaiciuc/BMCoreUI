@@ -233,6 +233,9 @@ BMLayoutEditorSettingsFooter.prototype = BMExtend(Object.create(BMCollectionView
  * 
  * The settings cell class itself is never used directly; instead, dependending on the type of the setting 
  * an appropriate subclass is used.
+ * 
+ * For settings where the built in cell types are not sufficient, this class serves as the base setting class
+ * that can be subclassed to provide custom settings interfaces.
  */
 export function BMLayoutEditorSettingsCell() {} // <constructor>
 
@@ -298,7 +301,7 @@ BMLayoutEditorSettingsCell.prototype = BMExtend(Object.create(BMCollectionViewCe
      * This property is typically not available during construction, but will
      * become available after this cell has been bound to a setting.
      */
-    get settingsView() { // <BMLayoutEditorSettingsView, nullable>
+    get settingsView() { // <_BMLayoutEditorSettingsView, nullable>
         return this.tab._settingsPanel._settingsView;
     },
 
@@ -1278,7 +1281,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
 
 // @endtype
 
-// @type BMLayoutEditorSettingsIntegerCell extends BMLayoutEditorInputCell
+// @type BMLayoutEditorSettingsIntegerCell extends BMLayoutEditorSettingsInputCell
 
 /**
  * A cell type specialized for displaying integer settings.
@@ -1304,7 +1307,7 @@ BMLayoutEditorSettingsIntegerCell.prototype = BMExtend(Object.create(BMLayoutEdi
 
 // @endtype
 
-// @type BMLayoutEditorSettingsNumberCell extends BMLayoutEditorInputCell
+// @type BMLayoutEditorSettingsNumberCell extends BMLayoutEditorSettingsInputCell
 
 /**
  * A cell type specialized for displaying number settings.
@@ -1328,7 +1331,7 @@ BMLayoutEditorSettingsNumberCell.prototype = BMExtend(Object.create(BMLayoutEdit
 
 // @endtype
 
-// @type BMLayoutEditorSettingsStringCell extends BMLayoutEditorInputCell
+// @type BMLayoutEditorSettingsStringCell extends BMLayoutEditorSettingsInputCell
 
 /**
  * A cell type specialized for displaying string settings.
@@ -1352,7 +1355,7 @@ BMLayoutEditorSettingsStringCell.prototype = BMExtend(Object.create(BMLayoutEdit
 
 // @endtype
 
-// @type BMLayoutEditorSettingsConstantCell extends BMLayoutEditorInputCell
+// @type BMLayoutEditorSettingsConstantCell extends BMLayoutEditorSettingsInputCell
 
 /**
  * A cell type specialized for displaying constraint constant settings.

@@ -133,7 +133,6 @@ When using the settings view, it is no longer required to subclass the layout ed
 When setting panels are created, during initialization and at several points throughout their lifecycle, CoreUI will invoke one of the following methods on the editor's delegate, depending on what kind of item is selected:
  * `layoutEditorAdditionalSettingTabsForView(_, _)` can be used to add additional setting tabs that are visible when views are selected.
  * `layoutEditorAdditionalSettingTabsForConstraint(_, _)` can be used to add additional setting tabs that are visible when constraints are selected.
- * `layoutEditorAdditionalSettingTabsForSelection(_, _)` can be used to add additional setting tabs that are visible when multiple views are selected.
 
 View subclasses can also implement the `additionalSettingTabsForLayoutEditor(_)` method to supply their own specific settings regardless of the delegate object.
 
