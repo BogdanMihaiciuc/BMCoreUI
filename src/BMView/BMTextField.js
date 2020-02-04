@@ -480,7 +480,7 @@ BMTextField.textField = function () {
 
 /**
  * Constructs and returns a text field for the given input DOM node.
- * @param <DOMNode> node        An input DOM node.
+ * @param node <DOMNode>        An input DOM node.
  * @return <BMTextField>        A text field.
  */
 BMTextField.textFieldForInputNode = function (node) {
