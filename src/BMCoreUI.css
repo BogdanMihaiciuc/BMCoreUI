@@ -168,7 +168,7 @@
 	opacity: .5;
 }
 
-.BMKeyWindow {
+.BMWindow.BMKeyWindow {
 	z-index: 2007;
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
 	backdrop-filter: blur(15px);
@@ -176,7 +176,7 @@
 	background: rgba(245, 245, 245, .8);
 }
 
-.BMModalWindow {
+.BMWindow.BMModalWindow {
 	z-index: 2008;
 }
 
@@ -248,7 +248,7 @@
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 6px 32px;
 	}
 
-	.BMKeyWindow {
+	.BMWindow.BMKeyWindow {
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
 	}
 
@@ -1746,7 +1746,7 @@ BMLayoutEditorDetailsItemBadge {
 }
 
 .BMLayoutTreeViewContainerExpanded {
-	max-height: 800px;
+	max-height: 8000px;
 	opacity: 1;
 }
 
@@ -2083,6 +2083,10 @@ BMLayoutEditorDetailsItemBadge {
 
 /* MARK: Popover windows */
 
+.BMPopover {
+	position: absolute;
+}
+
 .BMPopoverOverlay {
 	position: absolute;
 	
@@ -2093,6 +2097,9 @@ BMLayoutEditorDetailsItemBadge {
 	top: 0px;
 	
 	z-index: 9999999; /* :( */
+
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
 }
 
 .BMPopoverContainer {
@@ -2109,6 +2116,10 @@ BMLayoutEditorDetailsItemBadge {
 
 	overflow: auto;
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+}
+
+.BMPopoverContainerView {
+	padding-top: 0px;
 }
 
 .BMPopoverContainerConstant {
@@ -2324,9 +2335,10 @@ The background layer contains the background.
 
 /* MARK: Layout Variables suggestions */
 
-.BMLayoutEditorConstantSuggestions {
+.BMLayoutEditorConstantSuggestions, .BMTextFieldSuggestions {
 	pointer-events: all;
 	max-height: 420px;
+	overflow: hidden;
 }
 
 .BMLayoutEditorConstantSuggestionsOverlay {
