@@ -950,7 +950,7 @@ export function BMAnimationApplyBlocking(blocking) {
 				}
 			}
 
-			const easing = Array.isArray(options.easing) ? `cubicBezier(${options.easing.join(',')})` : BMAnimationEasing[options.easing];
+			const easing = Array.isArray(options.easing) ? `cubic-bezier(${options.easing.join(',')})` : BMAnimationEasing[options.easing];
 
 			let nodeAnimation;
 			try {
