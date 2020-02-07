@@ -1,3 +1,29 @@
+# 2.6 Beta 2
+
+## BMAnimationContext
+
+Resolved an issue that caused custom bezier easings to not work when using web animations.
+
+## BMView
+
+When a view is removed while it had a pending layout pass, it is now removed from its layout queue.
+
+## BMWindow
+
+When a window is released, its node is now removed from the document.
+
+## BMPopover
+
+A new `BMPopover` subclass of `BMWindow` is now available for use. It represents a modal window that is visually linked to an element or point on the document. The anchor element or point can be set on it via the `anchorNode` or `anchorPoint` properties.
+
+## BMLayoutEditor
+
+Resolved an issue that caused entries in the view hierarchy window to be cut off.
+
+## BMTextField
+
+Resolved a display issue when the text field had a very large number of items. Additionaly, the suggestions dropdown will now only display the first 10 entries.
+
 # 2.6
 
 ## General Changes
