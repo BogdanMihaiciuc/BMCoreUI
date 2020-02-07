@@ -4,7 +4,9 @@ import { BMMenuKind } from "./BMMenu";
 
 // @ts-check
 
-// @type BMTextField
+const BM_TEXT_FIELD_MAX_SUGGESTIONS = 10;
+
+// @type BMTextField extends BMView
 
 /**
  * A text field is a vew wrapper around an `input` type `"text"` element that adds additional
@@ -133,8 +135,10 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             else return;
 
             filteredSuggestions = suggestions;
+
             highlightedItemIndex = -1;
 
+            let limit = BM_TEXT_FIELD_MAX_SUGGESTIONS;
             for (const option of suggestions) {
                 options.push(this._menuItemWithLabel(option, {action: () => {
                     menu = undefined;
@@ -147,6 +151,10 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                     // Remove focus from the text box upon selecting a value
                     inputNode.blur();
                 }}));
+
+                // Limit to 10 items
+                limit--;
+                if (!limit) break;
             }
 
             // Create and show a pulldown menu below the constant textbox, if there are any suggestions
@@ -263,6 +271,9 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
             // If the menu is visible, filter it accordingly
             filteredSuggestions = suggestions.filter(e => e.toLowerCase().startsWith(inputNode.value.toLowerCase()));
+
+            // Limit to the topmost 10 items
+            filteredSuggestions.length = Math.min(filteredSuggestions.length, 10);
             
             // Empty the menu
             if (menu) menu.innerHTML = '';
@@ -271,8 +282,9 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             highlightedItemIndex = 0;
 
             // Then add the filtered options
+            let limit = BM_TEXT_FIELD_MAX_SUGGESTIONS;
             if (menu) for (const option of filteredSuggestions) {
-                menu.appendChild(this.layoutEditor.constraintOptionWithLabel(option, {action: () => {
+                menu.appendChild(this._menuItemWithLabel(option, {action: () => {
                     menu = undefined;
                     inputNode.value = option;
 
@@ -280,6 +292,10 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                         this.delegate.textFieldContentsDidChange(this);
                     }
                 }}));
+
+                // Limit to 10 items
+                limit--;
+                if (!limit) break;
             }
 
             // Set to YES if the change event is fired due to autocompleting the text in the text field
@@ -384,7 +400,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
     _showMenuAtPoint(point, args) {
         // TODO: Roll up into BMMenu
         let constraintPopup = document.createElement('div');
-        constraintPopup.className = 'BMLayoutEditorConstraintPopup';
+        constraintPopup.className = 'BMLayoutEditorConstraintPopup BMTextFieldSuggestions';
 
         let constraintPopupContainer = document.createElement('div');
         constraintPopupContainer.className = 'BMLayoutEditorConstraintPopupContainer';
@@ -410,7 +426,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             if (args.kind == BMMenuKind.PullDownMenu) {
                 constraintPopup.style.transformOrigin = '50% 100%';
             }
-            point.y -= height;
+            point.y -= height + this.frame.size.height;
         }
 
         constraintPopup.style.left = point.x + 'px';
@@ -461,7 +477,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         });
 
         return constraintPopup;
-    }
+    },
 
 });
 
