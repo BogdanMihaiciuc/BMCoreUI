@@ -123,6 +123,7 @@ const DTSFiles = [
     'BMWindow/BMWindow.js', 
     'BMWindow/BMToolWindow.js', 
     'BMWindow/BMWindowDelegate.js', 
+    'BMWindow/BMPopover/BMPopover.js', 
     'BMCodeEditor/BMCodeEditor.js', 
 ];
 
