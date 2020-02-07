@@ -32,6 +32,7 @@ class BMWindowOverlay extends BMView {
 
 		let node = document.createElement('div');
 		node.className = 'BMWindowBlocker';
+		// TODO: This isn't good for subclasses; consider using a class instead
 		BMCopyProperties(node.style, {
 			opacity: 0,
 			display: 'none',
@@ -95,7 +96,7 @@ class BMWindowOverlay extends BMView {
 		if (this._awaitsLayout) {
 			this._awaitsLayout = NO;
 			super._registerLayout();
-			this.layoutQueue.dequeue;
+			this.layoutQueue.dequeue();
 		}
 	}
 
@@ -401,6 +402,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		return this.content;
 	},
 
+	/**
+	 * The view to which subviews should be added.
+	 */
+	get contentView() { // <BMView>
+		return this;
+	},
+
 	get frame() {
 		return this._frame;
 	},
@@ -494,6 +502,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Set to `YES` if this window is modal.
 	 */
 	_modal: NO, // <Boolean>
+
+	/**
+	 * Set to `YES` if this window is modal.
+	 */
+	get isModal() {
+		return this._modal;
+	},
 
 	/**
 	 * Set to `YES` if this window is a tool window.
@@ -929,9 +944,122 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			this.bringToFrontAnimated(animated, args);
 		}
 	},
+	
+	/**
+	 * An object containing additional details for a window animation.
+	 */
+	_animationArguments: undefined, // <AnyObject>
 
 	/**
-	 * Should be invoked to make this window visible.
+	 * @protected
+	 * This method can be invoked by subclasses to set the arguments object that will be
+	 * passed to `animateInWithArguments()` or `animateOutWithArguments()` the next time one of
+	 * these methods is invoked.
+	 * @param args <AnyObject>		An object that will be passed to `animateInWithArguments()` or `animateOutWithArguments()`.
+	 */
+	setAnimationArguments(args) {
+		this._animationArguments = args;
+	},
+
+	/**
+	 * @protected
+	 * This method is invoked during `bringToFrontAnimated()` to run the animations that will make this window visible.
+	 * Subclasses can override this method to perform custom animations.
+	 * 
+	 * This method is not invoked from within an animation context.
+	 * @param args <AnyObject>						An object containing arguments for the animation. The contents of this object
+	 * 												depend on the parameters supplied to `bringToFrontAnimated`. For `BMWindow` this is an object that can contain
+	 * 												either of the following properties:
+	 * 												* **`fromRect`**: A `BMRect` object that represents the rect from which to show the window.
+	 * 												* **`fromNode`**: A `DOMNode` obect that represents the source element from which to show the window.
+	 * 
+	 * 												For subclasses, the arguments supplied to this method can be customized by overriding `bringToFrontAnimated`.
+	 * {
+	 * 	@param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
+	 * }
+	 */
+	animateInWithArguments(args, {completionHandler}) {
+		const self = this;
+		if (args && args.fromRect) {
+			const rect = args.fromRect;
+			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
+			const transformRect = frame.rectWithTransformToRect(rect);
+			
+			__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
+							scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								display: 'block'
+							}, YES);
+		}
+		else if (args && args.fromNode) {
+			// Create a copy of the given node which will be used in the animation in place of the original node
+			const node = args.fromNode;
+			const rect = BMRectMakeWithNodeFrame(node);
+			const animationNode = node.cloneNode(YES);
+			
+			const nodeDisplay = node.style.display;
+			
+			animationNode.style.position = 'fixed';
+			animationNode.style.zIndex = 2008;
+			animationNode.style.transform = '';
+			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
+			
+			// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
+			animationNode.style.pointerEvents = 'none';
+			
+			// Compute the transform and apply it first to the window
+			// and then to the animation node, but inversed
+			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
+			const transformRect = frame.rectWithTransformToRect(rect);
+			
+			document.body.appendChild(animationNode);
+			node.style.display = 'none';
+			
+			__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
+							scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								display: 'block',
+								complete: completionHandler
+							}, YES);
+			
+			// After finishing the animation, remove the temporary node and restore the original node's display
+			__BMVelocityAnimate(animationNode, {opacity: [0, 1], translateX: -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
+							scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								complete: function () { 
+									animationNode.remove(); 
+									var windowShouldKeepNodeHidden = NO;
+									if (self.delegate && self.delegate.windowShouldKeepNodeHidden) {
+										windowShouldKeepNodeHidden = self.delegate.windowShouldKeepNodeHidden(self, node);
+									}
+									if (windowShouldKeepNodeHidden) {
+										self._nodeDisplay = nodeDisplay;
+									}
+									else {
+										node.style.display = nodeDisplay;
+									}
+
+									completionHandler();
+								}
+							}, YES);
+		}
+		else {
+		
+			__BMVelocityAnimate(this._window, {opacity: 1, scaleX: [1, .9], scaleY: [1, .9], translateZ: 0}, {
+				duration: _BMWindowAnimationDurationIncomingDefault,
+				easing: _BMWindowAnimationEasingIncomingDefault, 
+				display: 'block',
+				complete: completionHandler
+			}, YES);
+			
+		}
+	},
+
+	/**
+	 * Should be invoked to make this window visible. Subclasses overriding this method should invoke the base method at some point in their implementation.
 	 * @param animated <Boolean, nullable>				Defaults to YES. If set to YES, this change will be animated, otherwise it will be instant.
 	 * {
 	 *	@param fromRect <BMRect, nullable>				Requires animated to be set to YES. If set to a rect, the window will expand from the given rect.
@@ -984,79 +1112,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				}
 			}, YES);
 			
-			if (args && args.fromRect) {
-				var rect = args.fromRect;
-				var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-				var transformRect = frame.rectWithTransformToRect(rect);
-				
-				__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
-								scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									display: 'block'
-								}, YES);
-			}
-			else if (args && args.fromNode) {
-				// Create a copy of the given node which will be used in the animation in place of the original node
-				var node = args.fromNode;
-				var rect = BMRectMakeWithNodeFrame(node);
-				var animationNode = node.cloneNode(YES);
-				
-				var nodeDisplay = node.style.display;
-				
-				animationNode.style.position = 'fixed';
-				animationNode.style.zIndex = 2008;
-				animationNode.style.transform = '';
-				BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
-				
-				// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
-				animationNode.style.pointerEvents = 'none';
-				
-				// Compute the transform and apply it first to the window
-				// and then to the animation node, but inversed
-				var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-				var transformRect = frame.rectWithTransformToRect(rect);
-				
-				document.body.appendChild(animationNode);
-				node.style.display = 'none';
-				
-				__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
-								scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									display: 'block'
-								}, YES);
-				
-				// After finishing the animation, remove the temporary node and restore the original node's display
-				__BMVelocityAnimate(animationNode, {opacity: [0, 1], translateX: -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
-								scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									complete: function () { 
-										animationNode.remove(); 
-										var windowShouldKeepNodeHidden = NO;
-										if (self.delegate && self.delegate.windowShouldKeepNodeHidden) {
-											windowShouldKeepNodeHidden = self.delegate.windowShouldKeepNodeHidden(self, node);
-										}
-										if (windowShouldKeepNodeHidden) {
-											self._nodeDisplay = nodeDisplay;
-										}
-										else {
-											node.style.display = nodeDisplay;
-										}
-									}
-								}, YES);
-			}
-			else {
-			
-				__BMVelocityAnimate(this._window, {opacity: 1, scaleX: [1, .9], scaleY: [1, .9], translateZ: 0}, {
-					duration: _BMWindowAnimationDurationIncomingDefault,
-					easing: _BMWindowAnimationEasingIncomingDefault, 
-					display: 'block'
-				}, YES);
-				
-			}
-
+			this.animateInWithArguments(this._animationArguments || args, {completionHandler: () => {}});
+			this._animationArguments = undefined;
 
 			this._blocker.style.display = 'block';
 			this._window.style.display = 'block';
@@ -1083,9 +1140,102 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		}
 	},
 	
+
+
+	/**
+	 * @protected
+	 * This method is invoked during `dismissAnimated()` to run the animations that will make this window hidden.
+	 * Subclasses can override this method to perform custom animations.
+	 * 
+	 * This method is not invoked from within an animation context.
+	 * @param args <AnyObject>						An object containing arguments for the animation. The contents of this object
+	 * 												depend on the parameters supplied to `dismissAnimated`. For `BMWindow` this is an object that can contain
+	 * 												either of the following properties:
+	 * 												* **`fromRect`**: A `BMRect` object that represents the rect from which to show the window.
+	 * 												* **`fromNode`**: A `DOMNode` obect that represents the source element from which to show the window.
+	 * 
+	 * 												For subclasses, the arguments supplied to this method can be customized by overriding `dismissAnimated`.
+	 * {
+	 * 	@param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
+	 * }
+	 */
+	animateOutWithArguments(args, {completionHandler}) {
+		const self = this;
+			
+		if (args && args.toRect) {
+			const rect = args.toRect;
+			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
+			const transformRect = frame.rectWithTransformToRect(rect);
+			
+			__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
+							scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								display: 'none',
+								complete: completionHandler
+							}, YES);
+		}
+		else if (args && args.toNode) {
+			// Create a copy of the given node which will be used in the animation in place of the original node
+			const node = args.toNode;
+			
+			if ('_nodeDisplay' in self) {
+				node.style.display = self._nodeDisplay;
+			}
+			
+			const rect = BMRectMakeWithNodeFrame(node);
+			const animationNode = node.cloneNode(YES);
+			
+			const nodeDisplay = ('_nodeDisplay' in self) ? self._nodeDisplay : node.style.display;
+			self._nodeDisplay = undefined;
+			
+			animationNode.style.position = 'fixed';
+			animationNode.style.zIndex = 2008;
+			animationNode.style.transform = '';
+			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
+			
+			// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
+			animationNode.style.pointerEvents = 'none';
+			
+			// Compute the transform and apply it first to the window
+			// and then to the animation node, but inversed
+			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
+			const transformRect = frame.rectWithTransformToRect(rect);
+			
+			BMHook(animationNode, {translateX:  -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
+							scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height, opacity: 0});
+			
+			document.body.appendChild(animationNode);
+			node.style.display = 'none';
+			
+			__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
+							scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								display: 'none',
+								complete: completionHandler
+							}, YES);
+			
+			// After finishing the animation, remove the temporary node and restore the original node's display
+			__BMVelocityAnimate(animationNode, {opacity: [1, 0], translateX: ['0px', -transformRect.origin.x + 'px'], translateY: ['0px', -transformRect.origin.y + 'px'], 
+							scaleX: [1, 1 / transformRect.size.width], scaleY: [1, 1 / transformRect.size.height]}, {
+								duration: _BMWindowAnimationDurationDefault,
+								easing: _BMWindowAnimationEasingDefault,
+								complete: function () { node.style.display = nodeDisplay; animationNode.remove(); }
+							}, YES);
+		}
+		else {
+			__BMVelocityAnimate(this._window, {opacity: 0, scaleX: .9, scaleY: .9, translateZ: 0}, {
+				duration: _BMWindowAnimationDurationOutgoingDefault,
+				easing: _BMWindowAnimationEasingOutgoingDefault,
+				display: 'none',
+				complete: completionHandler
+			}, YES);
+		}
+	},
 	
 	/**
-	 * Should be invoked to dismiss this window.
+	 * Should be invoked to dismiss this window. Subclasses overriding this method should invoke the base method at some point in their implementation.
 	 * @param animated <Boolean, nullable>				Defaults to YES. If set to YES, this change will be animated, otherwise it will be instant.
 	 * {
 	 *	@param toRect <BMRect, nullable>				Requires animated to be set to YES. If set to a rect, the window will compact to the given rect.
@@ -1132,74 +1282,12 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					if (args && args.completionHandler) args.completionHandler();
 				}
 			}, YES);
-			
-			if (args && args.toRect) {
-				var rect = args.toRect;
-				var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-				var transformRect = frame.rectWithTransformToRect(rect);
-				
-				__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
-								scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									display: 'none'
-								}, YES);
-			}
-			else if (args && args.toNode) {
-				// Create a copy of the given node which will be used in the animation in place of the original node
-				var node = args.toNode;
-				
-				if ('_nodeDisplay' in self) {
-					node.style.display = self._nodeDisplay;
-				}
-				
-				var rect = BMRectMakeWithNodeFrame(node);
-				var animationNode = node.cloneNode(YES);
-				
-				var nodeDisplay = ('_nodeDisplay' in self) ? self._nodeDisplay : node.style.display;
-				self._nodeDisplay = undefined;
-				
-				animationNode.style.position = 'fixed';
-				animationNode.style.zIndex = 2008;
-				animationNode.style.transform = '';
-				BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
-				
-				// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
-				animationNode.style.pointerEvents = 'none';
-				
-				// Compute the transform and apply it first to the window
-				// and then to the animation node, but inversed
-				var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-				var transformRect = frame.rectWithTransformToRect(rect);
-				
-				BMHook(animationNode, {translateX:  -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
-								scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height, opacity: 0});
-				
-				document.body.appendChild(animationNode);
-				node.style.display = 'none';
-				
-				__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
-								scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									display: 'none'
-								}, YES);
-				
-				// After finishing the animation, remove the temporary node and restore the original node's display
-				__BMVelocityAnimate(animationNode, {opacity: [1, 0], translateX: ['0px', -transformRect.origin.x + 'px'], translateY: ['0px', -transformRect.origin.y + 'px'], 
-								scaleX: [1, 1 / transformRect.size.width], scaleY: [1, 1 / transformRect.size.height]}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									complete: function () { node.style.display = nodeDisplay; animationNode.remove(); }
-								}, YES);
-			}
-			else {
-				__BMVelocityAnimate(this._window, {opacity: 0, scaleX: .9, scaleY: .9, translateZ: 0}, {
-					duration: _BMWindowAnimationDurationOutgoingDefault,
-					easing: _BMWindowAnimationEasingOutgoingDefault,
-					display: 'none'
-				}, YES);
-			}
+
+			this.animateOutWithArguments(this._animationArguments || args, {completionHandler: () => {
+				this._window.style.display = 'none';
+				this._window.style.opacity = 0;
+			}});
+			this._animationArguments = undefined;
 			
 		}
 		else {
@@ -1579,7 +1667,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Destroys this window and removes all DOM nodes associated with it.
 	 * This instance should not be reused after invoking this method.
 	 */
-	release: function () {
+	release() {
 		if (BMWindow._keyWindow == this) BMWindow._keyWindow = undefined;
 
 		if (this._boundViewportDidResize) {
@@ -1606,8 +1694,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			}
 		}
 
-		this._blocker.remove();
-		this._window.remove();
+		BMView.prototype.release.call(this);
+		this._cancelLayout();
+		this._overlay.release();
+		this._overlay.node.remove();
+		this.node.remove();
 	},
 
 	/**
