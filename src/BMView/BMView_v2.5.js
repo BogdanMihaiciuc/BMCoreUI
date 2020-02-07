@@ -641,6 +641,8 @@ export function BMView() {} // <constructor>
         }
         this.__released = YES;
 
+        this.layoutQueue._removeView(this);
+
         for (const view of this._subviews.slice()) {
             view._releaseRecursive();
         }
@@ -825,6 +827,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         return this._layoutQueue;
     },
     set layoutQueue(queue) {
+        this._layoutQueue._removeView(this);
         this._layoutQueue = queue || _BMViewLayoutQueue;
     },
 
