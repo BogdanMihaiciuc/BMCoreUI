@@ -206,7 +206,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
             frame.origin.x = window.innerWidth - frame.size.width + 4;
         }
 
-        const appearsBelow = location.y < this.size.height + this._indicatorHeight;
+        const appearsBelow = location.y < window.innerHeight - this.size.height - this._indicatorHeight;
 
         if (appearsBelow) {
             frame.origin.y = this.anchorPoint ? location.y : nodeFrame.bottom - 2;
@@ -214,9 +214,9 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this._contentViewBottomConstraint.constant = 0;
         }
         else {
-            frame.origin.x = this.anchorPoint ? location.y - frame.size.height : nodeFrame.origin.x + 2;
+            frame.origin.y = this.anchorPoint ? location.y - frame.size.height : nodeFrame.origin.y + 2 - frame.size.height;
             this._contentViewTopConstraint.constant = 0;
-            this._contentViewBottomConstraint.constant = this._indicatorHeight;
+            this._contentViewBottomConstraint.constant = -this._indicatorHeight;
         }
 
         this.frame = frame;
