@@ -3278,8 +3278,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
         }
 
         // Invalidate the root view's constraints
-        this.rootView._invalidatedConstraints = YES;
-        this.rootView.needsLayout = YES;
+        const rootView = this.rootView;
+        rootView._invalidatedConstraints = YES;
+        rootView._invalidatedSizeClasses = YES;
+        rootView.needsLayout = YES;
     },
 
     /**
@@ -3306,6 +3308,12 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
             // Make the newly detached subview a root view if it has subviews
             if (subview._subviews.length) BMView._markAsRootView(subview);
+
+            // Invalidate the root view's constraints
+            const rootView = this.rootView;
+            rootView._invalidatedConstraints = YES;
+            rootView._invalidatedSizeClasses = YES;
+            rootView.needsLayout = YES;
         }
 
     },
