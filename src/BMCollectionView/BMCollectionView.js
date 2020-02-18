@@ -3791,6 +3791,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * }
 	 */
 	cellWasClicked: function (cell, options) {
+		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasClicked) {
@@ -3838,6 +3840,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * }
 	 */
 	cellWasDoubleClicked: function (cell, options) {
+		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasDoubleClicked) {
@@ -3853,6 +3857,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * }
 	 */
 	cellWasLongClicked: function (cell, options) {
+		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+		
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasLongClicked) {
@@ -3869,6 +3875,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @return <Boolean, nullable>					Defaults to NO. This should be YES if the default behaviour should be supressed, NO otherwise.
 	 */
 	cellWasRightClicked: function (cell, options) {
+		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+		
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasRightClicked) {
