@@ -21,14 +21,45 @@ BMWindowDelegate.prototype = {
 	 */
 	windowDidAppear(window) {},
 
+
+	/**
+	 * Invoked whenever the window is about to be resized. 
+	 * 
+	 * Delegates can implement this method to control when this window can be resized.
+	 * 
+	 * This method is invoked repeatedly while the user is resizing.
+	 * @param window <BMWindow>		The calling window.
+	 * @param toSize <BMSize>		The window's new size.
+	 * @return <Boolean>			`YES` if the window can be resized, `NO` otherwise.
+	 */
+	windowShouldResize(window, toSize) {},
+
 	/**
 	 * Invoked after the window has been resized. This method is invoked repeatedly while the user is resizing.
 	 * @param window <BMWindow>		The calling window.
-	 * {
-	 * 	@param toSize <BMSize>		The window's new size.
-	 * }
+	 * @param toSize <BMSize>		The window's new size.
 	 */
-	windowDidResize(window, {toSize}) {},
+	windowDidResize(window, toSize) {},
+
+
+	/**
+	 * Invoked whenever the window is about to be moved. 
+	 * 
+	 * Delegates can implement this method to control when this window can be moved.
+	 * 
+	 * This method is invoked repeatedly while the user is moving the window.
+	 * @param window <BMWindow>		The calling window.
+	 * @param toPosition <BMPoint>	The window's new position.
+	 * @return <Boolean>			`YES` if the window can be moved, `NO` otherwise.
+	 */
+	windowShouldMove(window, toPosition) {},
+
+	/**
+	 * Invoked after the window has been moved. This method is invoked repeatedly while the user is moving the window.
+	 * @param window <BMWindow>		The calling window.
+	 * @param toPosition <BMPoint>	The window's new position.
+	 */
+	windowDidMove(window, toPosition) {},
 
 	/**
 	 * Invoked after the window becomes the key window.

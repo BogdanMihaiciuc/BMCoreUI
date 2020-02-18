@@ -5,7 +5,9 @@ import {BMPointMake} from '../Core/BMPoint'
 import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
 import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
 import {BMView} from '../BMView/BMView_v2.5'
+import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMKeyboardShortcutModifier } from './BMKeyboardShortcut'
+import { BMSizeMake } from '../Core/BMSize'
 
 //@ts-check
 // @type BMWindowOverlay extends BMView
@@ -115,6 +117,8 @@ class BMWindowOverlay extends BMView {
         viewport._surfaceArea = viewport._width * viewport._height;
 
         return viewport;
+    }
+
 }
 
 // @endtype
@@ -212,11 +216,17 @@ BMWindow._showcaseElements = [];
 
 /**
  * Registers an element that will participate in the window showcase.
+ * @param element <AnyObject>		The showcase element.
  */
 BMWindow.registerShowcaseElement = function (element) {
 	BMWindow._showcaseElements.push(element);
 }
 
+
+/**
+ * Unregisters a showcase element.
+ * @param element <AnyObject>		The showcase element.
+ */
 BMWindow.unregisterShowcaseElement = function (element) {
 	BMWindow._showcaseElements.splice(BMWindow._showcaseElements.indexOf(element), 1);
 }
@@ -648,6 +658,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				// Don't process events originating from children of the toolbar
 				if (event.target != this._toolbar) return;
 
+				// Full screen windows cannot be moved
+				if (this._fullScreen) return;
+
 				this._dragged = YES;
 	
 				this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
@@ -655,9 +668,18 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	
 				let mouseMoveEventListener = event => {
 					let position = BMPointMake(event.clientX, event.clientY);
+					const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+
+					// Check if the window can move
+					let canMove = YES;
+					if (this.delegate && this.delegate.windowShouldMove) {
+						canMove = this.delegate.windowShouldMove(this, newPosition);
+					}
+					if (!canMove) return;
+
 					this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
 					this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
-					this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+					this._position = newPosition;
 					lastPosition = position;
 					this.layout();
 					event.preventDefault();
@@ -684,6 +706,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 				// Don't process events originating from children of the toolbar
 				if (event.target != this._toolbar) return;
+
+				// Full screen windows cannot be moved
+				if (this._fullScreen) return;
 	
 				// Only use the first touch point
 				touchDragPoint = event.changedTouches[0].identifier;
@@ -706,9 +731,18 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					if (!touch) return;
 	
 					let position = BMPointMake(touch.clientX, touch.clientY);
+					const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+
+					// Check if the window can move
+					let canMove = YES;
+					if (this.delegate && this.delegate.windowShouldMove) {
+						canMove = this.delegate.windowShouldMove(this, newPosition);
+					}
+					if (!canMove) return;
+
 					this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
 					this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
-					this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+					this._position = newPosition;
 					lastPosition = position;
 					this.layout();
 					event.preventDefault();
@@ -749,6 +783,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			// Initialize dragging touch events for the drag handler
 			dragHandle.addEventListener('mousedown', event => {
 
+				// Full screen windows cannot be resized
+				if (this._fullScreen) return;
+
 				this._dragged = YES;
 	
 				this._position = BMPointMake(this.widthConstraint.constant, this.heightConstraint.constant);
@@ -756,12 +793,23 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	
 				let mouseMoveEventListener = event => {
 					let position = BMPointMake(event.clientX, event.clientY);
-					this.widthConstraint.constant = this._position.x + position.x - lastPosition.x;
-					this.heightConstraint.constant = this._position.y + position.y - lastPosition.y;
+
+					const newWidth = this._position.x + position.x - lastPosition.x;
+					const newHeight = this._position.y + position.y - lastPosition.y;
+
+					this._position = BMPointMake(newWidth, newHeight);
+					lastPosition = position;
+
+					let canResize = YES;
+					if (this.delegate && this.delegate.windowShouldResize) {
+						canResize = this.delegate.windowShouldResize(this, BMSizeMake(newWidth, newHeight));
+					}
+					if (!canResize) return;
+
+					this.widthConstraint.constant = newWidth;
+					this.heightConstraint.constant = newHeight;
 					this.frame.size.width = this.widthConstraint.constant;
 					this.frame.size.height = this.heightConstraint.constant;
-					this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-					lastPosition = position;
 					this.layout();
 					if (this.delegate && this.delegate.windowDidResize) {
 						this.delegate.windowDidResize(this, {toSize: this.frame.size});
@@ -789,6 +837,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			let touchDragHandlePoint;
 	
 			dragHandle.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
+				// Full screen windows cannot be resized
+				if (this._fullScreen) return;
+
 				// If there is already a drag in progress, don't process this new event
 				if (typeof touchDragPoint !== 'undefined') {
 					return;
@@ -815,12 +866,24 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					if (!touch) return;
 	
 					let position = BMPointMake(touch.clientX, touch.clientY);
-					this.widthConstraint.constant = this._position.x + position.x - lastPosition.x;
-					this.heightConstraint.constant = this._position.y + position.y - lastPosition.y;
+
+					const newWidth = this._position.x + position.x - lastPosition.x;
+					const newHeight = this._position.y + position.y - lastPosition.y;
+
+					this._position = BMPointMake(newWidth, newHeight);
+					lastPosition = position;
+
+					let canResize = YES;
+					if (this.delegate && this.delegate.windowShouldResize) {
+						canResize = this.delegate.windowShouldResize(this, BMSizeMake(newWidth, newHeight));
+					}
+					if (!canResize) return;
+
+					this.widthConstraint.constant = newWidth;
+					this.heightConstraint.constant = newHeight;
 					this.frame.size.width = this.widthConstraint.constant;
 					this.frame.size.height = this.heightConstraint.constant;
-					this._position = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-					lastPosition = position;
+
 					this.layout();
 					if (this.delegate && this.delegate.windowDidResize) {
 						this.delegate.windowDidResize(this, {toSize: this.frame.size});
@@ -1516,7 +1579,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			BMAnimateWithBlock(() => {
 				let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
 				controller.registerBuiltInPropertiesWithDictionary({left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
+
+				const frame = this.frame.copy();
 				this.layout();
+
+				// When the window contains elements whose intrinsic size must be measured, upon finishing the layout, the window will continue to keep its
+				// temporary frame used for measuring, so it has to be reset prior to the animation starting
+				BMCopyProperties(this.node.style, {left: frame.origin.x + 'px', top: frame.origin.y + 'px', width: frame.size.width + 'px', height: frame.size.height + 'px'})
 			}, {duration: 300, easing: 'easeInOutQuart',
 				complete: function () {
 					if (self.delegate && self.delegate.windowDidEnterFullScreen) self.delegate.windowDidEnterFullScreen(self);
@@ -1576,8 +1645,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				controller.registerBuiltInProperty('top', {withValue: frame.origin.y + 'px'});
 				controller.registerBuiltInProperty('width', {withValue: frame.size.width + 'px'});
 				controller.registerBuiltInProperty('height', {withValue: frame.size.height + 'px'});
-				this.layout();
 				this._fullScreen = NO;
+				this.layout();
+				BMCopyProperties(self._window.style, {left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
 			}, {
 				duration: 300, easing: 'easeInOutQuart',
 				complete: function () {
