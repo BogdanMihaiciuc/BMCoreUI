@@ -8,9 +8,22 @@ Resolved an issue that caused custom bezier easings to not work when using web a
 
 When a view is removed while it had a pending layout pass, it is now removed from its layout queue.
 
+When adding or removing subviews in a hierarchy, the size classes are now correctly invalidated on the root view.
+
 ## BMWindow
 
 When a window is released, its node is now removed from the document.
+
+View hierarchies whose root view is a `BMWindow` will now use the window's size as the viewport.
+
+Resolved an issue that caused some windows in full screen mode to be able to move or resize.
+
+## BMWindowDelegate
+
+The following methods can now be implemented by window delegates:
+ * `windowShouldResize(_, _)`: Invoked to determine if a window can be resized.
+ * `windowShouldMove(_, _)`: Invoked to determine if a window can be moved.
+ * `windowDidMove(_, _)`: Invoked whenever a window is moved.
 
 ## BMPopover
 
