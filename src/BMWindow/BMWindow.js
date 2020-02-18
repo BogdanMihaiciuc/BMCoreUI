@@ -100,6 +100,21 @@ class BMWindowOverlay extends BMView {
 		}
 	}
 
+
+    // @override - BMView
+    get _currentViewport() {
+        if (this._requiredViewport) return this._requiredViewport;
+
+        let viewport = new BMViewport;
+        viewport.init();
+
+        viewport._width = this._window._fullScreen ? window.innerWidth : this._window.frame.size.width;
+        viewport._height = this._window._fullScreen ? window.innerHeight : this._window.frame.size.height;
+        viewport._diagonal = Math.sqrt(Math.pow(viewport._width, 2) + Math.pow(viewport._height, 2));
+        viewport._orientation = viewport._width >= viewport._height ? BMLayoutOrientation.Landscape : BMLayoutOrientation.Portrait;
+        viewport._surfaceArea = viewport._width * viewport._height;
+
+        return viewport;
 }
 
 // @endtype
