@@ -4,6 +4,10 @@
 
 Resolved an issue that caused custom bezier easings to not work when using web animations.
 
+## BMLayoutConstraint
+
+Resolved an issue that could trigger an unsolvable layout error to occur when changing the constant of a constraint.
+
 ## BMView
 
 When a view is removed while it had a pending layout pass, it is now removed from its layout queue.
@@ -32,6 +36,8 @@ A new `BMPopover` subclass of `BMWindow` is now available for use. It represents
 ## BMLayoutEditor
 
 Resolved an issue that caused entries in the view hierarchy window to be cut off.
+
+Resolved an issue with numeric setting cells that caused values to be assigned as strings instead of numbers.
 
 ## BMTextField
 
