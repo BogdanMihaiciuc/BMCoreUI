@@ -959,7 +959,7 @@ export function BMAnimationApplyBlocking(blocking) {
 					duration: options.duration * (window.BMAnimationMultiplier || 1), 
 					easing: easing || 'linear', 
 					//fill: 'none',
-					delay: options.delay,
+					delay: options.delay && (options.delay * (window.BMAnimationMultiplier || 1)),
 					composite: 'replace',
 					iterationComposite: 'replace'
 				});
@@ -1016,7 +1016,7 @@ export function BMAnimationApplyBlocking(blocking) {
 				};
 
 				// On Safari, onfinish and oncancel are bugged currently do not fire at times, so they are manually resolved as a workaround
-				setTimeout(nodeAnimation.onfinish, (options.delay || 0) + options.duration);
+				//setTimeout(nodeAnimation.onfinish, ((options.delay || 0) + options.duration) * (window.BMAnimationMultiplier || 1));
 			});
 			promises.push(promise);
 
