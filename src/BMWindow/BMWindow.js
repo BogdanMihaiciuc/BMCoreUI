@@ -1600,6 +1600,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			if (self.delegate && self.delegate.windowDidEnterFullScreen) self.delegate.windowDidEnterFullScreen(self);
 			if (args && args.completionHandler) args.completionHandler();
 		}
+
+		this._resizeHandler = event => {
+			this.widthConstraint.constant = window.innerWidth;
+			this.heightConstraint.constant = window.innerHeight;
+		}
+
+		window.addEventListener('resize', this._resizeHandler);
 		
 	},
 	
@@ -1612,6 +1619,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * }
 	 */
 	exitFullScreenAnimated: function (animated, args) {
+		if (!this._fullScreen) return;
+
 		animated = (animated === undefined ? YES : animated);
 		
 		//__BMVelocityAnimate(this._blocker, 'stop');
@@ -1666,6 +1675,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			if (self.delegate && self.delegate.windowDidExitFullScreen) self.delegate.windowDidExitFullScreen(self);
 			if (args && args.completionHandler) args.completionHandler();
 		}
+
+		window.removeEventListener('resize', this._resizeHandler);
 	},
 
 	/**
