@@ -336,18 +336,19 @@
 
 /* MARK: BMWindow */
 
-.BMWindowLabel {
+.BMWindowLabel, .BMLabel {
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 16px !important;
 	font-weight: normal !important;
-	
-	text-align: center !important;
-	
-	margin-left: 8px !important;
-	margin-right: 8px !important;
+
 	text-align: left !important;
 
 	color: rgba(0, 0, 0, .8);
+}
+
+.BMWindowLabel {
+	margin-left: 8px !important;
+	margin-right: 8px !important;
 
 	display: flex;
 	flex-direction: column;
@@ -361,36 +362,37 @@
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMWindowLabel {
+	.BMWindowLabel, .BMLabel {
 		color: rgba(255, 255, 255, .9);
 	}
 	
-	.BMWindowSublabel {
+	.BMWindowSublabel, .BMLabel {
 		color: rgba(255, 255, 255, .5);
 	}
 }
 
-.BMWindowEllipsis {
+.BMWindowEllipsis, .BMEllipsis {
 	flex-shrink: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.BMWindowTitle {
+.BMWindowTitle, .BMTitle {
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 24px !important;
 	font-weight: bold !important;
 	
-	text-align: center !important;
-	
+	text-align: left !important;
+
+	color: rgba(0, 0, 0, .8);
+}
+
+.BMWindowTitle {
 	min-height: 64px !important;
 	
 	margin-left: 24px !important;
 	margin-right: 8px !important;
-	text-align: left !important;
-
-	color: rgba(0, 0, 0, .8);
 
 	display: flex;
 	flex-direction: column;
@@ -398,28 +400,31 @@
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMWindowTitle {
+	.BMWindowTitle, .BMTitle {
 		color: rgba(255, 255, 255, .9);
 	}
 }
 
-.BMWindowInput {
+.BMWindowInput, .BMInput {
 	background: none !important;
 	-webkit-appearance: none !important;
 	border: none !important;
 	box-sizing: border-box !important;
 	
 	border-radius: 4px !important;
-	margin: 8px !important;
-	
-	height: calc(100% - 16px) !important;
-	min-width: 44px !important;
 	
 	transition: box-shadow .2s ease, background-color .2s ease !important;
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 
 	padding-left: 8px !important;
 	padding-right: 8px !important;
+}
+
+.BMWindowInput {
+	margin: 8px !important;
+	
+	height: calc(100% - 16px) !important;
+	min-width: 44px !important;
 }
 
 .BMWindowInput:not(.BMLayoutEditorDetailsCellInput) {
@@ -430,58 +435,58 @@
 	margin: 0px !important;
 }
 
-.BMWindowInput:hover:not(:focus) {
+.BMWindowInput:hover:not(:focus), .BMInput:hover:not(:focus) {
 	background: rgba(255, 255, 255, .5) !important;
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 }
 
-.BMWindowInput:focus {
+.BMWindowInput:focus, .BMInput:focus {
 	background: white !important;
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 10px rgba(0, 160, 255, 1) !important;
 }
 
-.BMWindowInput:disabled {
+.BMWindowInput:disabled, .BMInput:focus {
 	color: rgba(0, 0, 0, .5) !important;
 }
 
-.BMWindowInputInvalid {
+.BMWindowInputInvalid, .BMInputInvalid {
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
 }
 
-.BMWindowInputInvalid:hover:not(:focus) {
+.BMWindowInputInvalid:hover:not(:focus), .BMInputInvalid:hover:not(:focus) {
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
 }
 
-.BMWindowInputInvalid:focus {
+.BMWindowInputInvalid:focus, .BMInputInvalid:focus {
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .2), 0px 0px 10px rgba(255, 80, 0, 1) !important;
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMWindowInput {
+	.BMWindowInput, .BMWInput {
 		color: rgba(255, 255, 255, .9) !important;
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, 0) inset, 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 	}
 
-	.BMWindowInput:hover:not(:focus) {
+	.BMWindowInput:hover:not(:focus), .BMInput:hover:not(:focus) {
 		background: rgba(255, 255, 255, .05) !important;
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .1) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 	}
 
-	.BMWindowInput:focus {
+	.BMWindowInput:focus, .BMInput:focus {
 		background: rgba(0, 160, 255, .1) !important;
 		color: rgba(255, 255, 255, .9) !important;
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(0, 160, 255, .75) !important;
 	}
 
-	.BMWindowInput:disabled {
+	.BMWindowInput:disabled, .BMInput:disabled {
 		color: rgba(255, 255, 255, .5) !important;
 	}
 
-	.BMWindowInputInvalid:hover:not(:focus) {
+	.BMWindowInputInvalid:hover:not(:focus), .BMInputInvalid:hover:not(:focus) {
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
 	}
 	
-	.BMWindowInputInvalid:focus {
+	.BMWindowInputInvalid:focus, .BMInputInvalid:focus {
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(255, 80, 0, 1) !important;
 	}
 }
@@ -573,7 +578,7 @@
 	color: rgba(255, 255, 255, .5);
 }
 
-.BMWindowButton {
+.BMWindowButton, .BMButton {
 	-webkit-appearance: none;
 	outline: none;
 	
@@ -588,13 +593,34 @@
 	font-weight: bold;
 	
 	padding: 8px;
-	
-	margin: 8px;
-	border: none;
 
 	align-self: center;
 	transition: background-color .2s ease;
+}
+
+.BMWindowButton {
 	min-height: 32px;
+	
+	margin: 8px;
+	border: none;
+}
+
+.BMWindowButton:active, .BMButton:actie {
+	background: rgb(0, 108, 235);
+}
+
+/* NOTE: BMWindowButtonWeak is meant to be used together with BMWindowButton */
+.BMWindowButtonWeak, .BMButtonWeak {
+	background: transparent;
+	border: 1px solid rgba(0, 128, 255, 1);
+	color: rgba(0, 128, 255, 1);
+
+	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
+	box-shadow: none;
+}
+
+.BMWindowButtonWeak:active, .BMButtonWeak:active {
+	background: rgba(0, 0, 0, .05);
 }
 
 .BMWindowToolbarButton {
@@ -688,24 +714,6 @@
 
 .BMWindowFlexibleSpace {
 	flex-grow: 1;
-}
-
-.BMWindowButton:active {
-	background: rgb(0, 108, 235);
-}
-
-/* NOTE: BMWindowButtonWeak is meant to be used together with BMWindowButton */
-.BMWindowButtonWeak {
-	background: transparent;
-	border: 1px solid rgba(0, 128, 255, 1);
-	color: rgba(0, 128, 255, 1);
-
-	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
-	box-shadow: none;
-}
-
-.BMWindowButtonWeak:active {
-	background: rgba(0, 0, 0, .05);
 }
 
 /* MARK: Switch */

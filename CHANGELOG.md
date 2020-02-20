@@ -22,6 +22,8 @@ View hierarchies whose root view is a `BMWindow` will now use the window's size 
 
 Resolved an issue that caused some windows in full screen mode to be able to move or resize.
 
+Resolved an issue that caused full screen windows to not adapt to browser size changes.
+
 ## BMWindowDelegate
 
 The following methods can now be implemented by window delegates:
