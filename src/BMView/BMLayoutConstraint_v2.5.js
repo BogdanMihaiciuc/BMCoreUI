@@ -540,9 +540,14 @@ BMLayoutConstraint.prototype = {
 				// When changing the constant, update the attached solver, if there is one
 				if (this._solver) {
 					if (this._constraint) {
-						// Removing a constraint should never cause a layout that was previously solvable to become unsolvable;
-						// it may at most lead to an ambiguous layout
-						if (this._solver.hasConstraint(this._constraint)) this._solver.removeConstraint(this._constraint);
+						try {
+							if (this._solver.hasConstraint(this._constraint)) this._solver.removeConstraint(this._constraint);
+						}
+						catch (layoutError) {
+							this._cassowaryConstraint = undefined;
+							this._sourceView.rootView._invalidatedConstraints = YES;
+							this._sourceView.needsLayout = YES;
+						}
 						this._constraint = undefined;
 					}
 					// If this constant change causes the layout to be unsolvable, catch the error
@@ -553,7 +558,7 @@ BMLayoutConstraint.prototype = {
 					catch (layoutError) {
 						this._cassowaryConstraint = undefined;
 						this._sourceView.rootView._invalidatedConstraints = YES;
-						this._sourceView.layout();
+						this._sourceView.needsLayout = YES;
 					}
 				}
 
