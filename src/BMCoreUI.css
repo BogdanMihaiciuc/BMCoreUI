@@ -2188,7 +2188,7 @@ The background layer contains the background.
 	
 	z-index: 9999999; /* :( */
 	
-	background: rgba(255, 255, 255, .8);
+	background: rgba(245, 245, 245, .8);
 	-webkit-backdrop-filter: blur(25px);
 	pointer-events: none;
 }
@@ -2227,7 +2227,7 @@ The background layer contains the background.
 	}
 
 	.BMPopoverBackgroundDarkModeFill {
-		background-color: rgb(50, 50, 50);
+		background-color: rgb(40, 40, 40);
 
 		position: absolute;
 		width: 100%;
