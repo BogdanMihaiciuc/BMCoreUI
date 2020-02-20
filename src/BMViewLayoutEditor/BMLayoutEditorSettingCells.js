@@ -1098,11 +1098,12 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
      */
     inputValueDidChangeWithEvent(event) {
         const setting = this.setting;
+        const value = JSON.parse(this._inputView.node.value);
         if (setting.sizeClass) {
-            setting.target[`set${BMStringByCapitalizingString(setting.property)}`](this._inputView.node.value, {forSizeClass: setting.sizeClass});
+            setting.target[`set${BMStringByCapitalizingString(setting.property)}`](value, {forSizeClass: setting.sizeClass});
         }
         else {
-            setting.target[setting.property] = this._inputView.node.value;
+            setting.target[setting.property] = value;
         }
     },
 
@@ -1112,7 +1113,7 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
         for (const item of setting.options) {
             const option = document.createElement('option');
 
-            option.value = item.userInfo;
+            option.value = JSON.stringify(item.userInfo);
             option.innerText = item.name;
 
             this._inputView.node.appendChild(option);
@@ -1120,7 +1121,7 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
                 option.selected = YES;
             }*/
         }
-        this._inputView.node.value = setting.sizeClass ? setting.target._variations[setting.sizeClass][setting.property] : setting.target[setting.property];
+        this._inputView.node.value = setting.sizeClass ? JSON.stringify(setting.target._variations[setting.sizeClass][setting.property]) : JSON.stringify(setting.target[setting.property]);
         this._titleView.setting = setting;
     }
 })
@@ -1299,11 +1300,22 @@ BMLayoutEditorSettingsIntegerCell.prototype = BMExtend(Object.create(BMLayoutEdi
         return this;
     },
 
+
+    get value() {
+        const value = parseInt(this._inputView.node.value, 10);
+
+        if (isNaN(value)) {
+            return 0;
+        }
+
+        return value;
+    },
+
     // @override - BMCollectionViewCell
     cellDidBindToSetting(setting) {
         BMLayoutEditorSettingsInputCell.prototype.cellDidBindToSetting.apply(this, arguments);
     }
-})
+});
 
 // @endtype
 
@@ -1323,11 +1335,21 @@ BMLayoutEditorSettingsNumberCell.prototype = BMExtend(Object.create(BMLayoutEdit
         return BMLayoutEditorSettingsInputCell.prototype.initWithCollectionView.apply(this, arguments);
     },
 
+    get value() {
+        const value = parseFloat(this._inputView.node.value);
+
+        if (isNaN(value)) {
+            return 0;
+        }
+
+        return value;
+    },
+
     // @override - BMCollectionViewCell
     cellDidBindToSetting(setting) {
         BMLayoutEditorSettingsInputCell.prototype.cellDidBindToSetting.apply(this, arguments);
     }
-})
+});
 
 // @endtype
 
