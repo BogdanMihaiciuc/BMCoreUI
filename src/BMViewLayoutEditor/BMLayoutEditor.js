@@ -1465,18 +1465,15 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     /**
      * Brings up a popover to edit a constraint's constant.
-     * @param event <Event>                             The event that triggered this action.
+     * @param location <BMPoint>                        The point from which the popover should originate.
      * {
      *  @param forConstraint <BMLayoutConstraint>       The constraint whose constant should be edited.
      *  @param withReferenceView <BMView>               The reference view.
      * }
      */
-    _showConstantPopupWithEvent(event, {forConstraint: constraint, withReferenceView: referenceView}) {
+    _showConstantPopupAtPoint(location, {forConstraint: constraint, withReferenceView: referenceView}) {
         // TODO Extract the popover code into a common method
         const popoverParentElement = document.body;
-
-        // Find out the location where the popover should be
-        const location = BMPointMake(event.clientX | 0, event.clientY | 0);
 
         const appearsBelow = location.y < 160;
 
@@ -2343,7 +2340,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             constraint.setIsActive(YES, {forSizeClass: this._activeSizeClass});
         }
 
-        this.selectConstraint(constraint, {withReferenceView: constraint._sourceView});
+        const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: constraint._sourceView});
+        if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
     },
 
     /**
@@ -2691,6 +2689,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * {
      *  @param withReferenceView <BMView, nullable>             Must be specified if `constraint` is non-null. The reference view to which the constraint refers.
      * }
+     * @return <AnyObject>                                      The constraint descriptor, if the constraint is non-null.
      */
     selectConstraint(constraint, args) {
         if (this.selectedConstraint == constraint && this.selectedConstraintReferenceView == args.withReferenceView) return;
@@ -2718,7 +2717,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this._clearOffsets();
 
             // Draw the given constraint
-            this._drawConstraint(constraint, {withReferenceView: args.withReferenceView});
+            const node = this._drawConstraint(constraint, {withReferenceView: args.withReferenceView});
 
             if (constraint.isConstraintCollection) {
                 constraint._views.forEach(view => view._selector.classList.add('BMLayoutEditorViewSelectorConstrained'));
@@ -2739,6 +2738,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 this.detailsNodeContent.innerHTML = '';
                 this.createSettingsForConstraint(constraint, {withReferenceView: args.withReferenceView});
             }
+
+            return node;
         }
     },
 
@@ -2876,7 +2877,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         let constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Leading, BMLayoutAttribute.Left, BMLayoutAttribute.CenterX], {forView: view});
 
         if (constraint) {
-            this.selectConstraint(constraint, {withReferenceView: view});
+            const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+            if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
             return;
         }
         else {
@@ -2887,7 +2889,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             }
 
             if (constraint) {
-                this.selectConstraint(constraint, {withReferenceView: view});
+                const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+                if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
                 return;
             }
         }
@@ -2983,7 +2986,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         let constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Top, BMLayoutAttribute.CenterY], {forView: view});
 
         if (constraint) {
-            this.selectConstraint(constraint, {withReferenceView: view});
+            const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+            if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
             return;
         }
         else {
@@ -2994,7 +2998,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             }
 
             if (constraint) {
-                this.selectConstraint(constraint, {withReferenceView: view});
+                const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+                if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
                 return;
             }
         }
@@ -3089,7 +3094,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Trailing, BMLayoutAttribute.Right, BMLayoutAttribute.Width, BMLayoutAttribute.CenterX], {forView: view});
 
         if (constraint) {
-            this.selectConstraint(constraint, {withReferenceView: view});
+            const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+            if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
             return;
         }
         
@@ -3182,7 +3188,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const constraint = this._constraintAffectingAttributeInList([BMLayoutAttribute.Bottom, BMLayoutAttribute.Height, BMLayoutAttribute.CenterY], {forView: view});
 
         if (constraint) {
-            this.selectConstraint(constraint, {withReferenceView: view});
+            const constraintDescriptor = this.selectConstraint(constraint, {withReferenceView: view});
+            if (!this._detailsToolWindow._visible) this._showConstantPopupAtPoint(BMRectMakeWithNodeFrame(constraintDescriptor && constraintDescriptor.node || view.node).center, {forConstraint: constraint, withReferenceView: constraint._sourceView});
             return;
         }
 
@@ -3507,7 +3514,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView}); 
 
             if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && !this._detailsToolWindow._visible) {
-                this._showConstantPopupWithEvent(event, {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
+                this._showConstantPopupAtPoint(BMPointMake(event.clientX, event.clientY), {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
             }
 
             event.stopPropagation();
@@ -3575,7 +3582,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView});  
 
             if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && !this._detailsToolWindow._visible) {
-                this._showConstantPopupWithEvent(event, {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
+                this._showConstantPopupWithEvent(BMPointMake(event.clientX, event.clientY), {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
             }
 
             event.stopPropagation();

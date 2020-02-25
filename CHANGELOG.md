@@ -1,3 +1,7 @@
+# 2.6 Beta 3
+
+Creating a new constraint or selecting one via a keyboard shortcut while the inspector is hidden will now correctly bring up the constant editor for that constraint.
+
 # 2.6 Beta 2
 
 ## BMAnimationContext

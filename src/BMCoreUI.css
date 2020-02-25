@@ -168,7 +168,7 @@
 	opacity: .5;
 }
 
-.BMWindow.BMKeyWindow {
+.BMWindow.BMKeyWindow, .BMToolWindow {
 	z-index: 2007;
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
 	backdrop-filter: blur(15px);
@@ -248,7 +248,7 @@
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 6px 32px;
 	}
 
-	.BMWindow.BMKeyWindow {
+	.BMWindow.BMKeyWindow, .BMToolWindow {
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
 	}
 
