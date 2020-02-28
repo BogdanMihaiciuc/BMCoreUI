@@ -3582,7 +3582,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this.selectConstraint(sourceConstraint || constraint, {withReferenceView: args.withReferenceView});  
 
             if (BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW && !this._detailsToolWindow._visible) {
-                this._showConstantPopupWithEvent(BMPointMake(event.clientX, event.clientY), {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
+                this._showConstantPopupAtPoint(BMPointMake(event.clientX, event.clientY), {forConstraint: sourceConstraint || constraint, withReferenceView: args.withReferenceView});
             }
 
             event.stopPropagation();
