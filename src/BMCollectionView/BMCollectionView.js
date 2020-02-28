@@ -3280,7 +3280,19 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				// Prepare the map of shadows and list of objects to send over
 				// The list of objects will be a copy of the actual objects
 				let dropShadowMap = new Map;
-				let dropItems = this._draggingIndexPaths.map(indexPath => JSON.parse(JSON.stringify(indexPath.object)));
+				let dropItems = this._draggingIndexPaths.map(indexPath => {
+					const newObject = JSON.parse(JSON.stringify(indexPath.object));
+
+					// stringify + parse strips out undefined values, but this can lead to issues
+					// in Thingworx when testing the new object against the data shape
+					for (const key in indexPath.object) {
+						if (typeof indexPath.object[key] === 'undefined') {
+							newObject[key] = undefined;
+						}
+					}
+
+					return newObject;
+				});
 				let index = 0;
 
 				// Add one for the primary cell
