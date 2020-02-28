@@ -1,5 +1,11 @@
 # 2.6 Beta 3
 
+## BMCollectionView
+
+Resolves an issue when transferring items that caused transferred items to lose their properties that had undefined values.
+
+## BMLayoutEditor
+
 Creating a new constraint or selecting one via a keyboard shortcut while the inspector is hidden will now correctly bring up the constant editor for that constraint.
 
 # 2.6 Beta 2
