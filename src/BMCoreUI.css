@@ -1336,7 +1336,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	flex-direction: column;
 }
 
-.BMLayoutEditorDetailsDivider {
+.BMLayoutEditorDetailsDivider, .BMMenuDivider {
 	width: 100%;
 	height: 1px;
 
@@ -1353,7 +1353,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMLayoutEditorDetailsDivider, .BMLayoutEditorDetailsDividerCell {
+	.BMLayoutEditorDetailsDivider, .BMLayoutEditorDetailsDividerCell, .BMMenuDivider {
 		background: rgba(255, 255, 255, .05);
 	}
 }
