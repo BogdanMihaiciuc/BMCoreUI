@@ -1,3 +1,15 @@
+# 2.6 Beta 4
+
+## BMWindow
+
+Modal windows will now use a z index based on the value of `BM_WINDOW_Z_INDEX_MAX`.
+
+## BMLayoutEditor
+
+Whenever the constraint inspector panel appears, the appropriate constant field will now be focused by default.
+
+Resolved an issue that could allow the editor inspector to be shrunk below an acceptable size.
+
 # 2.6 Beta 3
 
 ## BMCollectionView
