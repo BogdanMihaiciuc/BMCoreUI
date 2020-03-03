@@ -386,6 +386,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             treeWindow.node.classList.add('BMLayoutEditorDetailsWindow');
             treeWindow.toolbar.style.height = '64px';
+
+            treeWindow.width.greaterThanOrEqualTo(320).isActive = YES;
+            treeWindow.height.greaterThanOrEqualTo(320).isActive = YES;
         }
         else {
             this.addSubview(this.tree);
@@ -477,6 +480,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             detailsToolWindow.node.appendChild(closeButton);
             detailsToolWindow.toolbar.style.height = '64px';
             detailsToolWindow.opensAutomatically = NO;
+
+            detailsToolWindow.width.greaterThanOrEqualTo(320).isActive = YES;
+            detailsToolWindow.height.greaterThanOrEqualTo(320).isActive = YES;
 
             this._detailsToolWindow = detailsToolWindow;
         }
