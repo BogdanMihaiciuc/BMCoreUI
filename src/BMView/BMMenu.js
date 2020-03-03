@@ -112,6 +112,14 @@ BMMenuItem.menuItemWithName = function (name, args) {
     return (new BMMenuItem).initWithName(name, args);
 }
 
+/**
+ * Constructs and returns a menu separator.
+ * @return <BMMenuItem>                             A menu item.
+ */
+BMMenuItem.menuSeparator = function () {
+    return (new BMMenuItem).initWithName('---');
+}
+
 // @endtype
 
 // @type BMMenu
@@ -245,6 +253,13 @@ BMMenu.prototype = {
         // Create and append the items for this menu
         const iconSize = this._iconSize;
         for (const item of this._items) {
+            if (item.name == '---') {
+                const itemNode = document.createElement('div');
+                itemNode.className = 'BMMenuDivider';
+                this._node.appendChild(itemNode);
+                continue;
+            }
+
             let itemNode = document.createElement('div');
             itemNode.className = 'BMMenuItem';
 
