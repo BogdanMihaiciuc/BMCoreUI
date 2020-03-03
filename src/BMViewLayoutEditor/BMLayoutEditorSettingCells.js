@@ -722,7 +722,8 @@ BMLayoutEditorSettingsReadonlyCell.prototype = BMExtend(Object.create(BMLayoutEd
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
-        inputView.width.equalTo(200).isActive = YES;
+        inputView.width.greaterThanOrEqualTo(200).isActive = YES;
+        inputView.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
         inputView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
         inputView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         inputView.height.greaterThanOrEqualTo(24).isActive = YES;
@@ -897,7 +898,8 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
         toggleContainer.trailing.equalTo(this.contentView.trailing, {plus: -8}).isActive = YES;
         toggleContainer.top.equalTo(this.contentView.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         toggleContainer.bottom.equalTo(this.contentView.bottom, {plus: -BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
-        toggleContainer.width.equalTo(200).isActive = YES;
+        toggleContainer.width.greaterThanOrEqualTo(200).isActive = YES;
+        toggleContainer.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
 
         // Create the toggle
         let value = document.createElement('label');
@@ -1071,11 +1073,12 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
-        inputView.width.equalTo(200).isActive = YES;
+        inputView.width.greaterThanOrEqualTo(200).isActive = YES;
         inputView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
         inputView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         inputView.height.equalTo(24).isActive = YES;
         inputView.bottom.equalTo(this.bottom, {plus: -BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
+        inputView.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
 
         inputNode.addEventListener('change', event => {
             if (!this._bound) return;
@@ -1199,11 +1202,12 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
-        inputView.width.equalTo(200).isActive = YES;
+        inputView.width.greaterThanOrEqualTo(200).isActive = YES;
         inputView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
         inputView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         inputView.height.equalTo(24).isActive = YES;
         inputView.bottom.equalTo(this.bottom, {plus: -BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
+        inputView.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
 
         inputNode.addEventListener('input', event => {
             if (!this._bound) return;
