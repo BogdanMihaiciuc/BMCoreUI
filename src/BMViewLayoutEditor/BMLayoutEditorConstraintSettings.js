@@ -178,14 +178,24 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
     },
 
     // @override - BMLayoutEditorSettingsPanel
-    settingsPanelWillAppear(animated) {
+    async settingsPanelWillAppear(animated) {
         this.layoutEditor.selectConstraint(this._displayedConstraint, {withReferenceView: this._referenceView});
-        //this.layoutEditor._drawConstraint(this._displayedConstraint, {withReferenceView: this._referenceView});
+        
+        await 0;
+
+        // Focus the relevant constraint box
+        const setting = BMLayoutEditorSetting.settingWithName('Constant', {kind: BMLayoutEditorSettingKind.Constant, target: this._displayedConstraint, variations: YES, property: 'constant'});
+        setting._sizeClass = this.layoutEditor.activeSizeClass;
+
+        const indexPath = this._attributesTab.indexPathForObject(setting);
+        const cell = indexPath && this._attributesTab._collectionView.cellAtIndexPath(indexPath);
+        if (cell) {
+            cell._inputView.node.focus();
+        }
     },
 
     // @override - BMLayoutEditorSettingsPanel
     settingsPanelDidAppear(animated) {
-
     },
 
     // @override - BMLayoutEditorSettingsPanel
