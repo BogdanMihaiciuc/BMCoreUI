@@ -133,7 +133,7 @@ const _BMWindowAnimationEasingOutgoingDefault = 'easeInQuart';
 const _BMWindowAnimationDurationOutgoingDefault = 200;
 
 const BM_WINDOW_SHOWCASE_MAX_ITERATIONS = 5000;
-const BM_WINDOW_Z_INDEX_MAX = 2007;
+let BM_WINDOW_Z_INDEX_MAX = 2007;
 
 /**
  * A window is an object that manages the display and lifecycle of a popup window.
@@ -1079,7 +1079,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			const nodeDisplay = node.style.display;
 			
 			animationNode.style.position = 'fixed';
-			animationNode.style.zIndex = 2008;
+			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
 			animationNode.style.transform = '';
 			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
 			
@@ -1268,7 +1268,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			self._nodeDisplay = undefined;
 			
 			animationNode.style.position = 'fixed';
-			animationNode.style.zIndex = 2008;
+			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
 			animationNode.style.transform = '';
 			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
 			
@@ -1427,7 +1427,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			var animationNode = node.cloneNode(YES);
 			
 			animationNode.style.position = 'fixed';
-			animationNode.style.zIndex = 2008;
+			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
 			animationNode.style.transform = '';
 			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
 			
@@ -1512,7 +1512,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				if (!this.isKeyWindow) this.becomeKeyWindow();
 				
 				animationNode.style.position = 'fixed';
-				animationNode.style.zIndex = 2008;
+				animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
 				animationNode.style.transform = '';
 				BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
 				
