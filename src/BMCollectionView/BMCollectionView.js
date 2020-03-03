@@ -199,7 +199,7 @@ export var BMCollectionViewScrollingGravityVertical = Object.freeze({ // <enum>
 
 // @endtype
 
-// @type BMCollectionView extends BMView
+// @type BMCollectionView<T = any> extends BMView
 
 // Contains all active collection view instances
 var _BMCollectionViews = new Map;
@@ -291,7 +291,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
     
     /**
 	 * A callback that the collection view will invoke to test objects for identity.
-	 * Two objects may refer to the same object even if they are not strictly equals.
+	 * Two objects may refer to the same object even if they are not strictly equal.
 	 * When performing full data set changes, this callback will be used by the collection view
 	 * to compare objects between the current and the old data set to determine how the contents have changed.
 	 * The callback takes two parameters that represent the two objects to compare and must return a truthy or falsy value
@@ -299,26 +299,26 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * This method may be redefined to customize the equality test.
 	 * The default implementation tests for identity using the == operator.
 	 */
-    identityComparator: _BMCollectionViewIdentityComparator, // <Boolean ^ (nullable AnyObject, nullable AnyObject)>
+    identityComparator: _BMCollectionViewIdentityComparator, // <Boolean ^ (nullable T, nullable T)>
     
     /**
-	 * May be invoked to get the complete index path of an object at the given row within the given section.
-	 * @param row <Int>					The object's index within the section.
+	 * May be invoked to get the index path of an object at the given row within the given section.
+	 * @param row <Int>						The object's index within the section.
 	 * {
-	 *	@param inSectionAtIndex <Int>	The section's index.
+	 *	@param inSectionAtIndex <Int>		The section's index.
 	 * }
-	 * @return <BMIndexPath, nullable>	The complete index path, or undefined if there is no object with the specified indexes.
+	 * @return <BMIndexPath<T>, nullable>	The index path, or undefined if there is no object with the specified indexes.
 	 */
     indexPathForObjectAtRow: function (row, options) {
 	    return this._dataSet ? this._dataSet.indexPathForObjectAtRow(row, {inSectionAtIndex: options.inSectionAtIndex}) : undefined;
     },
     
     /**
-	 * May be invoked to get the complete index path of an object within the data set.
+	 * May be invoked to get the index path of an object within the data set.
 	 * The object should be tested against the data set using the collection's view identity comparator,
 	 * but the actual implementaion is delegated to the data set object.
-	 * @param object <Object>			The object.
-	 * @return <BMIndexPath, nullable>	The complete index path, or undefined if the object is not part of the data set.
+	 * @param object <Object>				The object.
+	 * @return <BMIndexPath<T>, nullable>	The index path, or undefined if the object is not part of the data set.
 	 */
     indexPathForObject: function (object) {
 	    return this._dataSet ? this._dataSet.indexPathForObject(object) : undefined;
@@ -1791,7 +1791,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * When invoked, this causes collection view to clear out the cached measurement for cells that match a given condition. 
 	 * The condition is evaluated using the specified block which will be invoked once for each previously measured cell.
 	 * Subsequent requests to retrieve those cells' sizes will cause collection view to run a synchronous layout pass.
-	 * @param block <Boolean ^(BMSize, nullable BMIndexPath, nullable String)>			
+	 * @param block <Boolean ^(BMSize, nullable BMIndexPath<T>, nullable String)>			
 	 * 										The block to execute for each previously measured cell.
 	 * 										The block should return `YES` to invalidate the measurement or `NO` to retain it.
 	 * 										It takes the following parameters:
@@ -1831,7 +1831,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/**
 	 * When invoked, this causes collection view to clear out the cached measurement for the cell at the given
 	 * index path. Subsequent requests to retrieve the cell's size will cause collection view to run a synchronous layout pass.
-	 * @param indexPath <BMIndexPath>			The index path of the cell whose cached measurement shuold be cleared.
+	 * @param indexPath <BMIndexPath<T>>			The index path of the cell whose cached measurement shuold be cleared.
 	 */
 	invalidateMeasuredSizeOfCellAtIndexPath(indexPath) {
 		let identifier;
@@ -1858,7 +1858,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * After this measurement, collection view will cache this size and return it directly when invoking `measuredSizeOfCellAtIndexPath(_)`. 
 	 * To obtain new measurements, it is required to invoke `invalidateMeasuredSizeOfCellAtIndexPath(_)` on each cell prior to invoking this method.
 	 * This operation will raise an error if any cell at one of the specified index paths has no subviews that can be measured.
-	 * @param indexPaths <[BMIndexPath]>			The index paths of the cell whose size should be measured.
+	 * @param indexPaths <[BMIndexPath<T>]>			The index paths of the cell whose size should be measured.
 	 */
 	measureSizesOfCellsAtIndexPaths(indexPaths) {
 		const queue = BMViewLayoutQueue.layoutQueue();
@@ -1875,8 +1875,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * After the initial measurement, collection view will cache this size and return it directly for subsequent requests. To obtain a new
 	 * measurement, it is required to invoke `invalidateMeasuredSizeOfCellAtIndexPath(_)` prior to invoking this method.
 	 * This operation will raise an error if the cell at the specified index path has no subviews that can be measured.
-	 * @param indexPath <BMIndexPath>			The index path of the cell whose size should be measured.
-	 * @return <BMSize>							The measured size.
+	 * @param indexPath <BMIndexPath<T>>			The index path of the cell whose size should be measured.
+	 * @return <BMSize>								The measured size.
 	 */
 	measuredSizeOfCellAtIndexPath(indexPath) {
 		const iterator = this._measuredSizeOfCellAtIndexPathGenerator(indexPath, {layoutQueue: BMViewLayoutQueue.layoutQueue(), dequeue: YES});
@@ -2024,7 +2024,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/**
 	 * Prepares the cell at the given index path for measurement, yielding prior to measuring it, then returning the measured size.
 	 * If the cell was already measured, this will immediately return the cached measured size.
-	 * @param indexPath <BMIndexPath>					The index path of the cell whose size should be measured.
+	 * @param indexPath <BMIndexPath<T>>				The index path of the cell whose size should be measured.
 	 * {
 	 * 	@param layoutQueue <BMLayoutQueue>				The layout queue to use for this measurement.
 	 * 	@param dequeue <Boolean>						Whether the layout queue should be drained automatically or not. If set to `NO`,
@@ -2186,7 +2186,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Note that if the old cell was retained, its retain count will not carry over to the new cell. You should only invoke
 	 * this method on cells that are not retained or manually release the old cell and retain the new one.
 	 * If the new cell is hidden this method may return an undefined cell.
-	 * @param indexPath <BMIndexPath>				The index path.
+	 * @param indexPath <BMIndexPath<T>>			The index path.
 	 * {
 	 *	@param animated <Boolean, nullable>			Defaults to NO. If set to YES, the refresh will be animated.
 	 * }
@@ -2633,7 +2633,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/**
 	 * An array containing the index paths being manipulated by a drag & drop event.
 	 */
-	_draggingIndexPaths: undefined, // <[BMIndexPath], nullable>
+	_draggingIndexPaths: undefined, // <[BMIndexPath<T>], nullable>
 
 	/**
 	 * Should be invoked when the data set changes during a drag & drop operation and the index paths
@@ -2663,7 +2663,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Invoked by CoreUI to insert a set of items into this collection view as a result of a drag & drop operation.
 	 * @param items <[AnyObject]>							An array of items.
 	 * {
-	 * 	@param toIndexPath <BMIndexPath>					The suggested index path at which to add the items.
+	 * 	@param toIndexPath <BMIndexPath<T>>					The suggested index path at which to add the items.
 	 * 	@param withDropShadows <Map<AnyObject, DOMNode>>	A map containing the link between drop shadows and the items.
 	 * }
 	 */
@@ -3672,7 +3672,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	
 	/**
 	 * Finds and returns the cell for the specified index path, if it exists.
-	 * @param indexPath <BMIndexPath>										The index path.
+	 * @param indexPath <BMIndexPath<T>>									The index path.
 	 * {
 	 *	@param ofType <BMCollectionViewLayoutAttributesType, nullable>		Defaults to .Cell. The cell type. Must be .Cell, .SupplementaryView or .DecorationView
 	 *	@param withIdentifier <String, nullable>							For supplementary views and decoration views, this is the type of view. Should be omitted for cells.
@@ -3705,7 +3705,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Finds and returns the cell for the supplementary view at specified index path, if it exists.
 	 * @param identifier <String>					The type of supplementary view.
 	 * {
-	 *	@param atIndexPath <BMIndexPath>			The index path.
+	 *	@param atIndexPath <BMIndexPath<T>>			The index path.
 	 * }
 	 * @return <BMCollectionViewCell, nullable>		The cell if it exists, or undefined if it does not.
 	 */
@@ -3726,7 +3726,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Finds, retains and returns the cell for the specified index path, if it exists.
 	 * If the specified index path is out of view and it doesn't have a cell associated with it, the cell will be created, retained and returned.
 	 * When the cell is no longer needed, it must be released so the collection view can recycle and reuse it.
-	 * @param indexPath <BMIndexPath>				The index path.
+	 * @param indexPath <BMIndexPath<T>>			The index path.
 	 * @return <BMCollectionViewCell, nullable>		The cell if it exists, or undefined if the index path is out of bounds.
 	 */
 	retainCellForIndexPath: function (indexPath) {
@@ -3759,7 +3759,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * When the cell is no longer needed, it must be released so the collection view can recycle and reuse it.
 	 * @param identifier <String>					The type of supplementary view.
 	 * {
-	 * 	@param forIndexPath <BMIndexPath>			The index path.
+	 * 	@param forIndexPath <BMIndexPath<T>>		The index path.
 	 * }
 	 * @return <BMCollectionViewCell, nullable>		The cell if it exists, or undefined if the index path is out of bounds.
 	 */
@@ -3907,7 +3907,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * The index paths in the selection are all strictly compared to the index paths in the data set.
 	 * Whenever an update occurs, the selection index paths will also be updated to the new data.
 	 */
-	_selectedIndexPaths: undefined, // <[BMIndexPath]>
+	_selectedIndexPaths: undefined, // <[BMIndexPath<T>]>
 	
 	get selectedIndexPaths() { return this._selectedIndexPaths; },
 	
@@ -3972,8 +3972,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	
 	/**
 	 * Checks if the cell at the specified index path is selected.
-	 * @param indexPath <BMIndexPath>	The index path. This will be loosely compared to the selected index paths.
-	 * @return <Boolean>				YES if the cell is selected, NO otherwise.
+	 * @param indexPath <BMIndexPath<T>>	The index path. This will be loosely compared to the selected index paths.
+	 * @return <Boolean>					YES if the cell is selected, NO otherwise.
 	 */
 	isCellAtIndexPathSelected: function (indexPath) {
 		var selectionLength = this._selectedIndexPaths.length;
@@ -3986,7 +3986,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	
 	/**
 	 * Should be invoked to select the cell at the specified index path.
-	 * @param indexPath <BMIndexPath>	The index path.
+	 * @param indexPath <BMIndexPath<T>>	The index path.
 	 */
 	selectCellAtIndexPath: function (indexPath) {
 		this._selectedIndexPaths.push(indexPath);
@@ -3999,7 +3999,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	
 	/**
 	 * Should be invoked to deselect the cell at the specified index path.
-	 * @param indexPath <BMIndexPath>	The index path.
+	 * @param indexPath <BMIndexPath<T>>	The index path.
 	 */
 	deselectCellAtIndexPath: function (indexPath) {
 		var selectionLength = this._selectedIndexPaths.length;
@@ -5221,7 +5221,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/**
 	 * Should be invoked to cause the collection view to scroll to the cell at the specified index path.
 	 * Optionally, this scrolling may be animated.
-	 * @param indexPath <BMIndexPath>													The index path of the cell to scroll to.
+	 * @param indexPath <BMIndexPath<T>>												The index path of the cell to scroll to.
 	 * {
 	 *	@param withVerticalGravity <BMCollectionViewScrollingGravityVertical, nullable>	Defaults to `BMCollectionViewScrollingGravityVertical.Top`. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
@@ -5252,7 +5252,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Optionally, this scrolling may be animated.
 	 * @param identifier <String>														The supplementary view's type identifier.
 	 * {
-	 *	@param atIndexPath <BMIndexPath>												The index path of the supplementary view to scroll to.
+	 *	@param atIndexPath <BMIndexPath<T>>												The index path of the supplementary view to scroll to.
 	 *	@param verticalGravity <BMCollectionViewScrollingGravityVertical, nullable>		Defaults to BMCollectionViewScrollingGravityVertical.Top. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
