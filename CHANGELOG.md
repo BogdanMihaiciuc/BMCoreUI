@@ -10,6 +10,10 @@ Whenever the constraint inspector panel appears, the appropriate constant field 
 
 Resolved an issue that could allow the editor inspector to be shrunk below an acceptable size.
 
+## BMMonacoCodeEditor
+
+The monaco code editor will now set the tsc `alwaysStrict` flag to `false`.
+
 # 2.6 Beta 3
 
 ## BMCollectionView
