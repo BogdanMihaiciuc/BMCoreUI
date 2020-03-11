@@ -133,7 +133,7 @@ const _BMWindowAnimationEasingOutgoingDefault = 'easeInQuart';
 const _BMWindowAnimationDurationOutgoingDefault = 200;
 
 const BM_WINDOW_SHOWCASE_MAX_ITERATIONS = 5000;
-let BM_WINDOW_Z_INDEX_MAX = 2007;
+var BM_WINDOW_Z_INDEX_MAX = 2007;
 
 /**
  * A window is an object that manages the display and lifecycle of a popup window.
@@ -1732,6 +1732,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				BMWindow._windows.splice(BMWindow._windows.indexOf(this), 1);
 				BMWindow._windows.push(this);
 				BMWindow._windows.slice().reverse().forEach((window, index) => window.node.style.zIndex = BM_WINDOW_Z_INDEX_MAX - index);
+			}
+			else {
+				this._overlay.node.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
+				this.node.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
 			}
 
 			if (this.delegate && this.delegate.windowDidBecomeKeyWindow) {
