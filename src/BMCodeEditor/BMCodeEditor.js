@@ -462,7 +462,8 @@ BMExtend(BMMonacoCodeEditor.prototype, BMCodeEditor.prototype, {
 				experimentalDecorators: YES,
 				strict: YES,
 				inlineSourceMap: YES,
-				module: monaco.languages.typescript.ModuleKind.CommonJS
+				module: monaco.languages.typescript.ModuleKind.CommonJS,
+				noImplicitUseStrict: YES
 			});
 			
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
@@ -472,7 +473,8 @@ BMExtend(BMMonacoCodeEditor.prototype, BMCodeEditor.prototype, {
 				strict: YES,
 				inlineSourceMap: YES,
 				inlineSources: YES,
-				noImplicitUseStrict: YES
+				noImplicitUseStrict: YES,
+				alwaysStrict: NO
 			});
 		}
 		
