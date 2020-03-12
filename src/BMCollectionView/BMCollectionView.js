@@ -387,6 +387,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// If this frame is assigned as part of a layout animation, don't perform any changes
 		if (this._layoutAnimator) return Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
 
+		let requiresInit = false;
+
 		// If this change causes collection view's size to change, ask the layout object if the the layout should be invalidated
 		if (this._frame && !frame.size.isEqualToSize(this._frame.size) && this.initialized) {
 			let needsInvalidation = this._layout.shouldInvalidateLayoutForFrameChange(frame);
@@ -444,6 +446,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					this.invalidateLayout();
 				}
 			}
+			else if (this.__awaitsInit) {
+				requiresInit = true;
+			}
 		}
 
 		// Invoke view's setter to trigger the actual frame update
@@ -454,7 +459,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (this.iScroll) this.iScroll.refresh();
 		}
 
-		return this._frame = frame;
+		this._frame = frame;
+
+		if (requiresInit) {
+			this._init();
+		}
 	},
     
     /**
