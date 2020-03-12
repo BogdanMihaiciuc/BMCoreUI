@@ -200,7 +200,7 @@ function copy(cb) {
 async function prepareBuild(cb) {
 
     // Create the typescript definitions
-    const DTSSource = DTSFiles.map(f => `${outPath}/${f}`).map(f => fs.readFileSync(f, {encoding: 'utf8'})).join('\n');
+    const DTSSource = DTSFiles.map(f => `${outPath}/${f}`).map(f => fs.readFileSync(f, {encoding: 'utf8'}).replace(/\r\n/g, '\n')).join('\n');
     const DTS = createTypeScriptDefinitionsWithContent(DTSSource);
 
     // Remove unneeded files
