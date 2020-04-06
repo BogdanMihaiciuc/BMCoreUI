@@ -190,6 +190,7 @@ _BMLayoutEditorConstraintSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         const indexPath = this._attributesTab.indexPathForObject(setting);
         const cell = indexPath && this._attributesTab._collectionView.cellAtIndexPath(indexPath);
         if (cell) {
+            cell._delaysSuggestionsDropdown = YES;
             cell._inputView.node.focus();
         }
     },

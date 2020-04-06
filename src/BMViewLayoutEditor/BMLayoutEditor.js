@@ -2351,15 +2351,13 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Creates and brings up a context menu at the given coordinates, relative to the viewport.
-     * @param point <BMPoint>               The point at which to show the menu.
-     * {
-     *  @param withOptions <[DOMNode]>      The options that the menu should display.
-     *  @param kind <BMMenuKind, nullable>  Defaults to .Menu. The kind of menu to show.
-     * }
-     * @return <DOMNode>                    The menu element.
+     * Creates and returns a menu DOM node. The menu will be attached to the document, but will
+     * not be visible until the `showMenuAtPoint` method is invoke with the returned menu as
+     * a parameter.
+     * @param options <[DOMNode]>       The options that the menu should display.
+     * @return <DOMNode>                A menu dom node.
      */
-    showMenuAtPoint(point, args) {
+    _createMenuWithOptions(options) {
         let constraintPopup = document.createElement('div');
         constraintPopup.className = 'BMLayoutEditorConstraintPopup';
 
@@ -2370,11 +2368,51 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
         constraintPopupContainer.appendChild(constraintPopup);
 
-        args.withOptions.forEach(item => constraintPopup.appendChild(item));
-
-        BMHook(constraintPopup, {scaleX: args.kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0});
+        options.forEach(item => constraintPopup.appendChild(item));
 
         document.body.appendChild(constraintPopupContainer);
+        constraintPopupContainer.style.opacity = '0';
+
+        return constraintPopupContainer;
+    },
+
+    /**
+     * Creates and brings up a context menu at the given coordinates, relative to the viewport.
+     * @param point <BMPoint>                           The point at which to show the menu.
+     * {
+     *  @param menu <DOMNode, nullable>                 The menu to show, if created previously. Must be a menu DOM node previously created by `_createMenuWithOptions(_)`.
+     *  @param withOptions <[DOMNode], nullable>        Required if the `menu` parameter isn't specified. The options that the menu should display.
+     *  @param kind <BMMenuKind, nullable>              Defaults to .Menu. The kind of menu to show.
+     * }
+     * @return <DOMNode>                                The menu element.
+     */
+    showMenuAtPoint(point, args) {
+        let constraintPopup;
+        let constraintPopupContainer;
+        if (args.menu) {
+            constraintPopupContainer = args.menu;
+            constraintPopup = args.menu.children[0];
+    
+            BMHook(constraintPopup, {scaleX: args.kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0});
+            constraintPopupContainer.style.opacity = '1';
+        }
+        else {
+            constraintPopup = document.createElement('div');
+            constraintPopup.className = 'BMLayoutEditorConstraintPopup';
+    
+            constraintPopupContainer = document.createElement('div');
+            constraintPopupContainer.className = 'BMLayoutEditorConstraintPopupContainer';
+            if (!('backdropFilter' in document.body.style) && !('webkitBackdropFilter' in document.body.style)) {
+                constraintPopup.style.backgroundColor = 'white';
+            }
+            constraintPopupContainer.appendChild(constraintPopup);
+    
+            args.withOptions.forEach(item => constraintPopup.appendChild(item));
+    
+            BMHook(constraintPopup, {scaleX: args.kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0});
+    
+            document.body.appendChild(constraintPopupContainer);
+        }
 
         const height = constraintPopup.offsetHeight;
         const width = constraintPopup.offsetWidth;

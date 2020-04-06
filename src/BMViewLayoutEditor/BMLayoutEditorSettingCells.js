@@ -1400,6 +1400,7 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
         args.inputClasses = 'BMLayoutEditorDetailsItemTextValue';
         BMLayoutEditorSettingsInputCell.prototype.initWithCollectionView.apply(this, arguments);
 
+        /** @type {HTMLInputElement} */
         const inputNode = this._inputView.node;
         // This array contains all the available layout variables and is initialized upon the input
         // element acquiring keyboard focus
@@ -1411,7 +1412,7 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
         // The index of the top hit suggestion. And index of -1 represents no top hit.
         let highlightedItemIndex;
 
-        // TODO: Consider encapsulating this functionality into a separate auto-complete text box class
+        // TODO: Consider replacing this with a BMTextField
         inputNode.addEventListener('focus', async event => {
             // Select all content upon receiving focus
             inputNode.select();
@@ -1446,9 +1447,22 @@ BMLayoutEditorSettingsConstantCell.prototype = BMExtend(Object.create(BMLayoutEd
 
             // Create and show a pulldown menu below the constant textbox, if there are any suggestions
             if (suggestions.length) {
-                let frame = BMRectMakeWithNodeFrame(inputNode);
-                let point = BMPointMake(frame.origin.x, frame.bottom);
-                menu = this.layoutEditor.showMenuAtPoint(point, {withOptions: options, kind: BMMenuKind.PullDownMenu});
+                if (this._delaysSuggestionsDropdown) {
+                    const menuContainer = this.layoutEditor._createMenuWithOptions(options);
+                    menu = menuContainer.children[0];
+                    setTimeout(() => {
+                        if (document.activeElement == inputNode) {
+                            let frame = BMRectMakeWithNodeFrame(inputNode);
+                            let point = BMPointMake(frame.origin.x, frame.bottom);
+                            this.layoutEditor.showMenuAtPoint(point, {menu: menuContainer, kind: BMMenuKind.PullDownMenu});
+                        }
+                    }, 200);
+                }
+                else {
+                    let frame = BMRectMakeWithNodeFrame(inputNode);
+                    let point = BMPointMake(frame.origin.x, frame.bottom);
+                    menu = this.layoutEditor.showMenuAtPoint(point, {withOptions: options, kind: BMMenuKind.PullDownMenu});
+                }
                 menu.classList.add('BMLayoutEditorConstantSuggestions');
 
                 menu.parentNode.classList.add('BMLayoutEditorConstantSuggestionsOverlay');
