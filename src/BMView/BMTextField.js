@@ -306,6 +306,12 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                 if (menu) {
                     menu.childNodes[0].classList.add('BMLayoutEditorConstraintPopupOptionHighlighted');
                     menu.style.display = 'block';
+
+                    // Need to reposition the menu if it appears above the text box as it may float at a distance
+                    // due to items being removed
+                    let frame = BMRectMakeWithNodeFrame(inputNode);
+                    let point = BMPointMake(frame.origin.x, frame.bottom);
+                    this._repositionMenuAtPoint(point);
                 }
 
                 // Autocomplete the suggestion, if the caret is at the end of the text field
@@ -402,6 +408,8 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         let constraintPopup = document.createElement('div');
         constraintPopup.className = 'BMLayoutEditorConstraintPopup BMTextFieldSuggestions';
 
+        menu = constraintPopup;
+
         let constraintPopupContainer = document.createElement('div');
         constraintPopupContainer.className = 'BMLayoutEditorConstraintPopupContainer';
         if (!('backdropFilter' in document.body.style) && !('webkitBackdropFilter' in document.body.style)) {
@@ -415,22 +423,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
         document.body.appendChild(constraintPopupContainer);
 
-        let height = constraintPopup.offsetHeight;
-
-        constraintPopup.style.transformOrigin = '0% 0%';
-        if (args.kind == BMMenuKind.PullDownMenu) {
-            constraintPopup.style.transformOrigin = '50% 0%';
-        }
-        if (height + point.y > document.documentElement.clientHeight) {
-            constraintPopup.style.transformOrigin = '0% 100%';
-            if (args.kind == BMMenuKind.PullDownMenu) {
-                constraintPopup.style.transformOrigin = '50% 100%';
-            }
-            point.y -= height + this.frame.size.height;
-        }
-
-        constraintPopup.style.left = point.x + 'px';
-        constraintPopup.style.top = point.y + 'px';
+        this._repositionMenuAtPoint(point);
 
         constraintPopup.addEventListener('click', event => event.preventDefault());
 
@@ -478,6 +471,19 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
         return constraintPopup;
     },
+
+    _repositionMenuAtPoint(point) {
+        let height = menu.offsetHeight;
+
+        menu.style.transformOrigin = '50% 0%';
+        if (height + point.y > document.documentElement.clientHeight) {
+            menu.style.transformOrigin = '50% 100%';
+            point.y -= height + this.frame.size.height;
+        }
+
+        menu.style.left = point.x + 'px';
+        menu.style.top = point.y + 'px';
+    }
 
 });
 
