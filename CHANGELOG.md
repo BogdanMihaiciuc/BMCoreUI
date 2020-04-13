@@ -1,3 +1,9 @@
+# 2.6 Beta 5
+
+## BMLayoutEditor
+
+The new editor layout is no longer accessible by setting the global `BM_LAYOUT_EDITOR_USE_SETTINGS_VIEW` flag. Instead, a new `BMViewLayoutEditor` subclass of `BMLayoutEditor` should be created and used instead. This allows both the old layout and the new one to coexist in the same project.
+
 # 2.6 Beta 4
 
 ## BMWindow
