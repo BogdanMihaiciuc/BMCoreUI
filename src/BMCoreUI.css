@@ -150,10 +150,25 @@
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 6px 32px;
 }
 
+.BMNonModalWindow::before {
+	content: '';
+
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+
+	z-index: -1;
+}
+
 .BMWindowInactive {
+	background: rgba(250, 250, 250, 1);
+}
+
+.BMWindowInactive::before {
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-	background: rgba(250, 250, 250, 1);
 }
 
 .BMWindowHidden {
@@ -171,9 +186,12 @@
 .BMWindow.BMKeyWindow, .BMToolWindow {
 	z-index: 2007;
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
+	background: rgba(245, 245, 245, .8);
+}
+
+.BMWindow.BMKeyWindow::before, .BMToolWindow::before {
 	backdrop-filter: blur(15px);
 	-webkit-backdrop-filter: blur(15px);
-	background: rgba(245, 245, 245, .8);
 }
 
 .BMWindow.BMModalWindow {
@@ -1281,9 +1299,9 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	text-overflow: ellipsis;
 }
 
-.BMLayoutEditorDetailsWindow {
-	backdrop-filter: blur(25px);
-	-webkit-backdrop-filter: blur(25px);
+.BMLayoutEditorDetailsWindow::before {
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
 }
 
 .BMLayoutEditorDetails {
