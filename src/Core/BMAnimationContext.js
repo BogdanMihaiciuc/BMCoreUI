@@ -975,9 +975,9 @@ export function BMAnimationApplyBlocking(blocking) {
 
 			// Some implementations do not have promise support for web animations
 			let hasPromiseSupport = NO;
-			if (nodeAnimation.ready) {
+			if (nodeAnimation.finished) {
 				hasPromiseSupport = YES;
-				nodeAnimation.ready.then(async () => {
+				nodeAnimation.finished.then(async () => {
 					// Set up the final values when the animation finishes
 					// Animation fill mode is not used because it breaks all other CSS
 					for (let key in webAnimationProperties) {
