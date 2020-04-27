@@ -1,3 +1,17 @@
+# 2.6 Beta 6
+
+## BMAnimationContext
+
+Resolved an issue that caused certain animations to immediately skip to the end when using web animations.
+
+## BMWindow
+
+Resolved an issue with the blur effect on windows being cut off in recent versions of Safari.
+
+## BMViewLayoutEditor
+
+Added the missing icons for center x and center y constraint types.
+
 # 2.6 Beta 5
 
 ## BMLayoutEditor
