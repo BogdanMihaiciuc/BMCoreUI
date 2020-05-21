@@ -1,3 +1,7 @@
+🛑 **Note: If you are planning to use this widget in Thingworx 8.5 or newer, strongly consider using [Core UI Widgets](https://github.com/ptc-iot-sharing/BMCoreUIWidgets) instead.**
+
+This repository contains the standalone development version of the `BMCoreUI` widget library and is the source from which the widget is merged into core ui widgets.
+
 # 1. Introduction
 
 CoreUI is a javascript library that contains various reusable types and functions that may be used either as building blocks forming the basis of UI elements or as helpers for various UI-related tasks.
