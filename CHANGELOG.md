@@ -1,4 +1,4 @@
-# 2.6 Beta 6
+# 2.6 Beta 7
 
 ## BMAnimationContext
 
