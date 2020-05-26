@@ -4,6 +4,12 @@
 
 Resolved an issue that caused certain animations to immediately skip to the end when using web animations.
 
+## BMMenu
+
+A new `CSSClass` property can be set on menu objects and can be used to add additional CSS classes to the menu DOM node.
+
+Menu items beginning with at least 3 dashes will now be added as separators. Previous betas required items to have exactly 3 dashes.
+
 ## BMWindow
 
 Resolved an issue with the blur effect on windows being cut off in recent versions of Safari.
