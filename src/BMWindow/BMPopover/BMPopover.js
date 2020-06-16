@@ -314,7 +314,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     // @override - BMWindow
-    animateInWithArguments(args, {completionHandler}) {
+    animateInWithCompletionHandler(completionHandler) {
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
         this.node.style.opacity = 1;
@@ -329,7 +329,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     // @override - BMWindow
-    animateOutWithArguments(args, {completionHandler}) {
+    animateOutWithCompletionHandler(completionHandler) {
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
         const self = this;
