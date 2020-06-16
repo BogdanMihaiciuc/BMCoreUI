@@ -397,6 +397,7 @@ BMLayoutEditorSettingsConstraintCell.prototype = BMExtend(Object.create(BMLayout
                     break;
                 case BMLayoutAttribute.CenterY:
                     icon.src = _BMURLOfImageAtPath('images/CenterYConstraint.png');
+                    break;
                 case BMLayoutAttribute.Top:
                     icon.src = _BMURLOfImageAtPath('images/TopConstraint.png');
                     break;
