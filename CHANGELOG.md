@@ -1,3 +1,21 @@
+# 2.6 Beta 8
+
+## BMWindow
+
+The `setArguments(_)`, `animateInWithArguments(_, {completionHandler})` and `animateOutWithArguments(_, {completionHandler})` methods have been removed. Subclasses the need to customize these animations that were previously associated with those methods can now override the new `TBDWithCompletionHandler(_)` and `TBDWithCompletionHandler(_)` methods.
+
+For `bringToFrontAnimated(_, {completionHandler})` and `dismissAnimated(_, {completionHandler})`, the `fromNode`, `fromRect`, `toNode` and `toRect` arguments have been deprecated.
+
+Three new `anchorPoint`, `anchorRect` and `anchorNode` properties can now be specified on windows. These control the open/dismiss animations of the windows.
+
+## BMWindowDelegate
+
+The `DOMNodeForDismissedWindow(_)` and `rectForDimissedWindow(_)` methods have been deprecated. They will still be invoked when `anchorPoint`, `anchorRect` and `anchorNode` are all `undefined` on the window.
+
+## BMLayoutEditorSettingsConstraintCell
+
+Resolved an issue that caused this cell to display an improper icon for `CenterY` constraints.
+
 # 2.6 Beta 7
 
 ## BMAnimationContext
