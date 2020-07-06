@@ -2,11 +2,19 @@
 
 ## BMWindow
 
-The `setArguments(_)`, `animateInWithArguments(_, {completionHandler})` and `animateOutWithArguments(_, {completionHandler})` methods have been removed. Subclasses the need to customize these animations that were previously associated with those methods can now override the new `TBDWithCompletionHandler(_)` and `TBDWithCompletionHandler(_)` methods.
+The `setArguments(_)`, `animateInWithArguments(_, {completionHandler})` and `animateOutWithArguments(_, {completionHandler})` methods have been removed. Subclasses the need to customize these animations that were previously associated with those methods can now override the new `animateInWithCompletionHandler(_)` and `animateOutWithCompletionHandler(_)` methods.
 
 For `bringToFrontAnimated(_, {completionHandler})` and `dismissAnimated(_, {completionHandler})`, the `fromNode`, `fromRect`, `toNode` and `toRect` arguments have been deprecated.
 
 Three new `anchorPoint`, `anchorRect` and `anchorNode` properties can now be specified on windows. These control the open/dismiss animations of the windows.
+
+The `minimizeAnimated` and `restoreAnimated` methods will now invoke the completion handler correctly. Clarified that the non-animated versions of these operations are not yet implemented.
+
+## BMPopover
+
+Added support for the `anchorRect` property inherited from `BMWindow`.
+
+The various properties that were marked animatable can now be animated via animation contexts.
 
 ## BMWindowDelegate
 
