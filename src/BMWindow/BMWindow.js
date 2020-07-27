@@ -1174,7 +1174,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 *	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been made visible.
 	 * }
 	 */
-	bringToFrontAnimated: function (animated, args) {
+	bringToFrontAnimated: function (animated, args = {}) {
 		this._visible = YES;
 
 		this.becomeKeyWindow();
@@ -1361,7 +1361,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 *	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been hidden.
 	 * }
 	 */
-	dismissAnimated: function (animated, args) {
+	dismissAnimated: function (animated, args = {}) {
 		
 		animated = (animated === undefined ? YES : animated);
 		
