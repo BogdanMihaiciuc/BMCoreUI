@@ -4,6 +4,7 @@ import { BMRectMake } from "../Core/BMRect";
 import { BMExtend, NO, YES } from "../Core/BMCoreUI";
 import { BMWindow } from "./BMWindow";
 import { BMView } from "../BMView/BMView_v2.5";
+import { BMLayoutAttribute } from "../BMView/BMLayoutConstraint_v2.5";
 
 // @type BMConfirmationPopupResult
 
@@ -176,6 +177,21 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
     },
 
+    // @override - BMWindow
+    get frameSizePriority() {
+        return 1;
+    },
+
+    // @override - BMWindow
+    get frameHorizontalPositionLayoutAttribute() {
+        return BMLayoutAttribute.CenterX;
+    },
+
+    // @override - BMWindow
+    get frameVerticalPositionLayoutAttribute() {
+        return BMLayoutAttribute.CenterY;
+    },
+
     /**
      * Designated initializer. Initializes this confirmation popup with the given labels.
      * @param title <String>                    The popup's title.
@@ -203,50 +219,54 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // Title View
 
         this._titleView = BMView.view();
+        this._titleView.supportsAutomaticIntrinsicSize = YES;
         this._titleView.node.classList.add('BMTitle');
         this._titleView.node.innerText = title;
 
         this.contentView.addSubview(this._titleView);
-        this._titleView.leading.equalTo(this.contentView.leading, {plus: 16}).isActive = YES;
+        this._titleView.leading.equalTo(this.contentView.leading, {plus: 32}).isActive = YES;
         this._titleView.top.equalTo(this.contentView.top, {plus: 16}).isActive = YES;
-        this._titleView.trailing.lessThanOrEqualTo(this.contentView.trailing, {plus: -16}).isActive = YES;
+        this._titleView.trailing.lessThanOrEqualTo(this.contentView.trailing, {plus: -32}).isActive = YES;
 
 
         // Body
 
         this._textView = BMView.view();
+        this._textView.supportsAutomaticIntrinsicSize = YES;
         this._textView.node.classList.add('BMLabel');
         this._textView.node.innerText = text;
 
         this.contentView.addSubview(this._textView);
         this._textView.leading.equalTo(this._titleView.leading).isActive = YES;
-        this._textView.top.equalTo(this._titleView.bottom, {}).isActive = YES;
-        this._textView.trailing.lessThanOrEqualTo(this.contentView.trailing, {plus: -16}).isActive = YES;
+        this._textView.top.equalTo(this._titleView.bottom, {plus: 32}).isActive = YES;
+        this._textView.trailing.lessThanOrEqualTo(this.contentView.trailing, {plus: -32}).isActive = YES;
 
 
         // Positive button
 
         this._positiveActionButton = BMView.view();
+        this._positiveActionButton.supportsAutomaticIntrinsicSize = YES;
         this._positiveActionButton.node.classList.add('BMButton');
         this._positiveActionButton.node.innerText = positiveActionText;
 
         this.contentView.addSubview(this._positiveActionButton);
-        this._positiveActionButton.trailing.equalTo(this.contentView.trailing, {plus: -16}).isActive = YES;
-        this._positiveActionButton.bottom.equalTo(this.contentView.bottom, {plus: -16}).isActive = YES;
-        this._positiveActionButton.top.equalTo(this._textView.bottom, {plus: 32}).isActive = YES;
+        this._positiveActionButton.trailing.equalTo(this.contentView.trailing, {plus: -32}).isActive = YES;
+        this._positiveActionButton.bottom.equalTo(this.contentView.bottom, {plus: -32}).isActive = YES;
+        this._positiveActionButton.top.equalTo(this._textView.bottom, {plus: 64}).isActive = YES;
 
         this._positiveActionButton.node.addEventListener('click', event => this._confirm());
 
         // Negative button
 
         this._negativeActionButton = BMView.view();
+        this._negativeActionButton.supportsAutomaticIntrinsicSize = YES;
         this._negativeActionButton.node.classList.add('BMButton', 'BMButtonWeak');
         this._negativeActionButton.node.innerText = negativeActionText;
 
         this.contentView.addSubview(this._negativeActionButton);
-        this._negativeActionButton.leading.equalTo(this.contentView.leading, {plus: 16}).isActive = YES;
-        this._negativeActionButton.bottom.equalTo(this.contentView.bottom, {plus: -16}).isActive = YES;
-        this._negativeActionButton.top.equalTo(this._textView.bottom, {plus: 32}).isActive = YES;
+        this._negativeActionButton.leading.equalTo(this.contentView.leading, {plus: 32}).isActive = YES;
+        this._negativeActionButton.bottom.equalTo(this.contentView.bottom, {plus: -32}).isActive = YES;
+        this._negativeActionButton.top.equalTo(this._textView.bottom, {plus: 64}).isActive = YES;
 
         this._negativeActionButton.node.addEventListener('click', event => this._decline());
 
@@ -254,15 +274,16 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         // Cancel button
 
         this._cancelButton = BMView.view();
+        this._cancelButton.supportsAutomaticIntrinsicSize = YES;
         this._cancelButton.node.classList.add('BMButton', 'BMButtonWeak');
         this._cancelButton.node.innerText = 'Cancel';
         this._cancelButton.isVisible = NO;
 
         this.contentView.addSubview(this._cancelButton);
-        this._cancelButton.trailing.equalTo(this._positiveActionButton.leading, {plus: -16}).isActive = YES;
-        this._cancelButton.bottom.equalTo(this.contentView.bottom, {plus: -16}).isActive = YES;
-        this._cancelButton.top.equalTo(this._textView.bottom, {plus: 32}).isActive = YES;
-        this._cancelButton.leading.greaterThanOrEqualTo(this._negativeActionButton.trailing, {plus: 32}).isActive = YES;
+        this._cancelButton.trailing.equalTo(this._positiveActionButton.leading, {plus: -32}).isActive = YES;
+        this._cancelButton.bottom.equalTo(this.contentView.bottom, {plus: -32}).isActive = YES;
+        this._cancelButton.top.equalTo(this._textView.bottom, {plus: 64}).isActive = YES;
+        this._cancelButton.leading.greaterThanOrEqualTo(this._negativeActionButton.trailing, {plus: 64}).isActive = YES;
 
         this._cancelButton.node.addEventListener('click', event => this._cancel());
 
