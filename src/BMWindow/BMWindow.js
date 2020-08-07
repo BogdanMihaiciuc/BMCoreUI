@@ -8,6 +8,7 @@ import {BMView} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMKeyboardShortcutModifier } from './BMKeyboardShortcut'
 import { BMSizeMake } from '../Core/BMSize'
+import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
 
 //@ts-check
 // @type BMWindowOverlay extends BMView
@@ -457,10 +458,82 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			height: frame.size.height + 'px'
 		});
 
-		this.leftConstraint.constant = frame.origin.x;
-		this.topConstraint.constant = frame.origin.y;
+		switch (this.frameHorizontalPositionLayoutAttribute) {
+			case BMLayoutAttribute.Left:
+			case BMLayoutAttribute.Leading:
+				this.leftConstraint.constant = frame.origin.x;
+				break;
+			case BMLayoutAttribute.CenterX:
+				this.leftConstraint.constant = frame.center.x - this.superview.frame.center.x;
+				break;
+			case BMLayoutAttribute.Right:
+			case BMLayoutAttribute.Trailing:
+				this.leftConstraint.constant = frame.right - this.superview.frame.right;
+				break;
+		}
+
+		switch (this.frameVerticalPositionLayoutAttribute) {
+			case BMLayoutAttribute.Top:
+				this.topConstraint.constant = frame.origin.y;
+				break;
+			case BMLayoutAttribute.CenterY:
+				this.topConstraint.constant = frame.center.y - this.superview.frame.center.y;
+				break;
+			case BMLayoutAttribute.Bottom:
+				this.topConstraint.constant = frame.bottom - this.superview.frame.bottom;
+				break;
+		}
+		
 		this.widthConstraint.constant = frame.size.width;
 		this.heightConstraint.constant = frame.size.height;
+	},
+
+	/**
+	 * @protected
+	 * The priority to use when setting up frame position constraints.
+	 */
+	get framePositionPriority() { // <Number>
+		return 500;
+	},
+
+	/**
+	 * @protected
+	 * The priority to use when setting up frame size constraints.
+	 */
+	get frameSizePriority() { // <Number>
+		return 750;
+	},
+
+	/**
+	 * @protected
+	 * The source anchor point to use when setting up the horizontal position constraint.
+	 */
+	get frameHorizontalPositionLayoutAttribute() { // <BMLayoutAttribute>
+		return BMLayoutAttribute.Left;
+	},
+
+	/**
+	 * Returns the name of the horizontal anchor from which the horizontal position constraint will be created.
+	 */
+	get _frameHorizontalAnchorName() { // <String>
+		const key = this.frameHorizontalPositionLayoutAttribute;
+		return key.substring(0, 1).toLowerCase() + key.substring(1, key.length);
+	},
+
+	/**
+	 * @protected
+	 * The source anchor point to use when setting up the vertical position constraint.
+	 */
+	get frameVerticalPositionLayoutAttribute() { // <BMLayoutAttribute>
+		return BMLayoutAttribute.Top;
+	},
+
+	/**
+	 * Returns the name of the vertical anchor from which the vertical position constraint will be created.
+	 */
+	get _frameVerticalAnchorName() { // <String>
+		const key = this.frameVerticalPositionLayoutAttribute;
+		return key.substring(0, 1).toLowerCase() + key.substring(1, key.length);
 	},
 	
 	/**
@@ -678,10 +751,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		this._overlay.addSubview(this);
 		document.body.appendChild(node);
 
-		this.leftConstraint = this.left.equalTo(this._overlay.left, {plus: frame.origin.x, priority: 500});
-		this.topConstraint = this.top.equalTo(this._overlay.top, {plus: frame.origin.y, priority: 500});
-		this.widthConstraint = this.width.equalTo(frame.size.width, {priority: 750});
-		this.heightConstraint = this.height.equalTo(frame.size.height, {priority: 750});
+		this.leftConstraint = this[this._frameHorizontalAnchorName].equalTo(this._overlay[this._frameHorizontalAnchorName], {plus: frame.origin.x, priority: this.framePositionPriority});
+		this.topConstraint = this[this._frameVerticalAnchorName].equalTo(this._overlay[this._frameVerticalAnchorName], {plus: frame.origin.y, priority: this.framePositionPriority});
+		this.widthConstraint = this.width.equalTo(frame.size.width, {priority: this.frameSizePriority});
+		this.heightConstraint = this.height.equalTo(frame.size.height, {priority: this.frameSizePriority});
 		this.frame = frame;
 
 		this.leftConstraint.isActive = YES;
