@@ -10,6 +10,10 @@ Three new `anchorPoint`, `anchorRect` and `anchorNode` properties can now be spe
 
 The `minimizeAnimated` and `restoreAnimated` methods will now invoke the completion handler correctly. Clarified that the non-animated versions of these operations are not yet implemented.
 
+## BMConfirmationPopup
+
+A new `BMConfirmationPopup` class that is a subclass of `BMWindow` may be used for simple confirmation dialog boxes in place of the standard `confirm()`. `BMConfirmationPopup` provides a `Promise` that resolves when the user chooses any option.
+
 ## BMPopover
 
 Added support for the `anchorRect` property inherited from `BMWindow`.
