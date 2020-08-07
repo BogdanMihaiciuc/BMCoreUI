@@ -137,7 +137,7 @@
 .BMWindow {
 	position: fixed;
 	
-	border-radius: 4px;
+	border-radius: 8px;
 	overflow: hidden;
 	
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
@@ -599,6 +599,7 @@
 .BMWindowButton, .BMButton {
 	-webkit-appearance: none;
 	outline: none;
+	box-sizing: border-box !important;
 	
 	border-radius: 4px;
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
@@ -614,6 +615,8 @@
 
 	align-self: center;
 	transition: background-color .2s ease;
+
+	cursor: default;
 }
 
 .BMWindowButton {
