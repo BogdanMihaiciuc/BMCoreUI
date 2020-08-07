@@ -340,6 +340,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
  *  @param positiveActionText <String>      The text to display on the positive action button.
  *  @param negativeActionText <String>      The text to display on the negative action button.
  * }
+ * @return <BMConfirmationPopup>            A confirmation popup.
  */
 BMConfirmationPopup.confirmationPopupWithTitle = function (title, {text, positiveActionText, negativeActionText}) {
     return (new BMConfirmationPopup).initWithTitle(title, {text, positiveActionText, negativeActionText});
