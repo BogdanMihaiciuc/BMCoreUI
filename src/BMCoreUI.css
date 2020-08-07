@@ -275,7 +275,7 @@
 		position: absolute;
 		pointer-events: none;
 
-		border-radius: 4px;
+		border-radius: 8px;
 
 		left: 0px;
 		top: 0px;
@@ -1128,7 +1128,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	background-color: rgba(255, 255, 255, .8);
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 
-	border-radius: 4px;
+	border-radius: 8px;
 }
 
 .BMLayoutEditorConstraintPopup::before, .BMMenu::before {
@@ -1140,7 +1140,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	right: 0;
 	bottom: 0;
 
-	border-radius: 4px;
+	border-radius: 8px;
 
 	backdrop-filter: blur(25px);
 	-webkit-backdrop-filter: blur(25px);
@@ -1156,7 +1156,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	pointer-events: none !important;
 
-	border-radius: 4px !important;
+	border-radius: 8px !important;
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 	z-index: 999999 !important;
 }
@@ -1361,8 +1361,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	width: 100%;
 	height: 1px;
 
-	margin-top: 16px;
-	margin-bottom: 16px;
+	margin-top: 8px;
+	margin-bottom: 8px;
 
 	background: rgba(0, 0, 0, .05);
 
