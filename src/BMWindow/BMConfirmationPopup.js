@@ -6,6 +6,8 @@ import { BMWindow } from "./BMWindow";
 import { BMView } from "../BMView/BMView_v2.5";
 import { BMLayoutAttribute } from "../BMView/BMLayoutConstraint_v2.5";
 
+
+
 // @type BMConfirmationPopupResult
 
 /**
@@ -39,18 +41,19 @@ export const BMConfirmationPopupResult = Object.freeze({ // <enum>
 
 // @endtype
 
-// @type BMConfirmationPopup extends BMWindow
+// @type BMAlertPopup
 
 /**
- * A sublcass of `BMWindow` that is specialized for displaying a confirmation popup with a title, a text message and
- * a series of buttons that can be used to easily request and handle confirmation for potentially dangerous actions.
+ * A sublcass of `BMAlertPopup` that is specialized for displaying an alert popup with a title, a text message and
+ * a confirmation button.
  * 
- * To create a confirmation popup, use the static `confirmationPopupWithTitle(_, {})` method.
+ * To create a alert popup, use the static `alertPopupWithTitle(_, {})` method.
  * 
  * You can display your confirmation popup using the usual `bringToFrontAnimated(_)` method, but for convenience you can also
- * use the `confirm()` method that returns a promise which resolves when the user takes a decision.
+ * use the `confirm()` method that returns a promise which resolves when the user dismisses the alert.
  */
-function BMConfirmationPopup() {} // <constructor>
+export function BMAlertPopup() {} // <constructor>
+
 
 BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
@@ -64,7 +67,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * A promise that resolves when the user takes a decision in response to this confirmation
+     * A promise that resolves when the user takes a decision in response to this
      * popup. The value returned when the promise resolves will never be `.Undecided`.
      */
     _resolution: undefined, // <Promise<BMConfirmationPopupResult>>
@@ -79,7 +82,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     _resolve: undefined, // <void ^ (BMConfirmationPopupResult)>
 
     /**
-     * The confirmation popup's title. Ideally this should be used to provide a succint description
+     * The popup's title. Ideally this should be used to provide a succint description
      * of what the user confirms.
      */
     _title: undefined, // <String>
@@ -100,7 +103,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * The confirmation popup's body text. Ideally this should be used to provide additional information about
+     * The popup's body text. Ideally this should be used to provide additional information about
      * the action that is about to occur.
      */
     _text: undefined, // <String>
@@ -122,7 +125,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
-     * The confirmation popup's body text. Ideally this should be used to provide additional information about
+     * The popup's body text. Ideally this should be used to provide additional information about
      * the action that is about to occur. Unlike `text`, setting this property will not convert HTML tags to text.
      */
     get HTML() { // <String>
@@ -141,7 +144,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * The text to use for the positive button.
+     * The text to use for the alert's button.
      */
     _positiveActionText: undefined, // <String>
 
@@ -157,43 +160,6 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (this._positiveActionButton) {
             this._positiveActionButton.node.innerText = text;
             this._positiveActionButton.invalidateIntrinsicSize();
-        }
-    },
-
-    /**
-     * The text to use for the positive button.
-     */
-    _negativeActionText: undefined, // <String>
-
-    get negativeActionText() {
-        return this._negativeActionText;
-    },
-
-    set negativeActionText(text) {
-        if (text == this._negativeActionText) return;
-
-        this._negativeActionText = text;
-
-        if (this._negativeActionButton) {
-            this._negativeActionButton.node.innerText = text;
-            this._negativeActionButton.invalidateIntrinsicSize();
-        }
-    },
-
-    /**
-     * Controls whether a "Cancel" button will be available on this confirmation popup.
-     */
-    _showsCancelButton: NO, // <Boolean>
-
-    get showsCancelButton() {
-        return this._showsCancelButton;
-    },
-
-    set showsCancelButton(shows) {
-        this._showsCancelButton = shows;
-
-        if (this._cancelButton) {
-            this._cancelButton.isVisible = shows;
         }
     },
 
@@ -213,16 +179,15 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Designated initializer. Initializes this confirmation popup with the given labels.
+     * Designated initializer. Initializes this alert popup with the given labels.
      * @param title <String>                    The popup's title.
      * {
      *  @param text <String>                    The popup's body text.
-     *  @param positiveActionText <String>      The text to display on the positive action button.
-     *  @param negativeActionText <String>      The text to display on the negative action button.
+     *  @param actionText <String>              Defaults to `OK`. The text to display on the action button.
      * }
-     * @return <BMConfirmationPopup>            This confirmation popup.
+     * @return <BMAlertPopup>                   This alert popup.
      */
-    initWithTitle(title, {text, positiveActionText, negativeActionText}) {
+    initWithTitle(title, {text, actionText = 'OK'}) {
         const frame = BMRectMake(0, 0, 0, 0);
 
         BMWindow.prototype.initWithFrame.call(this, frame);
@@ -269,7 +234,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._positiveActionButton = BMView.view();
         this._positiveActionButton.supportsAutomaticIntrinsicSize = YES;
         this._positiveActionButton.node.classList.add('BMButton');
-        this._positiveActionButton.node.innerText = positiveActionText;
+        this._positiveActionButton.node.innerText = actionText;
 
         this.contentView.addSubview(this._positiveActionButton);
         this._positiveActionButton.trailing.equalTo(this.contentView.trailing, {plus: -32}).isActive = YES;
@@ -277,6 +242,126 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._positiveActionButton.top.equalTo(this._textView.bottom, {plus: 64}).isActive = YES;
 
         this._positiveActionButton.node.addEventListener('click', event => this._confirm());
+
+        return this;
+    },
+
+    /**
+     * Confirms the action, then dismisses this confirmation popup.
+     * If the result is already settled, this method will have no effect.
+     */
+    _confirm() {
+        if (this._result == BMConfirmationPopupResult.Undecided) {
+            this._result = BMConfirmationPopupResult.Confirmed;
+            this._resolve(BMConfirmationPopupResult.Confirmed);
+
+            this.dismissAnimated(YES);
+        }
+    },
+
+    /**
+     * Shows this confirmation window on screen, then returns a promise that resolves when the user takes an
+     * action in response.
+     * @return <Promise<BMConfirmationPopupResult>>     A promise that resolves with the user's action.
+     */
+    confirm() {
+        this.bringToFrontAnimated(YES);
+
+        return this._resolution;
+    },
+
+    // @override - BMWindow
+    dismissAnimated() {
+        // Since the window can be dismissed by clicking outside in certain cases, this would be equivalent to pressing "OK".
+        if (this._result == BMConfirmationPopupResult.Undecided) {
+            this._result = BMConfirmationPopupResult.Confirmed;
+            this._resolve(BMConfirmationPopupResult.Confirmed);
+        }
+
+        return BMWindow.prototype.dismissAnimated.apply(this, arguments);
+    }
+
+});
+
+/**
+ * Constructs and returns an alert popup that is initialized with the given title, text and button labels.
+ * @param title <String>                    The popup's title.
+ * {
+ *  @param text <String>                    The popup's body text.
+ *  @param actionText <String>              Defaults to `"OK"`. The text to display on the positive action button.
+ * }
+ * @return <BMAlertPopup>                   An alert popup.
+ */
+BMAlertPopup.alertPopupWithTitle = function (title, {text, actionText = 'OK'}) {
+    return (new BMAlertPopup).initWithTitle(title, {text, actionText});
+}
+
+// @endtype
+
+// @type BMConfirmationPopup extends BMAlertPopup
+
+/**
+ * A sublcass of `BMAlertPopup` that is specialized for displaying a confirmation popup with a title, a text message and
+ * a series of buttons that can be used to easily request and handle confirmation for potentially dangerous actions.
+ * 
+ * To create a confirmation popup, use the static `confirmationPopupWithTitle(_, {})` method.
+ * 
+ * You can display your confirmation popup using the usual `bringToFrontAnimated(_)` method, but for convenience you can also
+ * use the `confirm()` method that returns a promise which resolves when the user takes a decision.
+ */
+function BMConfirmationPopup() {} // <constructor>
+
+BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), {
+
+    /**
+     * The text to use for the positive button.
+     */
+    _negativeActionText: undefined, // <String>
+
+    get negativeActionText() {
+        return this._negativeActionText;
+    },
+
+    set negativeActionText(text) {
+        if (text == this._negativeActionText) return;
+
+        this._negativeActionText = text;
+
+        if (this._negativeActionButton) {
+            this._negativeActionButton.node.innerText = text;
+            this._negativeActionButton.invalidateIntrinsicSize();
+        }
+    },
+
+    /**
+     * Controls whether a "Cancel" button will be available on this confirmation popup.
+     */
+    _showsCancelButton: NO, // <Boolean>
+
+    get showsCancelButton() {
+        return this._showsCancelButton;
+    },
+
+    set showsCancelButton(shows) {
+        this._showsCancelButton = shows;
+
+        if (this._cancelButton) {
+            this._cancelButton.isVisible = shows;
+        }
+    },
+
+    /**
+     * Designated initializer. Initializes this confirmation popup with the given labels.
+     * @param title <String>                    The popup's title.
+     * {
+     *  @param text <String>                    The popup's body text.
+     *  @param positiveActionText <String>      The text to display on the positive action button.
+     *  @param negativeActionText <String>      The text to display on the negative action button.
+     * }
+     * @return <BMConfirmationPopup>            This confirmation popup.
+     */
+    initWithTitle(title, {text, positiveActionText, negativeActionText}) {
+        BMAlertPopup.prototype.initWithTitle.call(this, title, {text, actionText: positiveActionText});
 
         // Negative button
 
@@ -313,19 +398,6 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Confirms the action, then dismisses this confirmation popup.
-     * If the result is already settled, this method will have no effect.
-     */
-    _confirm() {
-        if (this._result == BMConfirmationPopupResult.Undecided) {
-            this._result = BMConfirmationPopupResult.Confirmed;
-            this._resolve(BMConfirmationPopupResult.Confirmed);
-
-            this.dismissAnimated(YES);
-        }
-    },
-
-    /**
      * Declines the action, then dismisses this confirmation popup.
      * If the result is already settled, this method will have no effect.
      */
@@ -349,17 +421,6 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             this.dismissAnimated(YES);
         }
-    },
-
-    /**
-     * Shows this confirmation window on screen, then returns a promise that resolves when the user takes an
-     * action in response.
-     * @return <Promise<BMConfirmationPopupResult>>     A promise that resolves with the user's action.
-     */
-    confirm() {
-        this.bringToFrontAnimated(YES);
-
-        return this._resolution;
     },
 
     // @override - BMWindow
