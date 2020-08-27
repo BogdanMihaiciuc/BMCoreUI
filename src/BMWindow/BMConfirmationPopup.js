@@ -207,6 +207,8 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         BMWindow.prototype.initWithFrame.call(this, frame);
 
+        this.contentView.contentNode.classList.add('BMWindowBackground');
+
         this._resolution = new Promise(resolve => {
             this._resolve = resolve;
         });
