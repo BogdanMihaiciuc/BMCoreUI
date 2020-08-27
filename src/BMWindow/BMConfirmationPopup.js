@@ -120,6 +120,26 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
     },
 
+
+    /**
+     * The confirmation popup's body text. Ideally this should be used to provide additional information about
+     * the action that is about to occur. Unlike `text`, setting this property will not convert HTML tags to text.
+     */
+    get HTML() { // <String>
+        return this._text;
+    },
+
+    set HTML(text) {
+        if (text == this._text) return;
+
+        this._text = text;
+
+        if (this._textView) {
+            this._textView.node.innerHTML = text;
+            this._textView.invalidateIntrinsicSize();
+        }
+    },
+
     /**
      * The text to use for the positive button.
      */
@@ -227,7 +247,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this.contentView.addSubview(this._titleView);
         this._titleView.leading.equalTo(this.contentView.leading, {plus: 32}).isActive = YES;
-        this._titleView.top.equalTo(this.contentView.top, {plus: 16}).isActive = YES;
+        this._titleView.top.equalTo(this.contentView.top, {plus: 32}).isActive = YES;
         this._titleView.trailing.lessThanOrEqualTo(this.contentView.trailing, {plus: -32}).isActive = YES;
 
 
