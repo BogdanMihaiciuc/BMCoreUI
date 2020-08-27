@@ -315,6 +315,16 @@
 	}
 }
 
+.BMWindowBackground {
+	background-color: white !important; /* tw-important */
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowBackground {
+		background-color: #1e1e1e !important; /* tw-important */
+	}
+}
+
 .BMWindowFullContent {
 	height: 100% !important;
 	top: 0px;
