@@ -55,7 +55,7 @@ export const BMConfirmationPopupResult = Object.freeze({ // <enum>
 export function BMAlertPopup() {} // <constructor>
 
 
-BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
+BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     /**
      * Represents the action that the user has taken.
@@ -183,7 +183,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param title <String>                    The popup's title.
      * {
      *  @param text <String>                    The popup's body text.
-     *  @param actionText <String>              Defaults to `OK`. The text to display on the action button.
+     *  @param actionText <String, nullable>    Defaults to `OK`. The text to display on the action button.
      * }
      * @return <BMAlertPopup>                   This alert popup.
      */
@@ -200,8 +200,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this._title = title;
         this._text = text;
-        this._positiveActionText = positiveActionText;
-        this._negativeActionText = negativeActionText;
+        this._positiveActionText = actionText;
 
         // Title View
 
@@ -288,7 +287,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
  * @param title <String>                    The popup's title.
  * {
  *  @param text <String>                    The popup's body text.
- *  @param actionText <String>              Defaults to `"OK"`. The text to display on the positive action button.
+ *  @param actionText <String, nullable>    Defaults to `"OK"`. The text to display on the positive action button.
  * }
  * @return <BMAlertPopup>                   An alert popup.
  */
@@ -362,6 +361,8 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), 
      */
     initWithTitle(title, {text, positiveActionText, negativeActionText}) {
         BMAlertPopup.prototype.initWithTitle.call(this, title, {text, actionText: positiveActionText});
+
+        this._negativeActionText = negativeActionText;
 
         // Negative button
 
