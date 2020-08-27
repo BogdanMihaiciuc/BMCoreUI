@@ -85,6 +85,14 @@ BMWindowDelegate.prototype = {
 	windowShouldKeepNodeHidden(window) {},
 	
 	/**
+	 * Invoked when the user takes an action that would normally cause the window to close.
+	 * Delegates can implement this method to control this behaviour.
+	 * @param window <BMWindow>		The calling window.
+	 * @return <Boolean>			`YES` if the window should close, `NO` otherwise.
+	 */
+	windowShouldClose(window) {},
+
+	/**
 	 * Invoked when the window is about to close. This method is invoked before the window actually
 	 * becomes hidden and before any associated animation runs.
 	 * @param window <BMWindow>		The calling window.
