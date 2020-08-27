@@ -41,7 +41,7 @@ export const BMConfirmationPopupResult = Object.freeze({ // <enum>
 
 // @endtype
 
-// @type BMAlertPopup
+// @type BMAlertPopup extends BMWindow
 
 /**
  * A sublcass of `BMAlertPopup` that is specialized for displaying an alert popup with a title, a text message and
