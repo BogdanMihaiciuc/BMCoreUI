@@ -18,7 +18,7 @@ A new `BMConfirmationPopup` class that is a subclass of `BMWindow` may be used f
 
 Added support for the `anchorRect` property inherited from `BMWindow`.
 
-The various properties that were marked animatable can now be animated via animation contexts.
+The various properties that were marked animatable but were not animatable have had their descriptions clarified.
 
 ## BMWindowDelegate
 

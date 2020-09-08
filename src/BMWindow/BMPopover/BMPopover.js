@@ -21,7 +21,7 @@ function BMPopover() {} // <constructor>
 BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     /**
-     * Animatable. The point from which this popover should originate, relative to the document. Either this property
+     * The point from which this popover should originate, relative to the document. Either this property
      * or `anchorNode` or `anchorRect` must be set before this popover is displayed.
      */
     _anchorPoint: undefined, // <BMPoint, nullable>
@@ -35,7 +35,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
-     * Animatable. The rect from which this popover should originate, relative to the document. Either this property
+     * The rect from which this popover should originate, relative to the document. Either this property
      * or `anchorPoint` or `anchorNode` must be set before this popover is displayed.
      */
     _anchorRect: undefined, // <BMRect, nullable>
@@ -49,7 +49,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
-     * Animatable. The element from which this popover should originate. Either this property
+     * The element from which this popover should originate. Either this property
      * or `anchorPoint` or `anchorRect` must be set before this popover is displayed.
      */
     _anchorNode: undefined, // <DOMNode, nullable>
@@ -62,7 +62,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. This popover's size.
+     * This popover's size. This property must be set prior to the
+     * popover being displayed.
      */
     _size: undefined, // <BMSize>
     get size() {
@@ -73,7 +74,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. The size of the indicator.
+     * The size of the indicator. This property should be set prior to the
+     * popover being displayed.
      */
     _indicatorSize: 16, // <Number>
     get indicatorSize() {
@@ -84,7 +86,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. Controls how rounded the popover's borders should be.
+     * Controls how rounded the popover's borders should be. This property should be set prior to the
+     * popover being displayed.
      */
     _borderRadius: 4, // <Number>
     get borderRadius() {
