@@ -243,7 +243,7 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this._positiveActionButton.node.addEventListener('click', event => this._confirm());
 
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Enter', {target: 'this', action: '_confirm'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Enter', {target: this, action: '_confirm'}));
 
         return this;
     },
@@ -398,7 +398,7 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), 
 
         this._cancelButton.node.addEventListener('click', event => this._cancel());
 
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {target: 'this', action: '_escape'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {target: this, action: '_escape'}));
 
         return this;
     },
