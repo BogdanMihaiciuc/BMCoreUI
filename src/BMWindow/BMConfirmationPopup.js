@@ -5,6 +5,7 @@ import { BMExtend, NO, YES } from "../Core/BMCoreUI";
 import { BMWindow } from "./BMWindow";
 import { BMView } from "../BMView/BMView_v2.5";
 import { BMLayoutAttribute } from "../BMView/BMLayoutConstraint_v2.5";
+import { BMKeyboardShortcut } from "./BMKeyboardShortcut";
 
 
 
@@ -242,6 +243,8 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this._positiveActionButton.node.addEventListener('click', event => this._confirm());
 
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Enter', {target: 'this', action: '_confirm'}));
+
         return this;
     },
 
@@ -395,7 +398,18 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), 
 
         this._cancelButton.node.addEventListener('click', event => this._cancel());
 
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {target: 'this', action: '_escape'}));
+
         return this;
+    },
+
+    _escape() {
+        if (this._showsCancelButton) {
+            this._cancel();
+        }
+        else {
+            this._decline();
+        }
     },
 
     /**
