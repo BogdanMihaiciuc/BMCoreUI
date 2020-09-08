@@ -1,3 +1,207 @@
+# 2.6
+
+## General Changes
+
+A new `BMStringByCapitalizingString(_)` function is now available that returns a copy of the given string with the first character uppercased.
+
+The `BMAddSmoothMousewheelInteractionToNode()` method will now forward the modifier key properties from the original event when generating smooth scroll events.
+
+## BMKeyboardShortcutModifier
+
+A new `BMKeyboardShortcutModifier` enum contains the modifier keys that can be used when registering keyboard shortcuts.
+
+## BMPoint
+
+Two new `multiplyWithScalar(_)` and `pointByMultiplyingWithScalar(_)` methods can be used to multiply all of a point's components with a given scalar.
+
+## BMRect
+
+Two new `multiplyWithScalar(_)` and `rectByMultiplyingWithScalar(_)` methods can be used to multiply all of a rect's components with a given scalar.
+
+## BMJQueryShim
+
+When **jQuery** is available, the factory method for this class will now return an equivalent jQuery object. In Thingworx, this change will allow the built-in `Collection` widget to work with this version of CoreUI.
+
+## BMAnimationContext
+
+Resolved an issue that caused custom bezier easings to not work when using web animations.
+
+Resolved an issue that caused certain animations to immediately skip to the end when using web animations.
+
+## BMLayoutConstraint
+
+Resolved an issue that could trigger an unsolvable layout error to occur when changing the constant of a constraint.
+
+## BMView
+
+The `release` method can now be safely invoked on views that have superviews; it will now recursively invoke the `release` method on all of the view's descendants.
+
+When a view is removed while it had a pending layout pass, it is now removed from its layout queue.
+
+When adding or removing subviews in a hierarchy, the size classes are now correctly invalidated on the root view.
+
+## BMTextField
+
+`BMTextField` is a new subclass of view that encapsulates some of the functionality that was previously used by the layout editor in relation to input elements. The layout editor now uses this class for such cases and it is now available for use in other situations as well. The primary objective of the text field class in this release is to add support for suggestions and autocompleting text to input elements. This works in conjunction with a `BMTextFieldDelegate` object that supplies the suggestions to be used and can further customize the situations in which those suggestions are used or displayed.
+
+## BMLayoutConstraint
+
+A new `descriptionRelativeToView(_)` method can now be invoked to obtain a string description of the constraint that is relative to the given view.
+
+## BMMenu
+
+When opened towards the right side of the page, if the menu doesn't fit to the right of the event source point, it will now open towards the left.
+
+Resolved an issue that caused the backdrop filter used by this element to not be applied properly.
+
+A new `CSSClass` property can be set on menu objects and can be used to add additional CSS classes to the menu DOM node.
+
+Menu items beginning with at least 3 dashes will now be added as separators.
+
+## BMCollectionViewFlowLayout
+
+Resolved a crash that could occur in certain situations when using footers and automatic cell sizes.
+
+Resolved a crash that could occur in certain situations when using automatic cell sizes.
+
+Resolved an issue that would cause the `End` gravity to behave the same as `Start`.
+
+The `Expand` constant can now be used for the `contentGravity` property and will expand the rows along the primary scrolling axis to take up the entire available space. The sizes of supplementary views and spacing will be kept constant.
+
+Resolved an issue that could cause the content width to add the size of the `bottomSpacing` property to the right of the content when using horizontal orientation.
+
+## BMCollectionView
+
+A new static `collectionView()` method can be used to create a new collection view and a `DOMNode` for it.
+
+A new `measureSizesOfCellsAtIndexPaths(_)` method can be used to measure several cells in bulk. When measuring multiple cells, this can be faster than individually measuring each cell, as the measurements will happen on the same layout queue to reduce the amount of layout thrashing. Note that in order to be measured, new cells have to be created, so this method should not be used with a very large amount of cells.
+
+When assigned a data set while invisible or while part of a view hierarchy but before obtaining a valid frame, collection view will now delay initialization until becoming visible and having been assigned a valid frame.
+
+When measuring cells, the measurement operation will now run in a separate layout queue.
+
+Resolved an issue that would cause cells to improperly lose their layout attributes during measurement if they had an exact retain count of 1.
+
+Resolved an issue that would cause the `scrollBarSize` property to return an incorrect value during the initial layout pass when `iScroll` was used.
+
+Resolves an issue when transferring items that caused transferred items to lose their properties that had undefined values.
+
+## BMCollectionViewCell
+
+A new `invalidate` method can now be overriden on collection view cells. This method is invoked prior to the cell being permanently removed and can be used by subclasses to perform any final cleanup they might need.
+
+## BMWindow
+
+A new `toggleAnimated(_, {completionHandler})` method is now available. If the window is visible, it will invoke `dismissAnimated`; otherwise it will invoke `bringToFrontAnimated`.
+
+For `bringToFrontAnimated(_, {completionHandler})` and `dismissAnimated(_, {completionHandler})`, the `fromNode`, `fromRect`, `toNode` and `toRect` arguments have been deprecated.
+
+Three new `anchorPoint`, `anchorRect` and `anchorNode` properties can now be specified on windows. These control the open/dismiss animations of the windows.
+
+The `minimizeAnimated` and `restoreAnimated` methods will now invoke the completion handler correctly. Clarified that the non-animated versions of these operations are not yet implemented.
+
+Preliminary support for keyboard shortcuts. The `registerKeyboardShortcut(_)` method can now be invoked by passing in a `BMKeyboardShortcut` object to set up a keyboard shortcut for the window. The `unregisterKeyboardShortcut(_)` method can be used to remove a previously registered keyboard shortcut.
+
+Window will no longer perform layout operations while it is invisible. All pending layout passes will be condensed into a single layout pass that occurs as soon as the window becomes visible.
+
+Resolved an issue that caused the backdrop filter used by this element to not be applied properly.
+
+When a window is released, its node is now removed from the document.
+
+View hierarchies whose root view is a `BMWindow` will now use the window's size as the viewport.
+
+Resolved an issue that caused some windows in full screen mode to be able to move or resize.
+
+Resolved an issue that caused full screen windows to not adapt to browser size changes.
+
+Modal windows will now use a z index based on the value of `BM_WINDOW_Z_INDEX_MAX`.
+
+## BMWindowDelegate
+
+The following methods can now be implemented by window delegates:
+ * `windowShouldResize(_, _)`: Invoked to determine if a window can be resized.
+ * `windowShouldMove(_, _)`: Invoked to determine if a window can be moved.
+ * `windowDidMove(_, _)`: Invoked whenever a window is moved.
+
+The `DOMNodeForDismissedWindow(_)` and `rectForDimissedWindow(_)` methods have been deprecated. They will still be invoked when `anchorPoint`, `anchorRect` and `anchorNode` are all `undefined` on the window.
+
+## BMKeyboardShortcut
+
+This new class can be used to define keyboard shortcuts and the actions that should be taken when the shortcut is triggered. An instance of this class can be obtained by invoking the static `keyboardShortcutWithKey` method.
+
+## BMToolWindow
+
+This class is now exported.
+
+A new `opensAutomatically` property can be now set on tool windows, with a default value of `YES`. When this property is set to `NO` the tool window will no longer open automatically when its owning window is opened.
+
+## BMPopover
+
+A new `BMPopover` subclass of `BMWindow` is now available for use. It represents a modal window that is visually linked to an element or point on the document. The anchor element or point can be set on it via the `anchorNode` or `anchorPoint` properties.
+
+## BMConfirmationPopup
+
+A new `BMConfirmationPopup` class that is a subclass of `BMWindow` may be used for simple confirmation dialog boxes in place of the standard `confirm()`. `BMConfirmationPopup` provides a `Promise` that resolves when the user chooses any option.
+
+## BMMenuItem
+
+A new `userInfo` property can now be set on menu items. It can be used to add additional information to the item. This object has no specific type and is not directly used by CoreUI, but can be used by custom implementations to attach arbitrary data to the item.
+
+## BMLayoutEditor
+
+It is now possible to freely pan the edited view hierarchy using the touchpad, mousewheel, clicking and dragging while holding the ⌥ key or by dragging with two fingers on touch devices.
+
+It is now possible to zoom the edited view hierarchy by using the mousewheel or touchpad scrolling while holding the ⌥ key or by pinch zooming on touch devices. 
+There is also a slider control and precise zoom input box available in the toolbar to control the zoom level.
+
+Constraints are now drawn in such a way that whenever possible they will touch the edges of the affected views instead of defaulting to originate from the center of the selected view.
+
+A new **Reset** button is now available in the toolbar that can be used to reset the zoom level and pan position.
+
+The height of the toolbar and the various settings controls has been reduced.
+
+The following keyboard shortcuts are now available when a view is selected:
+ * `⌘←`: Selects the first active constraint that affects the view's `Leading` or `Left` attribute. If such a constraint isn't available but the view has a constraints that affect its `Width` and `Trailing` or `Right` attributes, the `Width` constraint will be selected. If no such constraints are available, an appropriate `Leading` or `Width` constraint is created and selected.
+ * `⌘↑`: Selects the first active constraint that affects the view's `Top` attribute. If such a constraint isn't available but the view has a constraints that affect its `Height` and `Bottom` attributes, the `Height` constraint will be selected. If no such constraints are available, an appropriate `Top` constraint is created and selected.
+ * `⌘→`: Selects the first active constraint that affects the view's `Trailing`, `Right` or `Width` attribute. If no such constraint is available, an appropriate `Trailing` or `Width` constraint is created.
+ * `⌘↓`: Selects the first active constraint that affects the view's `Bottom` or `Height` attribute. If no such constraint is available, an appropriate `Bottom` or `Height` constraint is created.
+ * `⌘⌥C`: Creates missing constraints for the selected view.
+In all of the above cases, if a size class is selected, the newly created constraints will only be activated for the given size class.
+
+The following keyboard shortcuts are now available when a constraint is selected:
+ * `⌫`: Toggles activation of the constraint for the current size class.
+ * `⌘⌫`: Deletes the constraint.
+ * `⌘⌥-`: Sets the constraint equality sign to less than or equal to.
+ * `⌘⌥=`: Sets the constraint equality sign to greater than or equal to.
+ * `⌘⌥0`: Sets the constraint equality sign to equal to.
+
+The manner in which custom settings can be added and the structure and organization of the settings panel has changed. In this release, the change is opt-in and the previous method is still available and enabled by default.
+A new `BMViewLayoutEditor` subclass of `BMLayoutEditor` should be created and used instead to enable this. In addition to the changes above, when enabling the settings view, the layout editor will also have the following changes:
+ * The navigation tree is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resized.
+ * The settings sidebar is now hidden by default and no longer appears as a sidebar. It now appears as an inspector window that can be moved and resied. Whenever the settings inspector is dismissed, double clicking a view will cause it to reappear.
+
+When a view doesn't expose an intrinsic size, the compression and expansion resistance settings will no longer be displayed by the layout editor.
+
+When using the settings view, it is no longer required to subclass the layout editor to enable custom settings. The settings are now organized in:
+ * The settings view is the root of the settings inspector and contains one or several *settings panels*. Only one settings panel can be visible at any time and CoreUI manages creating and destroying these panels.
+ * A settings panel can contain one or more tabs. Tabs are represented by `BMLayoutEditorSettingsTab` objects.
+ * Each tab contains one or more *sections*, represented by the `BMLayoutEditorSettingsSection` class, each containing several *setting* objects, represented by the `BMLayoutEditorSetting` class.
+
+When setting panels are created, during initialization and at several points throughout their lifecycle, CoreUI will invoke one of the following methods on the editor's delegate, depending on what kind of item is selected:
+ * `layoutEditorAdditionalSettingTabsForView(_, _)` can be used to add additional setting tabs that are visible when views are selected.
+ * `layoutEditorAdditionalSettingTabsForConstraint(_, _)` can be used to add additional setting tabs that are visible when constraints are selected.
+
+View subclasses can also implement the `additionalSettingTabsForLayoutEditor(_)` method to supply their own specific settings regardless of the delegate object.
+
+After the tabs are created and whenever they are updated, for each tab, CoreUI will invoke the following method on the editor's delegate:
+ * `layoutEditorAdditionalSettingSectionsForTab(_, _)` can be used to add additional settings to a tab. This includes the custom tabs created previously, which normally have no settings of their own.
+
+Similarly, view subclasses can implement the `additionalSettingSectionsForTab(_, {layoutEditor})` to add their own specific settings.
+
+## BMMonacoCodeEditor
+
+The monaco code editor will now set the tsc `alwaysStrict` flag to `false`.
+
 # 2.6 Beta 8
 
 ## BMWindow
