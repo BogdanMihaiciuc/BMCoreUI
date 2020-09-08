@@ -1335,6 +1335,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			
 			if (args && args.completionHandler) args.completionHandler();
 		}
+
+		if (this._keyboardShortcutsEnabled) {
+			this.node.focus();
+		}
 	},
 	
 
