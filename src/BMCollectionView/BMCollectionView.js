@@ -446,9 +446,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					this.invalidateLayout();
 				}
 			}
-			else if (this.__awaitsInit) {
-				requiresInit = true;
-			}
+		}
+
+		if (this.__awaitsInit && this._frame.size.width > 0 && this._frame.size.height > 0) {
+			requiresInit = true;
 		}
 
 		// Invoke view's setter to trigger the actual frame update

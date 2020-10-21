@@ -1,3 +1,9 @@
+# 2.6.1
+
+## BMCollectionView
+
+Resolves an issue that could cause collection view to indefinitely stall awaiting for a valid frame after being assigned a frame with one of the size fields set to 0.
+
 # 2.6
 
 ## General Changes
