@@ -4,6 +4,10 @@
 
 Resolves an issue that could cause collection view to indefinitely stall awaiting for a valid frame after being assigned a frame with one of the size fields set to 0.
 
+Specifying the `BMCollectionViewCellEventHandler` class on a node will now cause collection view to also ignore events originating from that element's direct descendants.
+
+Collection view will now ignore events originating from folding panel headers.
+
 # 2.6
 
 ## General Changes

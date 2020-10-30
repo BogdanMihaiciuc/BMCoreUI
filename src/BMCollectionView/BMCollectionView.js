@@ -2345,7 +2345,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    // Don't handle non-left clicks here
 		    if (!BMIsTouchDevice && which != 1) return;
 		    
-		    // Don't handle events originating from buttons and input elements or their direct descendants
+		    // Don't handle events originating from buttons and input elements or their direct descendants as well as several whitelisted class names
 		    if (event.target.nodeName == 'BUTTON' || event.target.nodeName == 'INPUT' || event.target.nodeName == 'LABEL' || event.target.nodeName == 'A' ||
 				event.target.parentNode.nodeName == 'BUTTON' || event.target.parentNode.nodeName == 'INPUT' || event.target.parentNode.nodeName == 'LABEL' ||
 				event.target.classList.contains('BMCollectionViewCellEventHandler') || event.target.parentNode.classList.contains('BMCollectionViewCellEventHandler') ||
