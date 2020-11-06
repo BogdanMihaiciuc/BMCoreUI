@@ -1725,6 +1725,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         };
 
         box.focus();
+        box.select();
 
         let popoverVisible = YES;
         const popoverLayers = [popoverContainer, popoverBackground, popoverDropShadowContainer];
