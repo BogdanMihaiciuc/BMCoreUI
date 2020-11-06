@@ -1052,11 +1052,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Invoked by collection view when it needs to recalculate its frame.
 	 */
     _prepareFrame: function () {
-	    
+		// TODO: Investigate the usefulness of this method when this collection view is part of a view hierarchy
+		
 	    var offset = this._container.offset();
 	    
 	    // Compute the internal frame
-	    this._frame = BMRectMake(offset.left, offset.top, this._container.width(), this._container.height());
+	    this._frame = BMRectMake(offset.left, offset.top, this._container[0].offsetWidth, this._container[0].offsetHeight);
 	    
 	    // When using custom scrolling, due to the way scrolling works, off-screen rendering is useless
 	    // because scrolling and collection always happen in the same animation frame

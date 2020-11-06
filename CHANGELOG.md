@@ -1,3 +1,9 @@
+# 2.6.3
+
+## BMCollectionView
+
+Resolves an issue that caused collection view to assign an incorrect size to the content wrapper element on WebKit/Blink based browsers. This caused the space occupied by the scrollbar to be accounted for twice leading to a visible gap between the scrollbar and the content.
+
 # 2.6.1
 
 ## BMCollectionView
