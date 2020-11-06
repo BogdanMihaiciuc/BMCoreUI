@@ -156,6 +156,19 @@ BMWindow._windows = [];
 // An array containing all minimized non-modal window DOM nodes
 BMWindow._minimizedWindows = [];
 
+
+/**
+ * Returns the z-index value that the topmost non-modal window will have.
+ * Any z-index value higher than the value returned by this method is guaranteed
+ * to appear on top of any other window.
+ * 
+ * Note that the value used by modal windows is always at least `BM_WINDOW_Z_INDEX_MAX + 1`.
+ * @return <Number>		The maximum z-index value used by a non-modal `BMWindow`.
+ */
+BMWindow.zIndexMax = function () {
+	return BM_WINDOW_Z_INDEX_MAX;
+}
+
 /**
  * Minimizes all non-minimized windows.
  * @param animated <Boolean, nullable>			Defaults to `YES`. If set to `YES`, this change will be animated.

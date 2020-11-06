@@ -4,6 +4,10 @@
 
 Resolves an issue that caused collection view to assign an incorrect size to the content wrapper element on WebKit/Blink based browsers. This caused the space occupied by the scrollbar to be accounted for twice leading to a visible gap between the scrollbar and the content.
 
+## BMWindow
+
+A new `zIndexMax` static method will return the value of the `BM_WINDOW_Z_INDEX_MAX` constant.
+
 # 2.6.1
 
 ## BMCollectionView
