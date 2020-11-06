@@ -8,6 +8,12 @@ Resolves an issue that caused collection view to assign an incorrect size to the
 
 A new `zIndexMax` static method will return the value of the `BM_WINDOW_Z_INDEX_MAX` constant.
 
+## BMViewLayoutEditor
+
+When selecting a constraint while the inspector is closed, the text field that appears will now also have its contents automatically selected.
+
+The pointer cursor will now appear whenever the mouse cursor is in any of a constraint's selectable area, rather than just directly on the constraint line.
+
 # 2.6.1
 
 ## BMCollectionView
