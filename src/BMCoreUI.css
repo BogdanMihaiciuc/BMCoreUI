@@ -1984,6 +1984,8 @@ BMLayoutEditorDetailsItemBadge {
 	position: absolute;
 	pointer-events: all !important;
 
+	cursor: pointer;
+
 	/* Needed for Thingworx environment */
 	z-index: 999998;
 }
