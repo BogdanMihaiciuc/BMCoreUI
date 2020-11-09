@@ -85,6 +85,14 @@ BMWindowDelegate.prototype = {
 	windowShouldKeepNodeHidden(window) {},
 	
 	/**
+	 * Invoked when the user takes an action that would normally cause the window to close.
+	 * Delegates can implement this method to control this behaviour.
+	 * @param window <BMWindow>		The calling window.
+	 * @return <Boolean>			`YES` if the window should close, `NO` otherwise.
+	 */
+	windowShouldClose(window) {},
+
+	/**
 	 * Invoked when the window is about to close. This method is invoked before the window actually
 	 * becomes hidden and before any associated animation runs.
 	 * @param window <BMWindow>		The calling window.
@@ -92,6 +100,8 @@ BMWindowDelegate.prototype = {
 	windowWillClose(window) {},
 
 	/**
+	 * @deprecated - Set the `anchorRect` property on the window object instead.
+	 * 
 	 * This method is invoked when the window is about to be dismissed as a result of standard user interaction.
 	 * Delegate objects can optionally implement this method and return a `BMRect` object to which this window will transition when closing.
 	 * 
@@ -102,6 +112,8 @@ BMWindowDelegate.prototype = {
 	rectForDismissedWindow(window) {},
 
 	/**
+	 * @deprecated - Set the `anchorNode` property on the window object instead.
+	 * 
 	 * This method is invoked when the window is about to be dismissed as a result of standard user interaction.
 	 * Delegate objects can optionally implement this method and return a DOM node to which this window will transition when closing.
 	 * 

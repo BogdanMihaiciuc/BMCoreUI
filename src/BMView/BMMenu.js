@@ -170,6 +170,20 @@ BMMenu.prototype = {
     },
 
     /**
+     * A custom list of CSS classes to add to the menu DOM node.
+     * This only has effect when set before the menu is opened.
+     */
+    _CSSClass: '', // <String>
+
+    get CSSClass() {
+        return this._CSSClass;
+    },
+
+    set CSSClass(CSSClass) {
+        this._CSSClass = CSSClass || '';
+    },
+
+    /**
      * The point at which the menu is visible.
      */
     _point: new BMPoint(), // <BMPoint>
@@ -219,7 +233,7 @@ BMMenu.prototype = {
     _renderMenu() {
         // The actual menu node
         const menuNode = document.createElement('div');
-        menuNode.className = 'BMMenu';
+        menuNode.className = this._CSSClass ? `BMMenu ${this._CSSClass}` : 'BMMenu';
         this._node = menuNode;
 
         // The overlay which intercepts clicks outside of the menu
@@ -253,7 +267,7 @@ BMMenu.prototype = {
         // Create and append the items for this menu
         const iconSize = this._iconSize;
         for (const item of this._items) {
-            if (item.name == '---') {
+            if (item.name.startsWith('---')) {
                 const itemNode = document.createElement('div');
                 itemNode.className = 'BMMenuDivider';
                 this._node.appendChild(itemNode);

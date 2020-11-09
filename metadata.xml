@@ -36,6 +36,7 @@
         <FileResource type="JS" file="BMWindow/BMToolWindow.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMWindow/BMKeyboardShortcut.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMWindow/BMPopover/BMPopover.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMWindow/BMConfirmationPopup.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMCodeEditor/BMCodeEditor.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditor.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorVariablesController.js" description="" isDevelopment="true" isRuntime="true"/>

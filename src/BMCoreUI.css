@@ -137,7 +137,7 @@
 .BMWindow {
 	position: fixed;
 	
-	border-radius: 4px;
+	border-radius: 8px;
 	overflow: hidden;
 	
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
@@ -150,10 +150,25 @@
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 6px 32px;
 }
 
+.BMNonModalWindow::before {
+	content: '';
+
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+
+	z-index: -1;
+}
+
 .BMWindowInactive {
+	background: rgba(250, 250, 250, 1);
+}
+
+.BMWindowInactive::before {
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-	background: rgba(250, 250, 250, 1);
 }
 
 .BMWindowHidden {
@@ -171,9 +186,12 @@
 .BMWindow.BMKeyWindow, .BMToolWindow {
 	z-index: 2007;
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
+	background: rgba(245, 245, 245, .8);
+}
+
+.BMWindow.BMKeyWindow::before, .BMToolWindow::before {
 	backdrop-filter: blur(15px);
 	-webkit-backdrop-filter: blur(15px);
-	background: rgba(245, 245, 245, .8);
 }
 
 .BMWindow.BMModalWindow {
@@ -257,7 +275,7 @@
 		position: absolute;
 		pointer-events: none;
 
-		border-radius: 4px;
+		border-radius: 8px;
 
 		left: 0px;
 		top: 0px;
@@ -294,6 +312,16 @@
 @media (prefers-color-scheme: dark) {
 	.BMWindowContent {
 		background-color: rgba(0, 0, 0, .75) !important;
+	}
+}
+
+.BMWindowBackground {
+	background-color: white !important; /* tw-important */
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowBackground {
+		background-color: #1e1e1e !important; /* tw-important */
 	}
 }
 
@@ -344,6 +372,8 @@
 	text-align: left !important;
 
 	color: rgba(0, 0, 0, .8);
+
+	line-height: 1.5;
 }
 
 .BMWindowLabel {
@@ -581,6 +611,7 @@
 .BMWindowButton, .BMButton {
 	-webkit-appearance: none;
 	outline: none;
+	box-sizing: border-box !important;
 	
 	border-radius: 4px;
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
@@ -596,6 +627,8 @@
 
 	align-self: center;
 	transition: background-color .2s ease;
+
+	cursor: default;
 }
 
 .BMWindowButton {
@@ -1107,7 +1140,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	background-color: rgba(255, 255, 255, .8);
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 
-	border-radius: 4px;
+	border-radius: 8px;
 }
 
 .BMLayoutEditorConstraintPopup::before, .BMMenu::before {
@@ -1119,7 +1152,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	right: 0;
 	bottom: 0;
 
-	border-radius: 4px;
+	border-radius: 8px;
 
 	backdrop-filter: blur(25px);
 	-webkit-backdrop-filter: blur(25px);
@@ -1135,7 +1168,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	pointer-events: none !important;
 
-	border-radius: 4px !important;
+	border-radius: 8px !important;
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 	z-index: 999999 !important;
 }
@@ -1281,9 +1314,9 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	text-overflow: ellipsis;
 }
 
-.BMLayoutEditorDetailsWindow {
-	backdrop-filter: blur(25px);
-	-webkit-backdrop-filter: blur(25px);
+.BMLayoutEditorDetailsWindow::before {
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
 }
 
 .BMLayoutEditorDetails {
@@ -1340,8 +1373,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	width: 100%;
 	height: 1px;
 
-	margin-top: 16px;
-	margin-bottom: 16px;
+	margin-top: 8px;
+	margin-bottom: 8px;
 
 	background: rgba(0, 0, 0, .05);
 
@@ -1950,6 +1983,8 @@ BMLayoutEditorDetailsItemBadge {
 .BMLayoutEditorConstraint {
 	position: absolute;
 	pointer-events: all !important;
+
+	cursor: pointer;
 
 	/* Needed for Thingworx environment */
 	z-index: 999998;

@@ -4,26 +4,27 @@
     "moduleName": "BMCoreUI",
     "version": "2.7.0-alpha.1",
     "description": "A collection of reusable UI classes.",
-    "thingworxServer": "http://localhost:8016",
+    "thingworxServer": "http://localhost:8915",
     "thingworxUser": "Administrator",
-    "thingworxPassword": "admin",
+    "thingworxPassword": "Administrator12345",
     "author": "Thingworx RoIcenter",
     "minimumThingWorxVersion": "6.0.0",
-    "homepage": "https://github.com/ptc-iot-sharing/BMCoreUI",
+    "homepage": "https://github.com/BogdanMihaiciuc/BMCoreUI",
     "main": "lib/BMCoreUI.min.js",
     "module": "build/index.js",
     "sideEffects": false,
     "autoUpdate": {
-        "giteaURL": "https://api.github.com/repos/ptc-iot-sharing/BMCoreUI/releases/latest"
+        "giteaURL": "https://api.github.com/repos/BogdanMihaiciuc/BMCoreUI/releases/latest"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/ptc-iot-sharing/BMCoreUI.git"
+        "url": "https://github.com/BogdanMihaiciuc/BMCoreUI.git"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "gulp",
+        "build": "gulp --p",
         "buildProduction": "gulp --p",
+        "buildDebug": "gulp",
         "upload": "gulp upload",
         "uploadProduction": "gulp upload --p"
     },

@@ -21,8 +21,8 @@ function BMPopover() {} // <constructor>
 BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     /**
-     * The point from which this popover should originate. Either this property
-     * or `anchorNode` must be set before this popover is displayed.
+     * The point from which this popover should originate, relative to the document. Either this property
+     * or `anchorNode` or `anchorRect` must be set before this popover is displayed.
      */
     _anchorPoint: undefined, // <BMPoint, nullable>
 
@@ -35,8 +35,22 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 
     /**
+     * The rect from which this popover should originate, relative to the document. Either this property
+     * or `anchorPoint` or `anchorNode` must be set before this popover is displayed.
+     */
+    _anchorRect: undefined, // <BMRect, nullable>
+
+    get anchorRect() {
+        return this._anchorRect;
+    },
+    set anchorRect(rect) {
+        this._anchorRect = rect;
+    },
+
+
+    /**
      * The element from which this popover should originate. Either this property
-     * or `anchorPoint` must be set before this popover is displayed.
+     * or `anchorPoint` or `anchorRect` must be set before this popover is displayed.
      */
     _anchorNode: undefined, // <DOMNode, nullable>
 
@@ -48,7 +62,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. This popover's size.
+     * This popover's size. This property must be set prior to the
+     * popover being displayed.
      */
     _size: undefined, // <BMSize>
     get size() {
@@ -59,7 +74,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. The size of the indicator.
+     * The size of the indicator. This property should be set prior to the
+     * popover being displayed.
      */
     _indicatorSize: 16, // <Number>
     get indicatorSize() {
@@ -70,7 +86,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
-     * Animatable. Controls how rounded the popover's borders should be.
+     * Controls how rounded the popover's borders should be. This property should be set prior to the
+     * popover being displayed.
      */
     _borderRadius: 4, // <Number>
     get borderRadius() {
@@ -94,6 +111,11 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * The background node.
      */
     _background: undefined, // <DOMNode>
+
+    /**
+     * The dark mode fill node.
+     */
+    _darkModeFill: undefined, // <DOMNode>
 
     /**
      * The view to which subviews should be added.
@@ -166,6 +188,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._background = popoverBackground;
         this._dropShadowContainer = popoverDropShadowContainer;
         this._dropShadowContent = popoverDropShadowContent;
+        this._popoverDarkModeFill = this._background.querySelector('.BMPopoverBackgroundDarkModeFill');
 
         const contentView = this._contentView = BMView.view();
         this.addSubview(this._contentView);
@@ -194,7 +217,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         frame.size.height = this._size.height + this._indicatorHeight;
         frame.size.width = this._size.width;
 
-        const nodeFrame = this.anchorNode && BMRectMakeWithNodeFrame(this.anchorNode);
+        const nodeFrame = this.anchorRect && this.anchorNode && BMRectMakeWithNodeFrame(this.anchorNode);
         const location = this.anchorPoint ? this.anchorPoint.copy() : nodeFrame.center;
 
         frame.origin.x = location.x - frame.size.width / 2 | 0;
@@ -271,7 +294,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * }
      * @return <String>                                 The SVG path.
      */
-    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 4, inset = 0, knobPosition = undefined, gravity = 'Top'} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
+    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 8, inset = 0, knobPosition = undefined, gravity = 'Top'} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
         let top = gravity === 'Bottom' ? 0 : size * Math.SQRT2 / 2 | 0;
         let bottom = gravity === 'Bottom' ? frame.size.height - size * Math.SQRT2 / 2 | 0 : frame.size.height;
         const left = inset;
@@ -314,7 +337,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     // @override - BMWindow
-    animateInWithArguments(args, {completionHandler}) {
+    animateInWithCompletionHandler(completionHandler) {
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
         this.node.style.opacity = 1;
@@ -329,7 +352,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     // @override - BMWindow
-    animateOutWithArguments(args, {completionHandler}) {
+    animateOutWithCompletionHandler(completionHandler) {
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
         const self = this;
@@ -351,7 +374,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
     // @override - BMWindow
     bringToFrontAnimated(animated, args) {
-        if (!this.anchorNode && !this.anchorPoint) throw new Error('The anchorPoint or anchorNode must be set prior to showing this popover.');
+        if (!this.anchorNode && !this.anchorPoint && !this.anchorRect) throw new Error('The anchorPoint, anchorRect or anchorNode must be set prior to showing this popover.');
 
         this._updatePosition();
 

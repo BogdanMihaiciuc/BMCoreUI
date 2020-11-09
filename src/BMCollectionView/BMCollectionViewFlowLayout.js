@@ -42,7 +42,7 @@ export var BMCollectionViewTableLayoutSupplementaryView = Object.freeze({
  * either a fixed height or a variable height.
  *
  * If the row heights are variable, the collection must have a delegate that implements the 
- * Number collectionViewRowHeightForCellAtIndexPath(BMCollectionView, BMIndexPath) method.
+ * `collectionViewRowHeightForCellAtIndexPath(_, _)` method.
  *
  * Optionally, the table layout may also generate supplementary views for section headers and section footers.
  */

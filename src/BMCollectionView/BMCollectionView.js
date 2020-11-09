@@ -446,9 +446,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					this.invalidateLayout();
 				}
 			}
-			else if (this.__awaitsInit) {
-				requiresInit = true;
-			}
+		}
+
+		if (this.__awaitsInit && this._frame.size.width > 0 && this._frame.size.height > 0) {
+			requiresInit = true;
 		}
 
 		// Invoke view's setter to trigger the actual frame update
@@ -1051,11 +1052,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Invoked by collection view when it needs to recalculate its frame.
 	 */
     _prepareFrame: function () {
-	    
+		// TODO: Investigate the usefulness of this method when this collection view is part of a view hierarchy
+		
 	    var offset = this._container.offset();
 	    
 	    // Compute the internal frame
-	    this._frame = BMRectMake(offset.left, offset.top, this._container.width(), this._container.height());
+	    this._frame = BMRectMake(offset.left, offset.top, this._container[0].offsetWidth, this._container[0].offsetHeight);
 	    
 	    // When using custom scrolling, due to the way scrolling works, off-screen rendering is useless
 	    // because scrolling and collection always happen in the same animation frame
@@ -2344,10 +2346,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    // Don't handle non-left clicks here
 		    if (!BMIsTouchDevice && which != 1) return;
 		    
-		    // Don't handle events originating from buttons and input elements or their direct descendants
+		    // Don't handle events originating from buttons and input elements or their direct descendants as well as several whitelisted class names
 		    if (event.target.nodeName == 'BUTTON' || event.target.nodeName == 'INPUT' || event.target.nodeName == 'LABEL' || event.target.nodeName == 'A' ||
 				event.target.parentNode.nodeName == 'BUTTON' || event.target.parentNode.nodeName == 'INPUT' || event.target.parentNode.nodeName == 'LABEL' ||
-				event.target.classList.contains('BMCollectionViewCellEventHandler') ||
+				event.target.classList.contains('BMCollectionViewCellEventHandler') || event.target.parentNode.classList.contains('BMCollectionViewCellEventHandler') ||
+				event.target.classList.contains('widget-foldingpanel-header') ||
 				// This a specific Thingworx workaround that depends on jQuery
 				(window.$ ? window.$(event.target).parents('.widget-dhxdropdown').length : false)) {
 			    return;

@@ -8,6 +8,7 @@ import {BMView} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMKeyboardShortcutModifier } from './BMKeyboardShortcut'
 import { BMSizeMake } from '../Core/BMSize'
+import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
 
 //@ts-check
 // @type BMWindowOverlay extends BMView
@@ -61,15 +62,21 @@ class BMWindowOverlay extends BMView {
 			var targetNode = undefined;
 			
 			if (shouldClose) {
-				if (window.delegate && window.delegate.rectForDismissedWindow) {
-					targetRect = window.delegate.rectForDismissedWindow(window);
+				// Don't ask the delegate for an anchor if it has been set via properties
+				if (window._anchorPoint || window._anchorRect || window._anchorNode) {
+					window.dismissAnimated(YES);
 				}
-				
-				if (window.delegate && window.delegate.DOMNodeForDismissedWindow) {
-					targetNode = window.delegate.DOMNodeForDismissedWindow(window);
+				else {
+					if (window.delegate && window.delegate.rectForDismissedWindow) {
+						targetRect = window.delegate.rectForDismissedWindow(window);
+					}
+					
+					if (window.delegate && window.delegate.DOMNodeForDismissedWindow) {
+						targetNode = window.delegate.DOMNodeForDismissedWindow(window);
+					}
+					
+					window.dismissAnimated(YES, {toRect: targetRect, toNode: targetNode});
 				}
-				
-				window.dismissAnimated(YES, {toRect: targetRect, toNode: targetNode});
 			}
 		});
 
@@ -148,6 +155,19 @@ BMWindow._windows = [];
 
 // An array containing all minimized non-modal window DOM nodes
 BMWindow._minimizedWindows = [];
+
+
+/**
+ * Returns the z-index value that the topmost non-modal window will have.
+ * Any z-index value higher than the value returned by this method is guaranteed
+ * to appear on top of any other window.
+ * 
+ * Note that the value used by modal windows is always at least `BM_WINDOW_Z_INDEX_MAX + 1`.
+ * @return <Number>		The maximum z-index value used by a non-modal `BMWindow`.
+ */
+BMWindow.zIndexMax = function () {
+	return BM_WINDOW_Z_INDEX_MAX;
+}
 
 /**
  * Minimizes all non-minimized windows.
@@ -451,10 +471,82 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			height: frame.size.height + 'px'
 		});
 
-		this.leftConstraint.constant = frame.origin.x;
-		this.topConstraint.constant = frame.origin.y;
+		switch (this.frameHorizontalPositionLayoutAttribute) {
+			case BMLayoutAttribute.Left:
+			case BMLayoutAttribute.Leading:
+				this.leftConstraint.constant = frame.origin.x;
+				break;
+			case BMLayoutAttribute.CenterX:
+				this.leftConstraint.constant = frame.center.x - this.superview.frame.center.x;
+				break;
+			case BMLayoutAttribute.Right:
+			case BMLayoutAttribute.Trailing:
+				this.leftConstraint.constant = frame.right - this.superview.frame.right;
+				break;
+		}
+
+		switch (this.frameVerticalPositionLayoutAttribute) {
+			case BMLayoutAttribute.Top:
+				this.topConstraint.constant = frame.origin.y;
+				break;
+			case BMLayoutAttribute.CenterY:
+				this.topConstraint.constant = frame.center.y - this.superview.frame.center.y;
+				break;
+			case BMLayoutAttribute.Bottom:
+				this.topConstraint.constant = frame.bottom - this.superview.frame.bottom;
+				break;
+		}
+		
 		this.widthConstraint.constant = frame.size.width;
 		this.heightConstraint.constant = frame.size.height;
+	},
+
+	/**
+	 * @protected
+	 * The priority to use when setting up frame position constraints.
+	 */
+	get framePositionPriority() { // <Number>
+		return 500;
+	},
+
+	/**
+	 * @protected
+	 * The priority to use when setting up frame size constraints.
+	 */
+	get frameSizePriority() { // <Number>
+		return 750;
+	},
+
+	/**
+	 * @protected
+	 * The source anchor point to use when setting up the horizontal position constraint.
+	 */
+	get frameHorizontalPositionLayoutAttribute() { // <BMLayoutAttribute>
+		return BMLayoutAttribute.Left;
+	},
+
+	/**
+	 * Returns the name of the horizontal anchor from which the horizontal position constraint will be created.
+	 */
+	get _frameHorizontalAnchorName() { // <String>
+		const key = this.frameHorizontalPositionLayoutAttribute;
+		return key.substring(0, 1).toLowerCase() + key.substring(1, key.length);
+	},
+
+	/**
+	 * @protected
+	 * The source anchor point to use when setting up the vertical position constraint.
+	 */
+	get frameVerticalPositionLayoutAttribute() { // <BMLayoutAttribute>
+		return BMLayoutAttribute.Top;
+	},
+
+	/**
+	 * Returns the name of the vertical anchor from which the vertical position constraint will be created.
+	 */
+	get _frameVerticalAnchorName() { // <String>
+		const key = this.frameVerticalPositionLayoutAttribute;
+		return key.substring(0, 1).toLowerCase() + key.substring(1, key.length);
 	},
 	
 	/**
@@ -498,26 +590,72 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	set title(title) {
 		this._title = title;
 	},
+
+    /**
+     * The point from which this popover should originate when open or dimissed with an animation.
+	 * Setting this property causes the `anchorNode` and `anchorRect` properties to be set to `undefined`.
+     */
+    _anchorPoint: undefined, // <BMPoint, nullable>
+
+    get anchorPoint() {
+        return this._anchorPoint;
+    },
+    set anchorPoint(point) {
+		this._anchorPoint = point && point.copy();
+		this.anchorNode = undefined;
+		this._anchorRect = undefined;
+    },
+
+    /**
+     * The rect from which this popover should originate when open or dimissed with an animation.
+	 * Setting this property causes the `anchorNode` and `anchorPoint` properties to be set to `undefined`.
+     */
+    _anchorRect: undefined, // <BMRect, nullable>
+
+    get anchorRect() {
+        return this._anchorRect;
+    },
+    set anchorRect(rect) {
+		this._anchorRect = rect && rect.copy();
+		this.anchorNode = undefined;
+		this._anchorPoint = undefined;
+    },
+
+
+    /**
+     * The node from which this popover should originate when open or dimissed with an animation.
+	 * Setting this property causes the `anchorPoint` and `anchorRect` properties to be set to `undefined`.
+     */
+    _anchorNode: undefined, // <DOMNode, nullable>
+
+    get anchorNode() {
+        return this._anchorNode;
+    },
+    set anchorNode(node) {
+		this._anchorNode = node;
+		this._anchorPoint = undefined;
+		this._anchorRect = undefined;
+    },
 	
 	/**
-	 * Set to YES while this window is visible.
+	 * Set to `YES` while this window is visible.
 	 */
 	_visible: NO, // <Boolean>
 	
 	/**
-	 * Set to YES while this window is visible.
+	 * Set to `YES` while this window is visible.
 	 */
 	get isVisible() { // <Boolean>
 		return this._visible;
 	},
 	
 	/**
-	 * Set to YES while this window is full screen.
+	 * Set to `YES` while this window is full screen.
 	 */
 	_fullScreen: NO, // <Boolean>
 	
 	/**
-	 * Set to YES while this window is full screen.
+	 * Set to `YES` while this window is full screen.
 	 */
 	get isFullScreen() { // <Boolean>
 		return this._fullScreen;
@@ -626,10 +764,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		this._overlay.addSubview(this);
 		document.body.appendChild(node);
 
-		this.leftConstraint = this.left.equalTo(this._overlay.left, {plus: frame.origin.x, priority: 500});
-		this.topConstraint = this.top.equalTo(this._overlay.top, {plus: frame.origin.y, priority: 500});
-		this.widthConstraint = this.width.equalTo(frame.size.width, {priority: 750});
-		this.heightConstraint = this.height.equalTo(frame.size.height, {priority: 750});
+		this.leftConstraint = this[this._frameHorizontalAnchorName].equalTo(this._overlay[this._frameHorizontalAnchorName], {plus: frame.origin.x, priority: this.framePositionPriority});
+		this.topConstraint = this[this._frameVerticalAnchorName].equalTo(this._overlay[this._frameVerticalAnchorName], {plus: frame.origin.y, priority: this.framePositionPriority});
+		this.widthConstraint = this.width.equalTo(frame.size.width, {priority: this.frameSizePriority});
+		this.heightConstraint = this.height.equalTo(frame.size.height, {priority: this.frameSizePriority});
 		this.frame = frame;
 
 		this.leftConstraint.isActive = YES;
@@ -1022,22 +1160,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			this.bringToFrontAnimated(animated, args);
 		}
 	},
-	
-	/**
-	 * An object containing additional details for a window animation.
-	 */
-	_animationArguments: undefined, // <AnyObject>
-
-	/**
-	 * @protected
-	 * This method can be invoked by subclasses to set the arguments object that will be
-	 * passed to `animateInWithArguments()` or `animateOutWithArguments()` the next time one of
-	 * these methods is invoked.
-	 * @param args <AnyObject>		An object that will be passed to `animateInWithArguments()` or `animateOutWithArguments()`.
-	 */
-	setAnimationArguments(args) {
-		this._animationArguments = args;
-	},
 
 	/**
 	 * @protected
@@ -1045,21 +1167,12 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Subclasses can override this method to perform custom animations.
 	 * 
 	 * This method is not invoked from within an animation context.
-	 * @param args <AnyObject>						An object containing arguments for the animation. The contents of this object
-	 * 												depend on the parameters supplied to `bringToFrontAnimated`. For `BMWindow` this is an object that can contain
-	 * 												either of the following properties:
-	 * 												* **`fromRect`**: A `BMRect` object that represents the rect from which to show the window.
-	 * 												* **`fromNode`**: A `DOMNode` obect that represents the source element from which to show the window.
-	 * 
-	 * 												For subclasses, the arguments supplied to this method can be customized by overriding `bringToFrontAnimated`.
-	 * {
-	 * 	@param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
-	 * }
+	 * @param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
 	 */
-	animateInWithArguments(args, {completionHandler}) {
+	animateInWithCompletionHandler(completionHandler) {
 		const self = this;
-		if (args && args.fromRect) {
-			const rect = args.fromRect;
+		if (this._anchorRect) {
+			const rect = this._anchorRect;
 			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
 			const transformRect = frame.rectWithTransformToRect(rect);
 			
@@ -1070,9 +1183,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 								display: 'block'
 							}, YES);
 		}
-		else if (args && args.fromNode) {
+		else if (this._anchorNode) {
 			// Create a copy of the given node which will be used in the animation in place of the original node
-			const node = args.fromNode;
+			const node = this._anchorNode;
 			const rect = BMRectMakeWithNodeFrame(node);
 			const animationNode = node.cloneNode(YES);
 			
@@ -1140,13 +1253,14 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Should be invoked to make this window visible. Subclasses overriding this method should invoke the base method at some point in their implementation.
 	 * @param animated <Boolean, nullable>				Defaults to YES. If set to YES, this change will be animated, otherwise it will be instant.
 	 * {
-	 *	@param fromRect <BMRect, nullable>				Requires animated to be set to YES. If set to a rect, the window will expand from the given rect.
-	 *  @param fromNode <DOMNode, nullable>				Requires animated to be set to YES and fromRect to not be set.
-	 *													If set to a DOM node, the window will expand from that element.
+	 *	@param fromRect <BMRect, nullable>				*Deprecated - Use the `anchorRect` property instead*. Ignored if either `anchorPoint`, `anchorRect` or `anchorNode` are set. 
+	 *													Sets the value of the `anchorRect` property to the given value until this operation completes.
+	 *  @param fromNode <DOMNode, nullable>				*Deprecated - Use the `anchorRect` property instead*. Ignored if either `anchorPoint`, `anchorRect` or `anchorNode` are set. 
+	 *													Sets the value of the `anchorNode` property to the given value until this operation completes.
 	 *	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been made visible.
 	 * }
 	 */
-	bringToFrontAnimated: function (animated, args) {
+	bringToFrontAnimated: function (animated, args = {}) {
 		this._visible = YES;
 
 		this.becomeKeyWindow();
@@ -1190,8 +1304,26 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				}
 			}, YES);
 			
-			this.animateInWithArguments(this._animationArguments || args, {completionHandler: () => {}});
-			this._animationArguments = undefined;
+			// Included for compatibility with the anchor arguments,
+			// due to be removed soon
+			let completionHandler;
+			if (this._anchorNode || this._anchorRect || this._anchorPoint) {
+				completionHandler = () => {};
+			}
+			else {
+				if (args.fromRect) {
+					this.anchorRect = args.fromRect;
+				}
+				if (args.fromNode) {
+					this.anchorNode = args.fromNode;
+				}
+				completionHandler = () => {
+					this.anchorRect = undefined;
+					this.anchorNode = undefined;
+				}
+			}
+
+			this.animateInWithCompletionHandler(completionHandler);
 
 			this._blocker.style.display = 'block';
 			this._window.style.display = 'block';
@@ -1216,6 +1348,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			
 			if (args && args.completionHandler) args.completionHandler();
 		}
+
+		if (this._keyboardShortcutsEnabled) {
+			this.node.focus();
+		}
 	},
 	
 
@@ -1226,22 +1362,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Subclasses can override this method to perform custom animations.
 	 * 
 	 * This method is not invoked from within an animation context.
-	 * @param args <AnyObject>						An object containing arguments for the animation. The contents of this object
-	 * 												depend on the parameters supplied to `dismissAnimated`. For `BMWindow` this is an object that can contain
-	 * 												either of the following properties:
-	 * 												* **`fromRect`**: A `BMRect` object that represents the rect from which to show the window.
-	 * 												* **`fromNode`**: A `DOMNode` obect that represents the source element from which to show the window.
-	 * 
-	 * 												For subclasses, the arguments supplied to this method can be customized by overriding `dismissAnimated`.
-	 * {
-	 * 	@param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
-	 * }
+	 * @param completionHandler <void ^()>			A method that custom implementations must invoke when the animation completes.
 	 */
-	animateOutWithArguments(args, {completionHandler}) {
+	animateOutWithCompletionHandler(completionHandler) {
 		const self = this;
 			
-		if (args && args.toRect) {
-			const rect = args.toRect;
+		if (this._anchorRect) {
+			const rect = this._anchorRect;
 			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
 			const transformRect = frame.rectWithTransformToRect(rect);
 			
@@ -1253,9 +1380,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 								complete: completionHandler
 							}, YES);
 		}
-		else if (args && args.toNode) {
+		else if (this._anchorNode) {
 			// Create a copy of the given node which will be used in the animation in place of the original node
-			const node = args.toNode;
+			const node = this._anchorNode;
 			
 			if ('_nodeDisplay' in self) {
 				node.style.display = self._nodeDisplay;
@@ -1316,13 +1443,15 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Should be invoked to dismiss this window. Subclasses overriding this method should invoke the base method at some point in their implementation.
 	 * @param animated <Boolean, nullable>				Defaults to YES. If set to YES, this change will be animated, otherwise it will be instant.
 	 * {
-	 *	@param toRect <BMRect, nullable>				Requires animated to be set to YES. If set to a rect, the window will compact to the given rect.
-	 *  @param toNode <DOMNode, nullable>				Requires animated to be set to YES and toRect to not be set.
+	 *	@param toRect <BMRect, nullable>				*Deprecated - Use the `anchorRect` property instead*. Ignored if either `anchorPoint`, `anchorRect` or `anchorNode` are set. 
+	 *													Sets the value of the `anchorRect` property to the given value until this operation completes.
+	 *  @param toNode <DOMNode, nullable>				*Deprecated - Use the `anchorRect` property instead*. Ignored if either `anchorPoint`, `anchorRect` or `anchorNode` are set. 
+	 *													Sets the value of the `anchorNode` property to the given value until this operation completes.
 	 *													If set to a DOM node, the window will compact to that element.
 	 *	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been hidden.
 	 * }
 	 */
-	dismissAnimated: function (animated, args) {
+	dismissAnimated: function (animated, args = {}) {
 		
 		animated = (animated === undefined ? YES : animated);
 		
@@ -1360,12 +1489,32 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					if (args && args.completionHandler) args.completionHandler();
 				}
 			}, YES);
+			
+			// Included for compatibility with the anchor arguments,
+			// due to be removed soon
+			let completionHandler;
+			if (this._anchorNode || this._anchorRect || this._anchorPoint) {
+				completionHandler = () => {
+					this._window.style.display = 'none';
+					this._window.style.opacity = 0;
+				};
+			}
+			else {
+				if (args.fromRect) {
+					this.anchorRect = args.fromRect;
+				}
+				if (args.fromNode) {
+					this.anchorNode = args.fromNode;
+				}
+				completionHandler = () => {
+					this.anchorRect = undefined;
+					this.anchorNode = undefined;
+					this._window.style.display = 'none';
+					this._window.style.opacity = 0;
+				}
+			}
 
-			this.animateOutWithArguments(this._animationArguments || args, {completionHandler: () => {
-				this._window.style.display = 'none';
-				this._window.style.opacity = 0;
-			}});
-			this._animationArguments = undefined;
+			this.animateOutWithCompletionHandler(completionHandler);
 			
 		}
 		else {
@@ -1386,6 +1535,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Minimizes this window. This method will raise an error if this window is modal.
 	 * If this window is already minimized, this method will have no effect.
 	 * @param animated <Boolean, nullable>				Defaults to `YES`. If set to `YES`, this change will be animated, otherwise it will be instant.
+	 * 													Setting this value to `NO` is currently unsupported.
 	 * {
 	 * 	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been minimized.
 	 * }
@@ -1464,6 +1614,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 									if (self.delegate && self.delegate.windowDidMinimize) {
 										self.delegate.windowDidMinimize(self);
 									}
+
+									if (args && args.completionHandler) args.completionHandler();
 								}
 							}, YES);
 		}
@@ -1473,6 +1625,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * Restores this window. This method will raise an error if this window is modal.
 	 * If this window is not minimized, this method will have no effect.
 	 * @param animated <Boolean, nullable>				Defaults to `YES`. If set to `YES`, this change will be animated, otherwise it will be instant.
+	 * 													Setting this value to `NO` is currently unsupported.
 	 * {
 	 * 	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been minimized.
 	 * }
@@ -1546,6 +1699,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 										if (self.delegate && self.delegate.windowDidRestore) {
 											self.delegate.windowDidRestore(self);
 										}
+
+										if (args && args.completionHandler) args.completionHandler();
 									}
 								}, YES);
 		}
