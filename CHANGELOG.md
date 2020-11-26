@@ -1,3 +1,9 @@
+# 2.6.5
+
+## BMPopover
+
+Fixes an issue that could lead to a thrown error when using a popover with `anchorNode`.
+
 # 2.6.3
 
 ## BMCollectionView
