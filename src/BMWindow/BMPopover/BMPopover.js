@@ -217,7 +217,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         frame.size.height = this._size.height + this._indicatorHeight;
         frame.size.width = this._size.width;
 
-        const nodeFrame = this.anchorRect && this.anchorNode && BMRectMakeWithNodeFrame(this.anchorNode);
+        const nodeFrame = this.anchorRect || (this.anchorNode && BMRectMakeWithNodeFrame(this.anchorNode));
         const location = this.anchorPoint ? this.anchorPoint.copy() : nodeFrame.center;
 
         frame.origin.x = location.x - frame.size.width / 2 | 0;
