@@ -1,6 +1,6 @@
 // @ts-check
 
-import { BMExtend, NO, YES, BMCopyProperties, BMNumberByConstrainingNumberToBounds } from "../../Core/BMCoreUI";
+import { BMExtend, NO, YES, BMCopyProperties, BMNumberByConstrainingNumberToBounds, BMUUIDMake } from "../../Core/BMCoreUI";
 import { BMWindow } from "../BMWindow";
 import { BMRectMakeWithOrigin, BMRectMakeWithNodeFrame, BMRectMake } from "../../Core/BMRect";
 import { BMPointMake } from "../../Core/BMPoint";
@@ -129,6 +129,30 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * A SVG object that defines the clip path that must be used on
+     * browsers that don't suport the `clip-path: path(...)` CSS values.
+     * This property will be `undefined` for all other browsers.
+     */
+    _clipPathSVG: undefined, // <DOMNode, nullable>
+
+    /**
+     * When `_clipPathSVG` is defined, this represents the background path element.
+     */
+    _clipPathBackgroundPath: undefined, // <DOMNode, nullable>
+
+    /**
+     * When `_clipPathSVG` is defined, this represents the outline path element.
+     */
+    _clipPathOutlinePath: undefined, // <DOMNode, nullable>
+
+    /**
+     * A string that forms part of the HTML IDs that will be assigned to the clip paths
+     * to be used on browsers.
+     * This property will be `undefined` for all other browsers.
+     */
+    _clipPathUUID: undefined, // <String, nullable>
+
+    /**
      * The content view's top edge constraint.
      */
     _contentViewTopConstraint: undefined, // <BMLayoutConstraint>
@@ -245,12 +269,54 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this.frame = frame;
 
         const innerFrame = frame.copy();
-        innerFrame.origin = BMPointMake();
 
         const knobPosition = BMNumberByConstrainingNumberToBounds(location.x - frame.origin.x, 12, frame.size.width - 12);
 
-        const path = `path('${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}')`;
-        const outlinePath = `path('${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, inset: 1, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}')`;
+        innerFrame.origin = BMPointMake();
+
+        const pathContent = `${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}`;
+        const outlinePathContent = `${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, inset: 1, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}`;
+
+        if (!this._clipPathUUID && !CSS.supports('clip-path', `path('${pathContent}')`)) {
+            // If inline path definitions are not supported by the browsers, create an UUID for a SVG clip path and create it
+            this._clipPathUUID = BMUUIDMake();
+
+            this._clipPathSVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            this._clipPathSVG.style.width = '0';
+            this._clipPathSVG.style.height = '0';
+
+            // Create and attach the main clip path
+            const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            clipPath.setAttribute('id', 'popover-clip-path-' + this._clipPathUUID);
+            clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+            this._clipPathBackgroundPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            clipPath.appendChild(this._clipPathBackgroundPath);
+
+            this._clipPathSVG.appendChild(clipPath);
+
+            // Create and attach the outline clip path
+            const outlineClipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            outlineClipPath.setAttribute('id', 'popover-outline-clip-path-' + this._clipPathUUID);
+            outlineClipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+            this._clipPathOutlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            outlineClipPath.appendChild(this._clipPathOutlinePath);
+
+            this._clipPathSVG.appendChild(outlineClipPath);
+
+            document.body.appendChild(this._clipPathSVG);
+            
+        }
+
+        // For Chrome, update the path nodes
+        if (this._clipPathUUID) {
+            this._clipPathBackgroundPath.setAttribute('d', pathContent);
+            this._clipPathOutlinePath.setAttribute('d', outlinePathContent);
+        }
+
+        // For Blink/Chrome-based browsers clip-path: path() is not supported, but clip-path: url() can be used instead for that browser
+        const path = this._clipPathUUID ? `url(#popover-clip-path-${this._clipPathUUID})` : `path('${pathContent}')`;
+        const outlinePath = this._clipPathUUID ? `url(#popover--outline-clip-path-${this._clipPathUUID})` : `path('${outlinePathContent}')`;
+
         // Assign the frame to the window, and to the drop shadow container
         const positionStyle = {
             left: innerFrame.origin.x + 'px',
@@ -379,6 +445,15 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._updatePosition();
 
         BMWindow.prototype.bringToFrontAnimated.apply(this, arguments);
+    },
+
+    // @override - BMWindow
+    release() {
+        if (this._clipPathUUID) {
+            this._clipPathSVG.remove();
+        }
+
+        return BMWindow.prototype.release.apply(this, arguments);
     }
 
 });

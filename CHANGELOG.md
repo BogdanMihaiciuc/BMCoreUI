@@ -1,3 +1,9 @@
+# 2.6.6
+
+## BMPopover
+
+The popover will now appear correctly on Chrome and other browsers that support the `url()` value for the CSS `clip-path` property. Previously, this required support for the `path()` value, which was supported only on Safari and Firefox.
+
 # 2.6.5
 
 ## BMPopover
