@@ -199,7 +199,25 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     /**
      * The cell's reuse identifier which corresponds to the template's reuse identifier.
      */
-    reuseIdentifier: undefined, // <String>
+    _reuseIdentifier: undefined, // <String>
+
+    get reuseIdentifier() {
+        return this._reuseIdentifier;
+    },
+    set reuseIdentifier(identifier) {
+        if (identifier != this._reuseIdentifier) {
+            if (this._reuseIdentifier) {
+                this.node.classList.remove(`BMCollectionViewCell-${this._reuseIdentifier}`);
+            }
+
+            if (identifier) {
+                this.node.classList.add(`BMCollectionViewCell-${identifier}`);
+            }
+
+            this._reuseIdentifier = identifier;
+        }
+
+    },
 
     /**
      * The cell's size and position relative to its own frame.
@@ -569,20 +587,20 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
      * Designated initializer. Invoked immediately after creation to initialize this cell.
      * Subclasses that need custom initialization should invoke the superclass method early on in their implementation to ensure
      * that the superclass components are correctly initialized.
-     * @param collectionView <BMCollectionView>             The calling collection view.
+     * @param collectionView <BMCollectionView>                         The calling collection view.
      * {
-     *	@param reuseIdentifier <String>	                    The reuse identifier of this cell. The collection view will use this property to return a cell
-     *														with the correct contents when reusing elements.
-     *  @param node <DOMNode>                               The DOM node managed by this cell.
+     *	@param reuseIdentifier <String>	                                The reuse identifier of this cell. The collection view will use this property to return a cell
+     *														            with the correct contents when reusing elements.
+     *  @param node <DOMNode>                                           The DOM node managed by this cell.
+     *  @param kind <BMCollectionViewLayoutAttributesType, nullable>    Defaults to `.Cell`. The kind of cell.
      * }
-     * @return <BMCollectionViewCell>                       This cell.
+     * @return <BMCollectionViewCell>                                   This cell.
      */
     initWithCollectionView(collectionView, args) {
         this._retainCount = 0;
         this._manageCount = 0;
         
         this.collectionView = collectionView;
-        this.reuseIdentifier = args.reuseIdentifier;
 
         // #FLAG BM_USE_BMVIEW_SUBCLASS
         if (BM_USE_BMVIEW_SUBCLASS) {
@@ -591,6 +609,10 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         else {
             this.node = args.node;
         }
+
+        this.reuseIdentifier = args.reuseIdentifier;
+
+        if (args.kind) this.itemType = args.kind;
 
         return this;
     },
