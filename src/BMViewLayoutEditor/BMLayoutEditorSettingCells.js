@@ -1271,7 +1271,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
     cellDidBindToSetting(setting) {
         if (setting.sizeClass) {
             if (setting.target._variations[setting.sizeClass]) {
-                if (!(setting.property in setting.target._variations)) {
+                if (!(setting.property in setting.target._variations[setting.sizeClass])) {
                     this._inputView.node.value = this.nullValue;
                 }
                 else {
