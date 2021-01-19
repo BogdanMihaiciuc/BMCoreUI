@@ -2298,7 +2298,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var node = document.createElement('div');
 		node.style.cssText = "position: absolute; left: 0px; top: 0px; visibility: hidden; overflow: visible;";
 
-		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node});
+		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node, kind: BMCollectionViewLayoutAttributesType.Cell});
 		cell._layoutQueue = this._cellLayoutQueue;
 		//BMCollectionViewCellMakeForCollectionView(this, {withReuseIdentifier: identifier});
 		
@@ -3527,9 +3527,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 	    // Otherwise construct a new one
 		var cellClass = this._supplementaryViewClasses[identifier] || this._cellClass;
-		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node});
+		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node, kind: BMCollectionViewLayoutAttributesType.SupplementaryView});
 		cell._layoutQueue = this._cellLayoutQueue;
-	    cell.itemType = BMCollectionViewLayoutAttributesType.SupplementaryView;
 		
 		// When using custom classes, it is no longer the data set object's responsibility to provide the contents for the cell
 	    if (cellClass == BMCollectionViewCell) cell.element.append(this._dataSet.contentsForSupplementaryViewWithIdentifier(identifier));

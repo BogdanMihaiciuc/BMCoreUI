@@ -1,3 +1,15 @@
+# 2.6.7
+
+## BMCollectionViewCell
+
+When setting a cell's `reuseIdentifier` property, a matching CSS class will be added to the cell's `node`. It will be named `BMCollectionViewCell-<reuseIdentifier>`, where `<reuseIdentifier>` will be the value used for the reuse identifier.
+
+The `initWithCollectionView` initializer is now supplied an additional parameter `kind` that identifies whether the cell will be used as a supplementary view or a data cell.
+
+## BViewLayoutEditor
+
+Resolves an issue that could cause fields for settings that applied to size class variations to appear blank even though a value was set for them.
+
 # 2.6.6
 
 ## BMPopover
