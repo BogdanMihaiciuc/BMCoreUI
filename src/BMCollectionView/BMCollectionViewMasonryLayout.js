@@ -480,4 +480,12 @@ BMCollectionViewMasonryLayout.prototype = BMExtend({}, BMCollectionViewLayout.pr
 	
 });
 
+/**
+ * Constructs and returns a new masonry layout.
+ * @returns <BMCollectionViewMasonryLayout>		A masonry layout.
+ */
+BMCollectionViewMasonryLayout.masonryLayout = function () {
+	return new BMCollectionViewMasonryLayout();
+};
+
 // @endtype

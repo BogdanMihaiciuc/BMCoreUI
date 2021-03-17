@@ -37,7 +37,7 @@ export var BMCollectionViewTableLayoutSupplementaryView = Object.freeze({
 
 /**
  * @deprecated Use `BMCollectionViewFlowLayout` with the `maximumCellsPerRow` property set to `1`.
- * 
+ * --------------------------------------
  * A basic layout implementation, the BMCollectionViewTableLayout will lay out its elements as a list where each row can have
  * either a fixed height or a variable height.
  *
@@ -4442,6 +4442,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 	
 	
 });
+
+/**
+ * Constructs and returns a new flow layout.
+ * @return <BMCollectionViewFlowLayout>		A flow layout.	 
+ */
+BMCollectionViewFlowLayout.flowLayout = function () {
+	return new BMCollectionViewFlowLayout();
+}
 
 // @endtype
 

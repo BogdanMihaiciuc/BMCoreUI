@@ -1110,4 +1110,12 @@ BMCollectionViewTileLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 
 });
 
+/**
+ * Constructs and returns a new tile layout.
+ * @return <BMCollectionViewTileLayout>		A tile layout.
+ */
+BMCollectionViewTileLayout.tileLayout = function () {
+	return new BMCollectionViewTileLayout();
+};
+
 // @endtype
