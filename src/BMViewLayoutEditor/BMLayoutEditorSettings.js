@@ -133,17 +133,23 @@ _BMLayoutEditorSettingsView.prototype = BMExtend(Object.create(BMView.prototype)
         const titleView = BMView.view();
         titleView.node.innerText = (backButton ? '‹ ' : '') + panel.title || '';
         titleView.node.className = 'BMWindowTitle BMLayoutEditorDetailsTitle';
+        let titleViewLeading = 64;
+        if (backButton) {
+            titleView.node.classList.add('BMLayoutEditorDetailsItemReadonlyValueClickable');
+            titleView.node.classList.add('BMLayoutEditorDetailsBackButton');
+            titleViewLeading -= 8;
+        }
         titleView.node.style.zIndex = 1;
         titleView.supportsAutomaticIntrinsicSize = YES;
         container.addSubview(titleView);
 
-        titleView.leading.equalTo(container.leading, {plus: 64}).isActive = YES;
+        titleView.leading.equalTo(container.leading, {plus: titleViewLeading}).isActive = YES;
         titleView.trailing.lessThanOrEqualTo(container.trailing, {plus: -16}).isActive = YES;
-        titleView.height.greaterThanOrEqualTo(48).isActive = YES;
-        titleView.top.equalTo(container.top).isActive = YES;
+        titleView.height.greaterThanOrEqualTo(32).isActive = YES;
+        titleView.top.equalTo(container.top, {plus: 12}).isActive = YES;
         panel._titleView = titleView;
 
-        view.top.equalTo(titleView.bottom).isActive = YES;
+        view.top.equalTo(titleView.bottom, {plus: 12}).isActive = YES;
 
         if (backButton) {
             titleView.node.addEventListener('click', e => this.popPanel());
