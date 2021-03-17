@@ -696,7 +696,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             if (sizeClass._maximumHeight) viewport._height = sizeClass._maximumHeight;
             if (sizeClass._maximumDiagonal) viewport._diagonal = sizeClass._maximumDiagonal;
             if (sizeClass._orientation != BMLayoutOrientation.Any) viewport._orientation = sizeClass._orientation;
-            if (sizeClass._maximumSurfaceArea) viewport._maximumSurfaceArea = sizeClass._maximumSurfaceArea;
+            if (sizeClass._maximumSurfaceArea) viewport._surfaceArea = sizeClass._maximumSurfaceArea;
         }
 
         this.view._requiredViewport = viewport;
@@ -770,6 +770,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * @param name <String>                                 The name to display for this size class option. 
      * {
      *  @param ofType <String>                              The type of the icon to display alongside this option.
+     *  @param preview <String, nullable>                   If specified, this should be the name of a viewport size that activates when this
+     *                                                      menu item is selected, in addition to activating the relevant size class.
      *  @param sizeClass <BMLayoutSizeClass, nullable>      The size class associated with this option.
      *  @param action <void ^(), nullable>                  An additional action to execute in addition to the default action.
      * }
