@@ -314,6 +314,51 @@ BMRect.prototype = {
 	},
 
 	/**
+	 * Scales this rect by the given factor. The scale will be centered around the given
+	 * point.
+	 * @param factor <Number>						The amount by which to scale the rect. 
+	 * {
+	 * 	@param aroundPoint <BMPoint, nullable>		Defaults to the rect's center point. The point around which to perform the scaling.
+	 * }
+	 */
+	scaleWithFactor(factor, args) {
+		const point = args && args.aroundPoint || this.center;
+
+		// The scaling is performed in such a way that the given point, expressed in terms
+		// of percentages of the rect's width and height remains constant after the scaling operation
+
+		// The percentage point is obtained by first converting the given point's coordinates to be relative to the
+		// rect's origin, then obtaining the percentage values
+		const percentagePoint = BMPointMake((point.x - this.origin.x) / this.size.width, (point.y - this.origin.y) / this.size.height);
+
+		// Scale the dimensions
+		this.size.width *= factor;
+		this.size.height *= factor;
+
+		// Move the origin point so that the ratio to the given point remains constant; this is essentially solving the equation at the
+		// beginning of this method for the origin point components
+		this.origin.x = point.x - percentagePoint.x * this.size.width;
+		this.origin.y = point.y - percentagePoint.y * this.size.height;
+	},
+
+	/**
+	 * Returns a copy of this rect that is scaled by the given factor. The scale will be centered around the given
+	 * point.
+	 * @param factor <Number>						The amount by which to scale the rect. 
+	 * {
+	 * 	@param aroundPoint <BMPoint, nullable>		Defaults to the rect's center point. The point around which to perform the scaling.
+	 * }
+	 * @return <BMRect>				A rect.
+	 */
+	rectByScalingWithFactor(factor, args) {
+		const rect = this.copy();
+		rect.scaleWithFactor(factor, args);
+		return rect;
+	},
+
+	/**
+	 * @deprecated Use either `insetWithWidth(_, {height})` or `insetWithInset(_)`.
+	 * --------------------------------------------------
 	 * Contracts or expands this rect in place by the specified sizes. If the sizes are positive, the rect is inset, otherwise it is expanded.
 	 * This method may be invoked in two ways:
 	 * --------------------------------------------------
