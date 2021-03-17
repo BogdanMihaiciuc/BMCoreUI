@@ -1306,13 +1306,29 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 /* MARK: Layout editor details */
 
 .BMLayoutEditorDetailsTitle {
-	margin: 0 !important;
-	padding: 0 !important;
+	margin: 0 !important; /* TWX-Important */
+	padding-top: 0 !important; /* TWX-Important */
+	padding-bottom: 0 !important; /* TWX-Important */
+
+	min-height: 32px !important; /* TWX-Important */
 
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
+
+	cursor: default;
+	pointer-events: none;
 }
+
+.BMLayoutEditorDetailsBackButton {
+	pointer-events: all;	
+	padding-left: 8px !important; /* TWX-Important */
+	padding-right: 8px !important; /* TWX-Important */
+
+	border-radius: 4px;
+}
+
+
 
 .BMLayoutEditorDetailsWindow::before {
 	backdrop-filter: blur(15px);
@@ -2229,10 +2245,11 @@ The background layer contains the background.
 .BMPopoverBackground {
 	position: absolute;
 	
-	z-index: 9999999; /* :( */
+	z-index: 9999999; /* TWX-Z-Index */
 	
 	background: rgba(245, 245, 245, .8);
 	-webkit-backdrop-filter: blur(25px);
+	backdrop-filter: blur(25px);
 	pointer-events: none;
 }
 
