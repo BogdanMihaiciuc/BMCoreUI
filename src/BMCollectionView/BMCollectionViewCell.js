@@ -205,7 +205,7 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         return this._reuseIdentifier;
     },
     set reuseIdentifier(identifier) {
-        if (identifier != this._reuseIdentifier) {
+        if (identifier != this._reuseIdentifier && this.collectionView.assignsReuseIdentifierAsClass) {
             if (this._reuseIdentifier) {
                 this.node.classList.remove(`BMCollectionViewCell-${this._reuseIdentifier}`);
             }

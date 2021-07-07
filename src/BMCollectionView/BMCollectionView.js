@@ -667,6 +667,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
 	/**
+	 * Defaults to `YES`. When set to `YES`, collection view will add each cell's reuse identifier as a class on that cell's node.
+	 */
+	assignsReuseIdentifierAsClass: YES, // <Boolean>
+
+	/**
 	 * Registers a class to be used when creating cells with the given reuse identifier.
 	 * This does not affect already existing cells, but newly created cells with the given identifier will be created
 	 * as instances of the given class.
