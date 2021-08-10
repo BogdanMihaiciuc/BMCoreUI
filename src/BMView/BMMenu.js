@@ -11,6 +11,11 @@ import { BMRectMakeWithNodeFrame } from '../Core/BMRect';
  */
 const _BMMenuSpacingToNode = 8;
 
+/**
+ * The name of the CSS class that is added to nodes that have a popup menu.
+ */
+export const BMMenuSourceNodeCSSClass = 'BMMenuSourceNode';
+
 // @type BMMenuKind
 
 export var BMMenuKind = Object.freeze({ // <enum>
@@ -342,7 +347,7 @@ BMMenu.prototype = {
         this._sourceNodeShadow.classList.add('BMMenuSourceNodeShadow');
         menuNode.classList.add('BMMenuTouch');
 
-        this._sourceNode.classList.add('BMMenuSourceNode');
+        this._sourceNode.classList.add(BMMenuSourceNodeCSSClass);
 
         // When applicable, this interaction will perform a short tap
         if ('vibrate' in window.navigator) window.navigator.vibrate(10);
@@ -353,6 +358,7 @@ BMMenu.prototype = {
         let displacement = 0;
 
         const scale = .33;
+        const pullDownScale = .5;
         const duration = 400;
         const easing = [.17,1.46,.84,.93];
 
@@ -374,7 +380,11 @@ BMMenu.prototype = {
         BMCopyProperties(menuNode.style, {left: point.x + 'px', top: point.y + 'px'});
         
         BMHook(menuContainer, {opacity: 0});
-        BMHook(menuNode, {scaleX: kind == BMMenuKind.PullDownMenu ? 1 : scale, scaleY: scale, translateY: -displacement + 'px'});
+        BMHook(menuNode, {
+            scaleX: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
+            scaleY: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
+            translateY: -displacement + 'px'
+        });
 
         // Make the container visible
         __BMVelocityAnimate(menuContainer, {opacity: 1}, {duration: duration, easing: easing});
@@ -427,7 +437,11 @@ BMMenu.prototype = {
         const menuNode = this._node;
         const menuContainer = this._containerNode;
 
-        BMHook(menuNode, {scaleX: kind == BMMenuKind.PullDownMenu ? 1 : .75, scaleY: .75, opacity: 0});
+        BMHook(menuNode, {
+            scaleX: kind == BMMenuKind.PullDownMenu ? .5 : .75, 
+            scaleY: kind == BMMenuKind.PullDownMenu ? .5 : .75, 
+            opacity: 0
+        });
 
         document.body.appendChild(menuContainer);
 
@@ -482,6 +496,10 @@ BMMenu.prototype = {
     closeAnimated(animated = YES) {
         if (!this._node) return;
 
+        if (this.delegate && this.delegate.menuWillClose) {
+            this.delegate.menuWillClose(this);
+        }
+
         this._node.style.pointerEvents = 'none'; 
         this._containerNode.style.pointerEvents = 'none';
         let delay = this._node.childNodes.length * 16 + 100 - 200;
@@ -517,7 +535,7 @@ BMMenu.prototype = {
                 containerNode.remove();
                 if (sourceNodeShadow) {
                     sourceNodeShadow.remove();
-                    sourceNode.classList.remove('BMMenuSourceNode');
+                    sourceNode.classList.remove(BMMenuSourceNodeCSSClass);
                 }
                 if (this.delegate && this.delegate.menuDidClose) {
                     this.delegate.menuDidClose(this);
