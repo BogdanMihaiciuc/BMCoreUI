@@ -170,6 +170,15 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         // NOTE: A cell's frame is controlled by its layout attributes, therefore this operation is a no-op
     },
 
+    get supportsAutomaticIntrinsicSize() {
+        // Use automatic intrinsic size when measuring this cell if it has no subviews
+        if (this._isMeasuring && !this._subviews.length) {
+            return YES;
+        }
+
+        return NO;
+    },
+
     /**
      * The collection view that created this cell.
      * Subclasses should not override this property.
@@ -473,7 +482,21 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         }
 
         if (this._isMeasuring) {
-            BMCopyProperties(this._node.style, {width: '100%', height: '100%'});
+            if (this._subviews.length) {
+                // If this cell's size can be determined via its subview's constraints, use the size of
+                // the cell's subview as its measurement
+                BMCopyProperties(this._node.style, {width: '100%', height: '100%'});
+            }
+            else {
+                if (this._requiredWidth) {
+                    // Otherwise derive the measured size using the instrinsic CSS size
+                    BMCopyProperties(this._node.style, {width: this._requiredWidth + 'px', height: 'auto'});
+                }
+                else {
+                    // Otherwise derive the measured size using the instrinsic CSS size
+                    BMCopyProperties(this._node.style, {width: 'auto', height: 'auto'});
+                }
+            }
         }
     },
 
