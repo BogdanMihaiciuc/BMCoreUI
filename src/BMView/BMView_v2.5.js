@@ -2980,18 +2980,22 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // Suspend at this point to allow other views to read the updated DOM
         yield;
 
-        // Create a new solver for the vertical constraints
-        //solver = new kiwi.Solver();
-
-        this._subviews.forEach(subview => {
-            // With the horizontal positions resolved, the assigned width should be set as required
-            // for the subviews to update their intrinsic positions
-            subview._assignWidth();
-            // Because the width have been assigned, the reference frames will not be captured from within this method, therefore
-            // layout thrashing should not occur when invoking this method separately on each subview
-            subview._prepareForAutomaticIntrinsicSize();
-            subview._updateInternalHeightConstraints();
-        });
+        // When there are no subviews, assign the width and prepare the root view for automatic intrinsic size
+        if (this.supportsAutomaticIntrinsicSize && !this._subviews.length) {
+            this._assignWidth();
+            this._prepareForAutomaticIntrinsicSize();
+            this._updateInternalHeightConstraints();
+        } else {
+            this._subviews.forEach(subview => {
+                // With the horizontal positions resolved, the assigned width should be set as required
+                // for the subviews to update their intrinsic positions
+                subview._assignWidth();
+                // Because the width have been assigned, the reference frames will not be captured from within this method, therefore
+                // layout thrashing should not occur when invoking this method separately on each subview
+                subview._prepareForAutomaticIntrinsicSize();
+                subview._updateInternalHeightConstraints();
+            });
+        }
 
         // Suspend at this point to allow other views to update the DOM
         yield;
@@ -3084,7 +3088,15 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // All variables should now be set. New frames can be created and applied to all views
         this.frame = BMRectMake(0, 0, this._variables[BMLayoutAttribute.Width].value() | 0, this._variables[BMLayoutAttribute.Height].value() | 0);
         this._needsIntrinsicSizeMeasurement = NO;
-        this._subviews.forEach(subview => subview._updateFrames());
+
+        if (this.supportsAutomaticIntrinsicSize && !this._subviews.length) {
+            this._requiredWidth = undefined;
+            this._needsLayout = NO;
+            this._needsIntrinsicSizeMeasurement = NO;
+        }
+        else {
+            this._subviews.forEach(subview => subview._updateFrames());
+        }
         
         if (BMViewDebug) console.log(`
         ***********************************************************************************************************
