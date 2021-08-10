@@ -9,6 +9,10 @@ import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionView
 import {BMLayoutConstraint, BMLayoutAttribute, BMLayoutConstraintRelation} from '../BMView/BMLayoutConstraint_v2.5'
 import {BMCollectionViewLayout} from './BMCollectionViewLayout'
 
+// When set to YES, this will cause flow layout to log messages to the console when the layout size changes as a
+// result of performing cell measurements
+const BM_AUTOMATIC_CELL_SIZE_MESSAGES = NO;
+
 // @type BMCollectionViewTableLayoutSupplementaryView
 
 /**
@@ -2294,13 +2298,13 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 								if (orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
 									if (height > cachedLayout.size.height) {
 										cachedLayout.size.height = height + rowSpacing + insetBottom + 1;
-										console.log('Layout height has changed to ' + height);
+										if (BM_AUTOMATIC_CELL_SIZE_MESSAGES) console.log('Layout height has changed to ' + height);
 									}
 								}
 								else {
 									if (width > cachedLayout.size.width) {
 										cachedLayout.size.width = width + rowSpacing + insetRight + 1;
-										console.log('Layout width has changed to ' + width);
+										if (BM_AUTOMATIC_CELL_SIZE_MESSAGES) console.log('Layout width has changed to ' + width);
 									}
 								}
 								section.bottom = height;
@@ -2323,13 +2327,13 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 								if (orientation == BMCollectionViewFlowLayoutOrientation.Vertical) {
 									if (height > cachedLayout.size.height) {
 										cachedLayout.size.height = height + rowSpacing + insetBottom + 1;
-										console.log('Layout height has changed to ' + height);
+										if (BM_AUTOMATIC_CELL_SIZE_MESSAGES) console.log('Layout height has changed to ' + height);
 									}
 								}
 								else {
 									if (width > cachedLayout.size.width) {
 										cachedLayout.size.width = width + rowSpacing + insetRight + 1;
-										console.log('Layout width has changed to ' + width);
+										if (BM_AUTOMATIC_CELL_SIZE_MESSAGES) console.log('Layout width has changed to ' + width);
 									}
 								}
 								section.bottom = height;
@@ -3198,12 +3202,20 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 	},
 
 	// @override - BMCollectionViewTableLayout
-	shouldInvalidateLayoutForFrameChange() {
-		// Because the measured size of the cells can depend upon the size of collection view's frame, in addition
-		// to invalidating the layout, flow layout also invalidates the size of cells that are as wide as collection view's previous frame.
-		this.collectionView.invalidateMeasuredSizeOfCellsWithBlock(size => {
-			return size.width >= this.cachedLayout.availableWidth;
-		});
+	shouldInvalidateLayoutForFrameChange(frame, {fromFrame}) {
+		if (fromFrame && fromFrame.size.width < frame.size.width) {
+			// If the size increases, invalidate all existing measured cells as their measured size can be less than the
+			// collection view's frame size as a result of how text wraps
+			this.collectionView.invalidateMeasuredSizeOfCells();
+		}
+		else {
+			// Because the measured size of the cells can depend upon the size of collection view's frame, in addition
+			// to invalidating the layout, flow layout also invalidates the size of cells that are as wide as collection view's previous frame.
+			this.collectionView.invalidateMeasuredSizeOfCellsWithBlock(size => {
+				return size.width >= this.cachedLayout.availableWidth;
+			});
+		}
+
 		return YES;
 	},
 	
@@ -3380,7 +3392,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 				(this.cachedLayout.resolvedIndexPath.section == options.atIndexPath.section && identifier == BMCollectionViewFlowLayoutSupplementaryView.Footer)) {
 					if (options.atIndexPath.section == this.collectionView.numberOfSections() - 1) {
 						// If there is no following section, compute until the last index path
-						this._layoutIterator.next({indexPath: this.collectionView.indexPathForObjectAtRow(this.collectionView.numberOfObjectsInSectionAtIndex(options.atIndexPath.section), {inSectionAtIndex: options.atIndexPath.section})});
+						this._layoutIterator.next({indexPath: this.collectionView.indexPathForObjectAtRow(this.collectionView.numberOfObjectsInSectionAtIndex(options.atIndexPath.section) - 1, {inSectionAtIndex: options.atIndexPath.section})});
 					}
 					else {
 						// If the layout has not been resolved up to this index path, continue computing up to the beginning of the next section
