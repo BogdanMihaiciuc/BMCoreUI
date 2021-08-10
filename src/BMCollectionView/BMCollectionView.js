@@ -13,6 +13,8 @@ import {BMJQueryShim, BMCollectionViewCell} from './BMCollectionViewCell'
 import {BMCollectionViewFlowLayout} from './BMCollectionViewFlowLayout'
 import {_BMCollectionViewTransitionLayout} from './BMCollectionViewLayout'
 import {IScroll} from '../iScroll/iscroll-probe'
+import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
+import { BMMenuSourceNodeCSSClass } from '../BMView/BMMenu'
 
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
@@ -34,7 +36,7 @@ const BM_SIMPLE_BENCH = NO;
 // @type BMCollectionViewTransferPolicy
 
 /**
- * An list of constants describing what happens to source objects when they are transferred
+ * A list of constants describing what happens to source objects when they are transferred
  * from a source collection view.
  */
 export var BMCollectionViewTransferPolicy = Object.freeze({ // <enum>
@@ -57,7 +59,7 @@ export var BMCollectionViewTransferPolicy = Object.freeze({ // <enum>
 // @type BMCollectionViewAcceptPolicy
 
 /**
- * An list of constants describing what happens to source objects when they are transferred
+ * A list of constants describing what happens to source objects when they are transferred
  * to a destination collection view.
  */
 export var BMCollectionViewAcceptPolicy = Object.freeze({ // <enum>
@@ -387,11 +389,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// If this frame is assigned as part of a layout animation, don't perform any changes
 		if (this._layoutAnimator) return Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
 
+		const currentFrame = this._frame && this._frame.copy();
+
 		let requiresInit = false;
 
 		// If this change causes collection view's size to change, ask the layout object if the the layout should be invalidated
 		if (this._frame && !frame.size.isEqualToSize(this._frame.size) && this.initialized) {
-			let needsInvalidation = this._layout.shouldInvalidateLayoutForFrameChange(frame);
+			let needsInvalidation = this._layout.shouldInvalidateLayoutForFrameChange(frame, {fromFrame: currentFrame});
 
 			// If the frame is changed during an animated layout pass, run a layout update animation in sync
 			if (BMAnimationContextGetCurrent()) {
@@ -433,7 +437,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this._frame = frame;
 
 			if (this.initialized) {
-				let needsInvalidation = this._layout.shouldInvalidateLayoutForFrameChange(frame);
+				let needsInvalidation = this._layout.shouldInvalidateLayoutForFrameChange(frame, {fromFrame: currentFrame});
 			
 				// Resize the bounds
 				this._bounds.size.width = this._frame.size.width + 2 * this._offscreenBufferSize;
@@ -1034,6 +1038,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    this.registerDataCompletionCallback(function () { self.resized(); });
 		    return;
 	    }
+
+		const currentFrame = this._frame && this._frame.copy();
 	    
 	    // Recalculate the frame
 	    this._prepareFrame();
@@ -1046,7 +1052,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._constrainBounds();
 	    
 	    // Check to see if the layout has to be invalidated for the new frame
-	    var shouldInvalidateLayout = this._layout.shouldInvalidateLayoutForFrameChange(this._frame);
+	    var shouldInvalidateLayout = this._layout.shouldInvalidateLayoutForFrameChange(this._frame, {fromFrame: currentFrame});
 	    
 	    if (shouldInvalidateLayout) {
 		    this.invalidateLayout();
@@ -1799,7 +1805,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Subsequent requests to retrieve any cell's size will cause collection view to run a synchronous layout pass.
 	 */
 	invalidateMeasuredSizeOfCells() {
-		this._measuers = {};
+		this._measures = {};
 		this._measuredIndexPaths = [];
 	},
 
@@ -1890,7 +1896,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * to the given index path and run a synchronous layout pass on its root view.
 	 * After the initial measurement, collection view will cache this size and return it directly for subsequent requests. To obtain a new
 	 * measurement, it is required to invoke `invalidateMeasuredSizeOfCellAtIndexPath(_)` prior to invoking this method.
-	 * This operation will raise an error if the cell at the specified index path has no subviews that can be measured.
 	 * @param indexPath <BMIndexPath<T>>			The index path of the cell whose size should be measured.
 	 * @return <BMSize>								The measured size.
 	 */
@@ -1993,7 +1998,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 
 		// Run a layout pass to measure the cell's subview
-		cell.layout();
+		cell.layoutIfNeeded();
 
 		cell.layoutQueue = layoutQueue;
 
@@ -2002,8 +2007,19 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this._measuringCells.push(cell.retain());
 		}
 
+		let size;
 		// Retrieve the cell's measured size
-		let size = cell.subviews[0].frame.size;
+		if (cell._subviews.length) {
+			// If the cell has any subviews, use the size of the first subview as the size
+			size = cell.subviews[0].frame.size;
+		}
+		else {
+			// Otherwise use the cell's own CSS size for this purpose
+			size = BMSizeMake(
+				cell._variables[BMLayoutAttribute.Width].value() | cell.node.offsetWidth, 
+				cell._variables[BMLayoutAttribute.Height].value() | cell.node.offsetHeight
+			);
+		}
 
 		// Release the temporary cell
 		cell.release();
@@ -2103,6 +2119,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		cell._isMeasuring = YES;
 		cell._invalidatedConstraints = YES;
+		if (!cell._subviews.length) {
+			// If the cell has no subviews that can invalidate intrinsic sizes, manually invalidate prior to measuring
+			cell._needsIntrinsicSizeMeasurement = YES;
+		}
 
 		// Move this measurement into a separate layout queue
 		const layoutQueue = cell.layoutQueue;
@@ -2144,7 +2164,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		yield;
 
 		// Run a layout pass to measure the cell's subview
-		if (dequeue) cell.layout();
+		if (dequeue) cell.layoutIfNeeded();
 
 		cell.layoutQueue = layoutQueue;
 
@@ -2153,8 +2173,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this._measuringCells.push(cell.retain());
 		}
 
+
+		let size;
 		// Retrieve the cell's measured size
-		let size = cell.subviews[0].frame.size;
+		if (cell._subviews.length) {
+			// If the cell has any subviews, use the size of the first subview as the size
+			size = cell.subviews[0].frame.size;
+		}
+		else {
+			// Otherwise use the cell's own CSS size for this purpose
+			size = BMSizeMake(
+				cell._variables[BMLayoutAttribute.Width].value() | cell.node.offsetWidth, 
+				cell._variables[BMLayoutAttribute.Height].value() | cell.node.offsetHeight
+			);
+		}
 
 		// Release the temporary cell
 		cell.release();
@@ -2341,7 +2373,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var useCapture = NO;
 
 		var canDrag = NO;
-	    
+		
 	    // Click, double click, long click, tap, double tap and long tap handlers
 	    cell.mousedownHandler = function (event) {
 			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
@@ -2400,7 +2432,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					// TODO: Consider if mouse events should also trigger drag & drop in this case
 
 					if (canDrag) {
-						// These events will be processed by the interactive movement handlers for this point on
+						// These events will be processed by the interactive movement handlers from this point on
 						// So the global mousemove and mouseup handlers should be unregistered
 						window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
 						window.removeEventListener('mouseup', cell.mouseupHandler, YES);
@@ -2416,6 +2448,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 						cellEventTrackedTouch = undefined;
 					}
+				}
+				else if (canDrag) {
+					// If the event was handled, but the user then starts dragging, start the drag & drop operation at that point
+					cellEventCanTouchDrag = YES;
 				}
 			    
 		    }, _BMCollectionViewLongClickDelay);
@@ -2492,7 +2528,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				}    	
 
 				// Mousemove drag events begin here, touch drag events need an additional flag
-				if (event.type == 'mousemove') {
+				if (event.type == 'mousemove' || cellEventCanTouchDrag) {
 					/*// Ask delegate if dragging is allowed, defaulting to NO if it can't provide this information
 					let canDrag = NO;
 					if (self.delegate && self.delegate.collectionViewCanMoveCell) {
@@ -2511,6 +2547,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 						// Begin tracking this as a drag event
 						self.beginDragWithEvent(event, {forCell: cell, touchIdentifier: cellEventTrackedTouch});
+
+						cellEventTrackedTouch = undefined;
 					}
 				}
 		    }
@@ -2720,6 +2758,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		let draggingShadowsToAdd = [];
 
+		const hasMenu = cell.node.classList.contains(BMMenuSourceNodeCSSClass);
+		// Temporarily disable the menu class so that a proper copy can be created
+		if (hasMenu) {
+			cell.node.classList.remove(BMMenuSourceNodeCSSClass);
+		}
+
 		// Create a copy of the cell that will be dragged
 		let draggingShadow = cell.node.cloneNode(YES);
 		draggingShadow.classList.add('BMDragShadow');
@@ -2750,8 +2794,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Create an indicator that shows how many items are being dragged
 		let draggingIndicator = document.createElement('div');
 		draggingIndicator.classList.add('BMDragIndicator');
-		draggingIndicator.innerText = cells.length;
-		draggingIndicator.style.zIndex = 99999999;
+		draggingIndicator.innerText = cells.length.toFixed();
+		draggingIndicator.style.zIndex = '99999999';
 
 		let clientX, clientY;
 		if (touchIdentifier !== undefined) {
@@ -3011,6 +3055,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 		}
 
+		// Restore the menu class, if it was set
+		if (hasMenu) {
+			cell.node.classList.add(BMMenuSourceNodeCSSClass);
+		}
+
 		// The mousemove handler performs several actions; despite its name it handles both mouse and touch events
 		//  1. For touch event, it verifies that the dragging pointer was moved before continuing
 		//  2. It updates the position of the dragging shadows so they match the pointer's position
@@ -3216,10 +3265,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			// Prevent the default action, which is to select things on the page
 			event.preventDefault(), event.stopPropagation();
 		};
-		window.addEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES});
+		window.addEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES, passive: NO});
 
 		// For touch devices, add the drop target handler which discovers when the touch point reaches inside valid drop targets
-		if (touchIdentifier !== undefined) window.addEventListener('touchmove', dropTargetHandler, {capture: YES});
+		if (touchIdentifier !== undefined) window.addEventListener('touchmove', dropTargetHandler, {capture: YES, passive: NO});
 
 		// Add a capturing mouseup event listener to the window to release the cell and
 		// the dragging shadow
@@ -3239,9 +3288,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 
 			// Remove the previously added handlers from window
-			window.removeEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES});
-			window.removeEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES});
-			if (touchIdentifier !== undefined) window.removeEventListener('touchcancel', mouseupHandler, {capture: YES});
+			window.removeEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES, passive: NO});
+			window.removeEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES, passive: NO});
+			if (touchIdentifier !== undefined) window.removeEventListener('touchcancel', mouseupHandler, {capture: YES, passive: NO});
 
 			// Remove the handlers added to the collection view drop targets
 			if (!touchIdentifier) collectionViewHandlers.forEach((handlers, collectionView) => {
@@ -3251,7 +3300,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			});
 			else {
 				collectionViewDropTargets.forEach(collectionView => collectionView._container[0].classList.remove('BMDropTarget'));
-				window.removeEventListener('touchmove', dropTargetHandler, {capture: YES});
+				window.removeEventListener('touchmove', dropTargetHandler, {capture: YES, passive: NO});
 			}
 
 			//document.querySelectorAll('.BMTest').forEach(node => node.classList.remove('BMTest'));
@@ -3498,8 +3547,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 			this._draggingIndexPaths = undefined;
 		};
-		window.addEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES});
-		if (touchIdentifier !== undefined) window.addEventListener('touchcancel', mouseupHandler, {capture: YES});
+		window.addEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES, passive: NO});
+		if (touchIdentifier !== undefined) window.addEventListener('touchcancel', mouseupHandler, {capture: YES, passive: NO});
 
 
 	},
@@ -3892,6 +3941,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		if (this.delegate && this.delegate.collectionViewCellWasLongClicked) {
 			eventHandled = this.delegate.collectionViewCellWasLongClicked(this, cell, {withEvent: options.withEvent});
 		}
+
+		return eventHandled;
 	},
 	
 	/**
