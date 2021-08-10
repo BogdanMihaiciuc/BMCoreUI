@@ -486,10 +486,13 @@ BMCollectionViewLayout.prototype = {
      * Will be invoked by the collection view whenever the frame changes, for example when the window is resized.
      * Layout objects should return YES from this method if the new frame requires a new layout.
      * The default implementation returns YES in all cases.
-     * @param frame <BMRect>        The new frame.
-     * @return <Boolean>            True if the new frame requires a new layout, false otherwise.
+     * @param frame <BMRect>        			The new frame.
+	 * {
+	 *  @param fromFrame <BMRect, nullable>		The previous frame, if one existed.
+	 * }
+     * @return <Boolean>            			True if the new frame requires a new layout, false otherwise.
      */
-    shouldInvalidateLayoutForFrameChange: function (frame) {
+    shouldInvalidateLayoutForFrameChange: function (frame, args) {
         return YES;
     },
 
