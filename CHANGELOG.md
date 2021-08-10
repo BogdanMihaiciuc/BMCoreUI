@@ -1,3 +1,35 @@
+# 2.6.9
+
+## BMView
+
+When a root view has no subviews, it will now take its own intrinsic size into account when performing a layout pass.
+
+## BMCollectionView
+
+When using `measuredSizeOfCellAtIndexPath(_)` on a cell that has no subviews, the measured size will be derived from the cell's computed CSS size when its `width` and `height` properties are set to `auto`.
+
+Resolves an issue with `invalidateMeasuredSizeOfCells()` that caused measures to not be invalidated when the data set supported identifiers.
+
+Resolves an issue that caused collection view to ignore the return value of `collectionViewCellWasLongClicked(_, _, {withEvent})`. In touch mode, if the long click event is handled, a drag & drop operation can still be initiated by moving the touch pointer afterwards without releasing it.
+
+Resolves an issue that caused error messages related to calling `preventDefault` in passive event listeners when using drag & drop on Chrome.
+
+## BMCollectionViewLayout
+
+The `shouldInvalidateLayoutForFrameChange()` method now also receives the previous frame as an argument.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue that caused flow layout to write out messages to the console that were intended for debug builds only. A new `BM_AUTOMATIC_CELL_SIZE_MESSAGES` flag is now used to control when these messages appear.
+
+Resolves an issue that could cause a crash when using automatic cell size and content that was short enough to not cause a scrollbar to appear.
+
+## BMMenu
+
+The menu will now invoke a `menuWillClose(_)` method on its delegate prior to closing.
+
+Menu shadows will now have the `overflow` CSS property set to `hidden`.
+
 # 2.6.8
 
 ## BMRect
