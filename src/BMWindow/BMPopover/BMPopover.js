@@ -6,6 +6,7 @@ import { BMRectMakeWithOrigin, BMRectMakeWithNodeFrame, BMRectMake } from "../..
 import { BMPointMake } from "../../Core/BMPoint";
 import { BMHook, __BMVelocityAnimate } from "../../Core/BMAnimationContext";
 import { BMView } from "../../BMView/BMView_v2.5";
+import { BMInsetMakeWithEqualInsets } from "../../Core/BMInset";
 
 // @type BMPopover extends BMWindow
 
@@ -98,6 +99,25 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * Controls the spacing that this popover will maintain towards the edges of the viewport
+     * in cases where the popover would move outside the visible area in order to maintain its
+     * regular position.
+     */
+    _edgeInsets: undefined, // <BMInset>
+    get edgeInsets() {
+        return this._edgeInsets;
+    },
+    set edgeInsets(margin) {
+        this._edgeInsets = margin || BMInsetMakeWithEqualInsets(8);
+
+        if (this.isVisible) {
+            // If this is updated while the popover is visible, update its position accordingly
+            // TODO: Only update when this would actually change the position
+            this._updatePosition();
+        }
+    },
+
+    /**
      * The drop shadow container.
      */
     _dropShadowContainer: undefined, // <DOMNode>
@@ -160,7 +180,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     /**
      * The content view's bottom edge constraint.
      */
-    _contentViewBottomConstraint: undefined, // <BMLayoutConstsraint>
+    _contentViewBottomConstraint: undefined, // <BMLayoutConstraint>
 
     /**
      * The computed height of the indicator.
@@ -181,6 +201,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     initWithSize(size) {
         const preliminaryFrame = BMRectMakeWithOrigin(BMPointMake(), {size});
         BMWindow.prototype.initWithFrame.call(this, preliminaryFrame, {modal: YES, toolbar: NO});
+
+        this._edgeInsets = BMInsetMakeWithEqualInsets(8);
 
         this._size = size.copy();
 
@@ -246,11 +268,11 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         frame.origin.x = location.x - frame.size.width / 2 | 0;
 
-        if (frame.origin.x < -4) {
-            frame.origin.x = -4;
+        if (frame.origin.x < this._edgeInsets.left) {
+            frame.origin.x = this._edgeInsets.left;
         }
-        if (frame.right > window.innerWidth + 4) {
-            frame.origin.x = window.innerWidth - frame.size.width + 4;
+        if (frame.right > window.innerWidth - this._edgeInsets.right) {
+            frame.origin.x = window.innerWidth - frame.size.width - this._edgeInsets.right;
         }
 
         const appearsBelow = location.y < window.innerHeight - this.size.height - this._indicatorHeight;
