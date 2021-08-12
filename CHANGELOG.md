@@ -1,3 +1,9 @@
+# 2.6.10
+
+## BMPopover
+
+Added a new `edgeInsets` property that is used to control the minimum spacing the popover will keep to the content edges when its position would move it outside of the viewport.
+
 # 2.6.9
 
 ## BMView
