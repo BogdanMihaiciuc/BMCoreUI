@@ -1114,7 +1114,8 @@ BMLayoutEditorSettingsSection.prototype = {
     },
 
     /**
-     * An array of settings belonging to this section.
+     * An array of settings belonging to this section. You should not directly add settings to this
+     * array; instead you should assign to this property directly.
      */
     _settings: undefined, // <[BMLayoutEditorSetting]>
     get settings() {
