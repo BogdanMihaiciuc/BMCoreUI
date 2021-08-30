@@ -640,6 +640,18 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         return this;
     },
 
+	_collectionViewDidBecomeVisible() {
+        for (const subview of this.allSubviews) {
+            subview.viewDidBecomeVisible();
+        }
+    },
+
+	_collectionViewDidBecomeInvisible() {
+        for (const subview of this.allSubviews) {
+            subview.viewDidBecomeInvisible();
+        }
+    },
+
     /**
      * @deprecated Currently unused.
      * 
