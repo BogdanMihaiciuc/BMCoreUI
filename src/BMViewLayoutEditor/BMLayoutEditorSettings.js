@@ -1228,6 +1228,11 @@ export var BMLayoutEditorSettingKind = Object.freeze({ // <enum>
 	 * A boolean setting kind.
 	 */
 	Boolean: '_Boolean', // <enum>
+
+    /**
+     * A `BMSize` setting kind.
+     */
+    Size: '_BMSize', // <enum>
 	
 	/**
 	 * A setting kind representing the possible values for a constraint constant.
