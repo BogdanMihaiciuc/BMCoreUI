@@ -1564,6 +1564,15 @@ BMLayoutEditorDetailsItemBadge {
 	height: 32px !important;
 }
 
+.BMLayoutEditorDetailsItemNumericValue[type='number'] {
+    -moz-appearance:textfield;
+}
+
+.BMLayoutEditorDetailsItemNumericValue::-webkit-outer-spin-button,
+.BMLayoutEditorDetailsItemNumericValue::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
 .BMLayoutEditorDetailsItemReadonlyValue, .BMLayoutEditorDetailsItemNumericValue, .BMLayoutEditorDetailsItemTextValue {
 	flex-grow: 1 !important;
 
