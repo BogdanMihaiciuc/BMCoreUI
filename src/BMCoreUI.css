@@ -1114,7 +1114,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	height: 100%;
 
 	/* Sadly needed for Thingworx environment */
-	z-index: 999999;
+	z-index: 9999999;
 }
 
 .BMMenuContainerFullScreen {
