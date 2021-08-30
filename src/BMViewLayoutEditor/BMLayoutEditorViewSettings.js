@@ -74,8 +74,6 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
         if (tab == this._attributesTab) {
             const view = this._displayedView;
 
-            tab._settingSections = [];
-
             // Add the attribute settings
             const attributesSection = BMLayoutEditorSettingsSection.section();
             attributesSection._settings[0] = BMLayoutEditorSetting.settingWithName('Opacity', {kind: BMLayoutEditorSettingKind.Number, target: view, variations: YES, property: 'opacity'});
