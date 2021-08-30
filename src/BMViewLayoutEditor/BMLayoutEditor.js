@@ -1,6 +1,6 @@
 // @ts-check
 
-import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice, BMNumberByConstrainingNumberToBounds, BMAddSmoothMousewheelInteractionToNode} from '../Core/BMCoreUI'
+import {YES, NO, BMExtend, BMCopyProperties, BMIsTouchDevice, BMNumberByConstrainingNumberToBounds, BMAddSmoothMousewheelInteractionToNode, BMStringByCapitalizingString} from '../Core/BMCoreUI'
 import {BMInsetMakeWithEqualInsets} from '../Core/BMInset'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
@@ -458,7 +458,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (this._useSettingsView) {
             detailsNode.classList.add('BMLayoutEditorDetailsView');
 
-            const frame = BMRectMake(window.innerWidth - 64 - 384, 56 + 64, 320, Math.min(window.innerHeight - 56 - 128, 576));
+            const frame = BMRectMake(window.innerWidth - 64 - 384, 56 + 64, 360, Math.min(window.innerHeight - 56 - 128, 576));
             const detailsToolWindow = BMToolWindow.toolWindowWithFrame(frame, {forWindow: this});
             detailsToolWindow.addSubview(this.detailsView);
             this.detailsView.left.equalTo(detailsToolWindow.left).isActive = YES;
@@ -3642,6 +3642,35 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         return {sourcePoint, targetPoint, kind: BMLayoutConstraintKind.Vertical, node: constraintView, leadLine, displaced: NO};
 
+    },
+
+    /**
+     * Should be invoked when the value of a setting changes. Causes the layout editor
+     * to update the target property.
+     * @param value <AnyObject>                     The value to set.
+     * {
+     *  @param forSetting <BMLayoutEditorSetting>   The setting for which to set the value.
+     * }
+     */
+    setValue(value, {forSetting: setting}) {
+        const isNull = value === undefined;
+
+        if (setting.sizeClass) {
+            if (value) {
+                setting.target[`set${BMStringByCapitalizingString(setting.property)}`](value, {forSizeClass: setting.sizeClass});
+            }
+            else {
+                setting.target[`remove${BMStringByCapitalizingString(setting.property)}VariationForSizeClass`](setting.sizeClass);
+            }
+        }
+        else {
+            if (isNull) {
+                setting.target[setting.property] = setting.defaultValue;
+            }
+            else {
+                setting.target[setting.property] = value;
+            }
+        }
     },
 
     // #region Deprecated settings
