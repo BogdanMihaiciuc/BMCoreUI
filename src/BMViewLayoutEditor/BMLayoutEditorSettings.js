@@ -912,7 +912,18 @@ BMLayoutEditorSettingsTab.prototype = {
     /**
      * Should be invoked to cause this tab to reload its settings whenever a setting is added or removed.
      */
-    updateSettings() {
+    async updateSettings() {
+        this._updateSettingsID = this._updateSettingsID + 1;
+        const ID = this._updateSettingsID;
+
+        // Await for any current data update
+        while (this._collectionView && this._collectionView.isUpdatingData) {
+            await this._collectionView._dataUpdatePromise;
+        }
+
+        // If a new update request arrives before this one gets a chance to execute, omit this update
+        if (this._updateSettingsID != ID) return;
+
         this.beginUpdates();
         this._settingsPanel._updateSettingsForTab(this);
         this.commitUpdates();
