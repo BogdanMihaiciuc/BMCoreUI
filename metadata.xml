@@ -42,6 +42,7 @@
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorVariablesController.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorSettings.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorSettingCells.js" description="" isDevelopment="true" isRuntime="true"/>
+        <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorSettingsComplexCells.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorViewSettings.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorViewGroupSettings.js" description="" isDevelopment="true" isRuntime="true"/>
         <FileResource type="JS" file="BMViewLayoutEditor/BMLayoutEditorConstraintSettings.js" description="" isDevelopment="true" isRuntime="true"/>
