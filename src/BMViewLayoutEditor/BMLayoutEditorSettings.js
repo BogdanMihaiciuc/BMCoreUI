@@ -1406,7 +1406,7 @@ BMLayoutEditorSetting.settingWithName = function (name, {kind, target, variation
 
 // @endtype
 
-// @type BMLayoutEditorEnumSetting
+// @type BMLayoutEditorEnumSetting extends BMLayoutEditorSetting
 
 /**
  * Represents a setting that can be displayed and modified in the layout editor.
