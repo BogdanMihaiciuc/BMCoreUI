@@ -910,6 +910,11 @@ BMLayoutEditorSettingsTab.prototype = {
     },
 
     /**
+     * An identifier unique to each update settings request.
+     */
+    _updateSettingsID: 0, // <Number>
+
+    /**
      * Should be invoked to cause this tab to reload its settings whenever a setting is added or removed.
      */
     async updateSettings() {
