@@ -1492,6 +1492,10 @@ BMLayoutEditorDetailsItemBadge {
 	font-weight: 500 !important;
 	cursor: default;
 
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+
 	user-select: none;
 	-ms-user-select: none;
 	-moz-user-select: none;
