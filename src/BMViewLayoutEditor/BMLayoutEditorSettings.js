@@ -9,9 +9,11 @@ import {BMView} from '../BMView/BMView_v2.5'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
-import { _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
+import { _BMLayoutEditorViewLayoutSettingsTab, _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
 import { _BMLayoutEditorConstraintSettingsPanel } from './BMLayoutEditorConstraintSettings'
 import { _BMLayoutEditorViewGroupSettingsPanel } from './BMLayoutEditorViewGroupSettings'
+import { BMCollectionViewCell } from '../BMCollectionView/BMCollectionViewCell'
+import { BMLayoutEditorSettingsInsetCell, BMLayoutEditorSettingsSizeCell } from './BMLayoutEditorSettingsComplexCells'
 
 /**
  * Returns the URL to the given image based on whether CoreUI is running within thingworx or standalone.
@@ -669,12 +671,21 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
     /**
      * Configures the layout settings of the given collection view.
      * @param collectionView <BMCollectionView>     The collection view.
+     * {
+     *  @param forTab <BMLayoutEditorSettingsTab>   The tab for which to configure this collection view.
+     * }
      */
-    _configureCollectionViewLayout(collectionView) {
+    _configureCollectionViewLayout(collectionView, {forTab: tab}) {
         collectionView.node.style.position = 'absolute';
 
         // Configure the layout
-        collectionView.layout.expectedCellSize = BMSizeMake(384, 48);
+        // Automatic cell size is only used on the constraints tab
+        if (tab instanceof _BMLayoutEditorViewLayoutSettingsTab) {
+            collectionView.layout.expectedCellSize = BMSizeMake(384, 48);
+        }
+        else {
+            collectionView.layout.expectedCellSize = BMSizeMake(384, 32);
+        }
         collectionView.layout.maximumCellsPerRow = 1;
         collectionView.layout.gravity = BMCollectionViewFlowLayoutGravity.Expand;
         collectionView.layout.rowSpacing = 0;
@@ -743,9 +754,12 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         for (const tab of this._tabs) {
             // Create a collection view for each tab that will display its contents
             const collectionView = BMCollectionView.collectionView();
+
+            collectionView.allowsOffscreenLayout = NO;
+
             tabHost.addSubview(collectionView);
 
-            this._configureCollectionViewLayout(collectionView);
+            this._configureCollectionViewLayout(collectionView, {forTab: tab});
 
             collectionView.leading.equalTo(tabHost.leading).isActive = true;
             collectionView.trailing.equalTo(tabHost.trailing).isActive = true;
