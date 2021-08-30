@@ -20,7 +20,7 @@ const BMLayoutEdittorSettingCellRowSpacing = 2;
  * In addition to displaying the cell's title, it also manages adding and removing variations
  * for the setting.
  */
-function BMLayoutEditorSettingsTitleView() {} // <constructor>
+export function BMLayoutEditorSettingsTitleView() {} // <constructor>
 
 BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.prototype), {
     constructor: BMLayoutEditorSettingsTitleView,
