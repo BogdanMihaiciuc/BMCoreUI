@@ -66,6 +66,14 @@ export class BMLayoutEditorVariableCell extends BMCollectionViewCell {
         this.addVariationButton.addEventListener('click', event => {
             // TODO check if a variation already exists for this size class; ideally filter the menu
             this.editor._showSizeClassMenuAtPoint(BMRectMakeWithNodeFrame(this.addVariationButton).center, {kind: BMMenuKind.Menu, action: sizeClass => {
+                // If this variation already exists, do nothing
+                const variables = this.collectionView.dataSet.variables;
+                const variable = variables.find(v => {
+                    return v.name == this.indexPath.object.name && sizeClass.isEqualToSizeClass(v.sizeClass);
+                });
+
+                if (variable) return;
+
                 // Update the UI with the new value
                 this.collectionView.dataSet.beginUpdates();
                 this.collectionView.dataSet.variables.splice(this.indexPath.row + 1, 0, {name: this.indexPath.object.name, sizeClass, value: this.indexPath.object.value});
