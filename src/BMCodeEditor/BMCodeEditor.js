@@ -360,7 +360,8 @@ BMMonacoCodeEditor.createThemes = function () {
 			{token: 'attribute.value', foreground: '43A202'},
 			{token: 'attribute.value.number', foreground: '5AA201', background: 'F6FAEB'},
 			{token: 'attribute.value.unit', foreground: '5AA201', background: 'F6FAEB'},
-			{token: 'attribute.value.hex', foreground: '43A202'}
+			{token: 'attribute.value.hex', foreground: '43A202'},
+			{token: 'tag.css', foreground: '3A77BF'}
 		]
 	});
 	
@@ -375,12 +376,13 @@ BMMonacoCodeEditor.createThemes = function () {
 			{token: 'identifier', foreground: 'bcbcbc'},
 			{token: 'delimiter', foreground: 'bcbcbc'},
 			{token: 'number', foreground: 'a37df1', background: 'E7E6FD'},
-			{token: 'tag', foreground: '434343'},
+			{token: 'tag', foreground: 'bcbcbc'},
 			{token: 'attribute.name', foreground: 'ff7b41'},
 			{token: 'attribute.value', foreground: '80dc4c'},
 			{token: 'attribute.value.number', foreground: '92d94b', background: 'F6FAEB'},
 			{token: 'attribute.value.unit', foreground: '92d94b', background: 'F6FAEB'},
-			{token: 'attribute.value.hex', foreground: '80dc4c'}
+			{token: 'attribute.value.hex', foreground: '80dc4c'},
+			{token: 'tag.css', foreground: '5fa1ec'}
 		]
 	});
 }
