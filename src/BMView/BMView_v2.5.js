@@ -866,6 +866,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // When the frame is assigned for the first time, make the node have an absolute positioning
         if (!this._frame) {
             this._node.style.position = 'absolute';
+            this._node.style.contain = 'layout';
             this._node.style.right = 'auto';
             this._node.style.bottom = 'auto';
             this._node.style.left = '0px';
