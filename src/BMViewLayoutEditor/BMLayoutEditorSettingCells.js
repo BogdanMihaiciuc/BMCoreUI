@@ -115,9 +115,11 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
 
     initWithDOMNode() {
         BMView.prototype.initWithDOMNode.apply(this, arguments);
+        this.debuggingName = 'TitleView';
 
         // Create and configure the label text.
         const label = this._titleLabel = BMView.view();
+        label.debuggingName = 'TitleViewLabel';
         label.supportsAutomaticIntrinsicSize = YES;
         label.node.className = 'BMLayoutEditorDetailsTitleCell';
         this.addSubview(label);
@@ -129,6 +131,7 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
 
         // Create and configure the size class badge
         const badge = this._badge = BMView.view();
+        badge.debuggingName = 'TitleViewBadge';
         badge.supportsAutomaticIntrinsicSize = YES;
         this.addSubview(badge);
         label.leading.equalTo(badge.trailing, {plus: 4}).isActive = YES;
@@ -139,6 +142,7 @@ BMLayoutEditorSettingsTitleView.prototype = BMExtend(Object.create(BMView.protot
 
         // Create and configure the variations button
         const button = this._button = BMView.view();
+        button.debuggingName = 'TitleViewButton';
         button.node.className = 'BMLayoutEditorDetailsItemVariationsButton';
         this.addSubview(button);
         button.leading.equalTo(this.leading).isActive = YES;
@@ -255,6 +259,7 @@ BMLayoutEditorSettingsCell.prototype = BMExtend(Object.create(BMCollectionViewCe
         BMCollectionViewCell.prototype.initWithCollectionView.apply(this, arguments);
 
         const contentView = BMView.view();
+        contentView.debuggingName = 'ContentView';
         this._contentView = contentView;
         this.addSubview(contentView);
 
@@ -268,6 +273,8 @@ BMLayoutEditorSettingsCell.prototype = BMExtend(Object.create(BMCollectionViewCe
         contentView.trailing.equalTo(this.trailing).isActive = YES;
         contentView.top.equalTo(this.top).isActive = YES;
         contentView.bottom.equalTo(this.bottom).isActive = YES;
+
+        contentView.height.greaterThanOrEqualTo(32, {priority: 750}).isActive = YES;
 
         return this;
     },
@@ -302,7 +309,10 @@ BMLayoutEditorSettingsCell.prototype = BMExtend(Object.create(BMCollectionViewCe
      * become available after this cell has been bound to a setting.
      */
     get settingsView() { // <_BMLayoutEditorSettingsView, nullable>
-        return this.tab._settingsPanel._settingsView;
+        const tab = this.tab;
+        if (tab) {
+            return tab._settingsPanel._settingsView;
+        }
     },
 
     /**
@@ -311,7 +321,10 @@ BMLayoutEditorSettingsCell.prototype = BMExtend(Object.create(BMCollectionViewCe
      * become available after this cell has been bound to a setting.
      */
     get layoutEditor() { // <BMLayoutEditor, nullable>
-        return this.tab.layoutEditor;
+        const tab = this.tab;
+        if (tab) {
+            return tab.layoutEditor;
+        }
     },
 
     /**
@@ -348,6 +361,7 @@ BMLayoutEditorSettingsConstraintCell.prototype = BMExtend(Object.create(BMLayout
         BMLayoutEditorSettingsCell.prototype.initWithCollectionView.apply(this, arguments);
 
         const constraintView = BMView.view();
+        constraintView.debuggingName = 'ConstraintView';
         this._constraintView = constraintView;
         this.contentView.addSubview(constraintView);
         constraintView.supportsAutomaticIntrinsicSize = YES;
@@ -481,6 +495,7 @@ BMLayoutEditorSettingsDeactivateConstraintsCell.prototype = BMExtend(Object.crea
         BMLayoutEditorSettingsCell.prototype.initWithCollectionView.apply(this, arguments);
 
         const buttonView = BMView.view();
+        buttonView.debuggingName = 'DeactivateButton';
         this._buttonView = buttonView;
         this.contentView.addSubview(buttonView);
         buttonView.supportsAutomaticIntrinsicSize = YES;
@@ -607,6 +622,7 @@ BMLayoutEditorSettingsDeleteConstraintCell.prototype = BMExtend(Object.create(BM
         this._buttonView = buttonView;
         this.contentView.addSubview(buttonView);
         buttonView.supportsAutomaticIntrinsicSize = YES;
+        buttonView.debuggingName = 'DeleteConstraintsButton';
 
         buttonView.leading.equalTo(this.contentView.leading, {plus: 32}).isActive = YES;
         buttonView.trailing.equalTo(this.contentView.trailing, {plus: -32}).isActive = YES;
@@ -656,6 +672,7 @@ BMLayoutEditorSettingsTitleCell.prototype = BMExtend(Object.create(BMLayoutEdito
         this._titleView = titleView;
         this.contentView.addSubview(titleView);
         titleView.supportsAutomaticIntrinsicSize = YES;
+        titleView.debuggingName = 'TitleView';
 
         titleView.leading.equalTo(this.leading, {plus: 8}).isActive = YES;
         titleView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
@@ -711,12 +728,13 @@ BMLayoutEditorSettingsReadonlyCell.prototype = BMExtend(Object.create(BMLayoutEd
         this._titleView = titleView;
         this.contentView.addSubview(titleView);
         titleView.supportsAutomaticIntrinsicSize = YES;
+        titleView.debuggingName = 'TitleView';
 
         titleView.leading.equalTo(this.leading, {plus: 8}).isActive = YES;
         titleView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         titleView.node.className = 'BMLayoutEditorDetailsTitleCell';
         titleView.node.style.textAlign = 'right';
-        titleView.height.equalTo(24).isActive = YES;
+        titleView.height.greaterThanOrEqualTo(24).isActive = YES;
         titleView.node.style.cssText = 'vertical-align: middle; line-height: 24px; text-align: right;';
 
         const inputNode = document.createElement('div');
@@ -725,6 +743,7 @@ BMLayoutEditorSettingsReadonlyCell.prototype = BMExtend(Object.create(BMLayoutEd
         const inputView = BMView.viewForNode(inputNode);
         this._inputView = inputView;
         inputView.supportsAutomaticIntrinsicSize = YES;
+        inputView.debuggingName = 'LabelView';
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
@@ -768,7 +787,7 @@ BMLayoutEditorSettingsViewCell.prototype = BMExtend(Object.create(BMLayoutEditor
         this._inputView.node.addEventListener('click', e => {
             this.settingsView.selectView(this.setting.target[this.setting.property]);
         });
-        this._inputView.node.style.cssText += 'margin: 0px !important';
+        this._inputView.node.style.cssText += 'margin: 0px !important;';
 
         return this;
     },
@@ -891,6 +910,7 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
         const titleView = BMLayoutEditorSettingsTitleView.titleView();
         this._titleView = titleView;
         this.contentView.addSubview(titleView);
+        titleView.debuggingName = 'TitleView';
         /*titleView.supportsAutomaticIntrinsicSize = YES;*/
 
         titleView.leading.equalTo(this.leading, {plus: 8}).isActive = YES;
@@ -899,6 +919,7 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
         titleView.node.style.textAlign = 'right';*/
 
         const toggleContainer = BMView.view();
+        toggleContainer.debuggingName = 'BooleanContainer';
         this.contentView.addSubview(toggleContainer);
         toggleContainer.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
         toggleContainer.trailing.equalTo(this.contentView.trailing, {plus: -8}).isActive = YES;
@@ -921,10 +942,10 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
         this._labelView = BMView.viewForNode(value);
         toggleContainer.addSubview(this._labelView);
         this._labelView.supportsAutomaticIntrinsicSize = YES;
+        this._labelView.debuggingName = 'BooleanSwitch';
 
-        this._labelView.top.equalTo(toggleContainer.top).isActive = YES;
+        this._labelView.centerY.equalTo(toggleContainer.centerY).isActive = YES;
         this._labelView.leading.equalTo(toggleContainer.leading).isActive = YES;
-        this._labelView.bottom.equalTo(toggleContainer.bottom).isActive = YES;
         this._labelView.width.equalTo(104).isActive = YES;
         this._labelView.height.equalTo(20).isActive = YES;
 
@@ -1013,9 +1034,6 @@ BMLayoutEditorSettingsBooleanCell.prototype = BMExtend(Object.create(BMLayoutEdi
         }
 
         this._titleView.setting = setting;
-
-        // this._titleView.node.innerText = setting.name + ':';
-        // this._titleView.invalidateIntrinsicSize();
     }
 })
 
@@ -1067,23 +1085,24 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
 
         const titleView = BMLayoutEditorSettingsTitleView.titleView();
         this._titleView = titleView;
+        titleView.debuggingName = 'TitleView';
         this.contentView.addSubview(titleView);
 
         titleView.leading.equalTo(this.leading, {plus: 8}).isActive = YES;
         titleView.centerY.equalTo(this.centerY).isActive = YES;
 
         const inputNode = document.createElement('select');
-        inputNode.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemNumericValue';
+        inputNode.className = 'BMWindowInput BMLayoutEditorDetailsCellInput BMLayoutEditorDetailsItemNumericValue BMLayoutEditorDetailsDropdown';
         const inputView = BMView.viewForNode(inputNode);
+        inputView.debuggingName = 'DropdownView';
         this._inputView = inputView;
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
         inputView.width.greaterThanOrEqualTo(200).isActive = YES;
         inputView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
-        inputView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         inputView.height.equalTo(24).isActive = YES;
-        inputView.bottom.equalTo(this.bottom, {plus: -BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
+        inputView.centerY.equalTo(this.centerY).isActive = YES;
         inputView.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
 
         inputNode.addEventListener('change', event => {
@@ -1126,9 +1145,6 @@ BMLayoutEditorSettingsDropdownCell.prototype = BMExtend(Object.create(BMLayoutEd
             option.innerText = item.name;
 
             this._inputView.node.appendChild(option);
-            /*if (args && args.selected) {
-                option.selected = YES;
-            }*/
         }
         this._inputView.node.value = setting.sizeClass ? JSON.stringify(setting.target._variations[setting.sizeClass][setting.property]) : JSON.stringify(setting.target[setting.property]);
         this._titleView.setting = setting;
@@ -1193,6 +1209,7 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
         const titleView = BMLayoutEditorSettingsTitleView.titleView();
         this._titleView = titleView;
         this.contentView.addSubview(titleView);
+        titleView.debuggingName = 'TitleView';
         // titleView.supportsAutomaticIntrinsicSize = YES;
 
         titleView.leading.equalTo(this.leading, {plus: 8}).isActive = YES;
@@ -1205,14 +1222,14 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
         inputNode.type = args.inputKind;
         const inputView = BMView.viewForNode(inputNode);
         this._inputView = inputView;
+        inputView.debuggingName = 'InputView';
 
         this.contentView.addSubview(inputView);
         inputView.leading.equalTo(titleView.trailing, {plus: 8}).isActive = YES;
         inputView.width.greaterThanOrEqualTo(200).isActive = YES;
         inputView.trailing.equalTo(this.trailing, {plus: -8}).isActive = YES;
-        inputView.top.equalTo(this.top, {plus: BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
+        inputView.centerY.equalTo(this.centerY).isActive = YES;
         inputView.height.equalTo(24).isActive = YES;
-        inputView.bottom.equalTo(this.bottom, {plus: -BMLayoutEdittorSettingCellRowSpacing}).isActive = YES;
         inputView.width.equalTo(titleView.width, {times: 1.5, priority: 600}).isActive = YES;
 
         inputNode.addEventListener('input', event => {
@@ -1283,7 +1300,13 @@ BMLayoutEditorSettingsInputCell.prototype = BMExtend(Object.create(BMLayoutEdito
             }
         }
         else {
-            this._inputView.node.value = setting.target[setting.property];
+            const value = setting.target[setting.property];
+            if (value === undefined) {
+                this._inputView.node.value = this.nullValue;
+            }
+            else {
+                this._inputView.node.value = setting.target[setting.property];
+            }
         }
         
         this._titleView.setting = setting;
