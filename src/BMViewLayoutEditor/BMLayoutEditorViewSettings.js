@@ -69,6 +69,8 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
      * @param tab <BMLayoutEditorSettingsTab>       The tab whose settings have been invalidated.
      */
     _updateSettingsForTab(tab) {
+        tab._settingSections = [];
+
         if (tab == this._attributesTab) {
             const view = this._displayedView;
 
