@@ -709,6 +709,7 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         collectionView.registerCellClass(BMLayoutEditorSettingsInsetCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Insets});
         collectionView.registerCellClass(BMLayoutEditorSettingsSizeCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Size});
         collectionView.registerSupplementaryViewClass(BMLayoutEditorSettingsFooter, {forReuseIdentifier: BMCollectionViewFlowLayoutSupplementaryView.Footer});
+        collectionView.registerSupplementaryViewClass(BMLayoutEditorSettingsFooter, {forReuseIdentifier: BMCollectionViewFlowLayoutSupplementaryView.Empty});
 
         // Register the custom cell classes
         for (const key in this.layoutEditor._settingCellClasses) {
