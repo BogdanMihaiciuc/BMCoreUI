@@ -2133,6 +2133,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
                 this.content.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
                 this.content.querySelectorAll('.BMLayoutEditorDragSource').forEach(target => target.classList.remove('BMLayoutEditorDragSource'));
+                this._treeWindow.node.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
+                this._treeWindow.node.querySelectorAll('.BMLayoutEditorDragSource').forEach(target => target.classList.remove('BMLayoutEditorDragSource'));
 
                 let point = event.type == 'mouseup' ? BMPointMake(event.clientX, event.clientY) : BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
 
@@ -2153,7 +2155,8 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
                     for (let touch of event.changedTouches) {
                         if (touch.identifier == touchIdentifier) {
                             this.content.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
-                
+                            this._treeWindow.node.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
+
                             let node = document.elementFromPoint(touch.clientX, touch.clientY);
                             let selector = node.closest('.BMLayoutEditorViewSelector')
                             if (selector) {
@@ -2314,6 +2317,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             if (!this.isCreatingConstraint) return;
 
             this.content.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
+            this._treeWindow.node.querySelectorAll('.BMLayoutEditorDragTarget').forEach(target => target.classList.remove('BMLayoutEditorDragTarget'));
 
             node.classList.add('BMLayoutEditorDragTarget');
             this.constraintTarget = view;

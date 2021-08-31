@@ -14,6 +14,8 @@ Added the `BMLayoutEditorSettingsSizeCell` and `BMLayoutEditorSettingsInsetCell`
 
 Resolves an issue that could allow the creation of a duplicate size class override for layout variables.
 
+Resolves an issue that could cause the highlighted style to persist on the navigation window when creating constraints.
+
 Added support for editing a view's content insets.
 
 ## BMLayoutEditorEnumSetting
