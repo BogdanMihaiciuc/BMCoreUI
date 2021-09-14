@@ -3,6 +3,8 @@ import {YES, NO, BMExtend} from '../Core/BMCoreUI'
 // @type BMCodeEditorLanguage
 
 /**
+ * @deprecated - This enum will be removed in a future version
+ * ---
  * An enum containing the languages that code editors should support.
  */
 export var BMCodeEditorLanguage = Object.freeze({ // <enum>
@@ -29,6 +31,8 @@ export var BMCodeEditorLanguage = Object.freeze({ // <enum>
 // @type BMCodeEditor
 
 /**
+ * @deprecated - This class will be removed in a future version
+ * ---
  * The code editor is an abstract type that defines the methods and properties that should be exposed by a code editor.
  * The code editor itself should not be used directly, instead one of the two subtypes - BMCodeMirrorCodeEditor or BMMonacoCodeEditor - shoud be used.
  */
@@ -203,11 +207,15 @@ BMCodeEditor.prototype = {
 // @type BMCodeMirrorCodeEditor
 
 /**
+ * @deprecated - This class will be removed in a future version
+ * ---
  * The code mirror code editor is a concrete implementation of BMCodeEditor that uses CodeMirror as its editor.
  */
 export function BMCodeMirrorCodeEditor() {} // <constructor>
 
 /**
+ * @deprecated - This constructor will be removed in a future version
+ * ---
  * Constructs and returns a code mirror code editor using the specified container.
  * @param container <DOMNode>			The DOM Node managed by this code mirror code editor.
  * {
@@ -328,6 +336,8 @@ BMExtend(BMCodeMirrorCodeEditor.prototype, BMCodeEditor.prototype, {
 // @type BMMonacoCodeEditor extends BMCodeEditor
 
 /**
+ * @deprecated - This class will be removed in a future version
+ * ---
  * The monaco code editor is a concrete implementation of BMCodeEditor that uses Monaco as its editor.
  */
 export function BMMonacoCodeEditor() {} // <constructor>
@@ -388,6 +398,8 @@ BMMonacoCodeEditor.createThemes = function () {
 }
 
 /**
+ * @deprecated - This constructor will be removed in a future version
+ * ---
  * Constructs and returns a code mirror code editor using the specified container.
  * @param container <DOMNode>			The DOM Node managed by this code mirror code editor.
  * {
@@ -476,7 +488,9 @@ BMExtend(BMMonacoCodeEditor.prototype, BMCodeEditor.prototype, {
 				inlineSourceMap: YES,
 				inlineSources: YES,
 				noImplicitUseStrict: YES,
-				alwaysStrict: NO
+				alwaysStrict: NO,
+				module: monaco.languages.typescript.ModuleKind.None,
+				useDefineForClassFields: NO,
 			});
 		}
 		
