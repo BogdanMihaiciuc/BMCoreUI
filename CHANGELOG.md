@@ -1,4 +1,4 @@
-# 2.6.11
+# 2.7
 
 ## BMLayoutEditorSettingsView
 
@@ -55,6 +55,8 @@ When the intrinsic size of a cell is measured wile collection view is hidden, co
 ## BMCodeEditor
 
 Added a new color for CSS selectors to the default themes. This resolves an issue where CSS selectors would be barely visible in dark mode.
+
+This class and all of its related types and subclasses are now deprecated and will be removed in a future release.
 
 # 2.6.10
 
