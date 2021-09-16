@@ -141,6 +141,7 @@
 	overflow: hidden;
 	
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
+	outline: none;
 	
 	z-index: 2008;
 }
@@ -612,6 +613,10 @@
 	-webkit-appearance: none;
 	outline: none;
 	box-sizing: border-box !important;
+
+	display: flex;
+	align-content: center;
+	justify-content: center;
 	
 	border-radius: 4px;
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
@@ -623,7 +628,7 @@
 	font-size: 14px;
 	font-weight: bold;
 	
-	padding: 8px;
+	padding: 8px 16px;
 
 	align-self: center;
 	transition: background-color .2s ease;
@@ -644,16 +649,26 @@
 
 /* NOTE: BMWindowButtonWeak is meant to be used together with BMWindowButton */
 .BMWindowButtonWeak, .BMButtonWeak {
-	background: transparent;
-	border: 1px solid rgba(0, 128, 255, 1);
-	color: rgba(0, 128, 255, 1);
+	background: rgba(0, 0, 0, .1);
+	color: rgba(0, 0, 0, .8);
 
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 	box-shadow: none;
 }
 
 .BMWindowButtonWeak:active, .BMButtonWeak:active {
-	background: rgba(0, 0, 0, .05);
+	background: rgba(0, 0, 0, .2);
+}
+
+@media (prefers-color-scheme: dark) {
+	.BMWindowButtonWeak, .BMButtonWeak {
+		background: rgba(255, 255, 255, .1);
+		color: rgba(255, 255, 255, .8);
+	}
+
+	.BMWindowButtonWeak:active, .BMButtonWeak:active {
+		background: rgba(255, 255, 255, .2);
+	}
 }
 
 .BMWindowToolbarButton {
