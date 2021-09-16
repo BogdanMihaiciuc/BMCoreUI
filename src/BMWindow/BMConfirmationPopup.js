@@ -245,7 +245,18 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Enter', {target: this, action: '_confirm'}));
 
+        const escapeKeyboardShortcut = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {target: this, action: '_escape'});
+        escapeKeyboardShortcut.preventsDefault = YES;
+        this.registerKeyboardShortcut(escapeKeyboardShortcut);
+
         return this;
+    },
+    /**
+     * Confirms the action, then dismisses this confirmation popup.
+     * If the result is already settled, this method will have no effect.
+     */
+    _escape() {
+        this._confirm();
     },
 
     /**
@@ -397,8 +408,6 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), 
         this._cancelButton.leading.greaterThanOrEqualTo(this._negativeActionButton.trailing, {plus: 64}).isActive = YES;
 
         this._cancelButton.node.addEventListener('click', event => this._cancel());
-
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {target: this, action: '_escape'}));
 
         return this;
     },
