@@ -612,7 +612,15 @@ BMExtend(BMMonacoCodeEditor.prototype, BMCodeEditor.prototype, {
 	 */
 	transpiledCode() { // <String>
 		return new Promise((resolve, reject) => {
-			monaco.languages.typescript.getLanguageWorker("typescript").then((worker) => {
+			let workerPromise;
+			if (monaco.languages.typescript.getLanguageWorker) {
+				workerPromise = monaco.languages.typescript.getLanguageWorker("typescript");
+			}
+			else {
+				workerPromise = monaco.languages.typescript.getTypeScriptWorker();
+			}
+
+			workerPromise.then((worker) => {
 				// if there is an uri available
 				if (this._monaco.getModel()) {
 					worker(this._monaco.getModel().uri).then((client) => {
