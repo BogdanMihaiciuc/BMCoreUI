@@ -52,6 +52,18 @@ Added a new `allowsOffscreenLayout` property, with a default value of `YES` that
 
 When the intrinsic size of a cell is measured wile collection view is hidden, collection view will invalidate the layout upon becoming visible. Additionally, the intrinsic size of cell subviews are also invalidated upon becoming visible.
 
+## BMWindowDelegate
+
+A new `windowShouldEnterShowcase` method can be implemented on window delegates to control whether the default toolbar gesture should trigger the window showcase or not.
+
+## BMAlertPopup
+
+This popup can now be dismissed by pressing the escape key, in addition to the return key.
+
+## BMConfirmationPopup
+
+When this popup handles the escape key, the default browser behavior will now be prevented.
+
 ## BMCodeEditor
 
 Added a new color for CSS selectors to the default themes. This resolves an issue where CSS selectors would be barely visible in dark mode.
