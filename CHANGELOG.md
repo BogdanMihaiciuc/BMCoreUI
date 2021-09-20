@@ -1,3 +1,75 @@
+# 2.7
+
+## BMLayoutEditorSettingsView
+
+The property titles will now be clipped if they are too long.
+
+Numeric inputs will no longer show the OS provided spinner controls.
+
+View links will no longer show a text selection cursor when hovered.
+
+Added a new `setValue(_, {forSetting})` that sets the appropriate variation or property value for the given setting. Setting cell subclasses are recommended to use this method instead of directly updating property values themselves.
+
+Added the `BMLayoutEditorSettingsSizeCell` and `BMLayoutEditorSettingsInsetCell` classes that can be used to edit `BMSize` and `BMInset` properties. Added a `Size` constant to the `BMLayoutEditorSettingKind` enum.
+
+Resolves an issue that could allow the creation of a duplicate size class override for layout variables.
+
+Resolves an issue that could cause the highlighted style to persist on the navigation window when creating constraints.
+
+Added support for editing a view's content insets.
+
+## BMLayoutEditorEnumSetting
+
+Fixes an issue where this type was incorrectly declared as being a root class. It is now properly declared as extending `BMLayoutEditorSetting`.
+
+## BMLayoutEditorSettingsTab
+
+Resolves an issue with `updateSettings` that could cause an error to be thrown if this method was invoked while a previous update was still in progress.
+
+Resolves an issue with `updateSettings` that caused settings to be duplicated.
+
+Resolves an issue that could cause an error to be thrown when a settings tab had no content.
+
+Resolves a layout issue that could cause settings tab contents to overlap if the settings window was resized while a tab was inactive.
+
+## BMLayoutEditorSettingsTitleView
+
+This class is now exported and can be used by setting cell subclasses to render a setting's title. This view will also render, when appropriate, a size class selector and a size class icon on its setting.
+
+## BMView
+
+The `isCurrentlyVisible` property will now return `NO` if any of the view's ancestors are hidden.
+
+When first assigning a frame, the CSS `contain` property will be set to `layout` on views.
+
+Two new `viewDidBecomeVisible` and `viewDidBecomeInvisible` properties are now invoked on views when they become visible or invisible, either through setting the `isVisible` property on them or because any of their ancestors become visible or invisible.
+
+## BMCollectionView
+
+Collection view will no longer retain cell measurements while it or any of its view ancestors are hidden.
+
+Added a new `allowsOffscreenLayout` property, with a default value of `YES` that controls whether collection view will perform layout operations while hidden. When set to `NO`, collection view will ignore layout invalidations while invisible and only invalidate the layout after becoming visible.
+
+When the intrinsic size of a cell is measured wile collection view is hidden, collection view will invalidate the layout upon becoming visible. Additionally, the intrinsic size of cell subviews are also invalidated upon becoming visible.
+
+## BMWindowDelegate
+
+A new `windowShouldEnterShowcase` method can be implemented on window delegates to control whether the default toolbar gesture should trigger the window showcase or not.
+
+## BMAlertPopup
+
+This popup can now be dismissed by pressing the escape key, in addition to the return key.
+
+## BMConfirmationPopup
+
+When this popup handles the escape key, the default browser behavior will now be prevented.
+
+## BMCodeEditor
+
+Added a new color for CSS selectors to the default themes. This resolves an issue where CSS selectors would be barely visible in dark mode.
+
+This class and all of its related types and subclasses are now deprecated and will be removed in a future release.
+
 # 2.6.10
 
 ## BMPopover

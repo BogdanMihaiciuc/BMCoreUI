@@ -905,8 +905,17 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			});
 
 			this._toolbar.addEventListener('wheel', /** @param {WheelEvent} event */ event => {
+				// Scrolling on the toolbar should enter showcase
 				if (event.deltaY > 0) {
-					BMWindow.enterShowcase();
+					// Allow the delegate to suppress this behaviour
+					let shouldEnterShowcase = YES;
+					if (this.delegate && this.delegate.windowShouldEnterShowcase) {
+						shouldEnterShowcase = this.delegate.windowShouldEnterShowcase(this);
+					}
+
+					if (shouldEnterShowcase) {
+						BMWindow.enterShowcase();
+					}
 				}
 			});
 
@@ -1540,7 +1549,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * 	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been minimized.
 	 * }
 	 */
-	minimizeAnimated: function (animated, args) {
+	minimizeAnimated: function (animated = YES, args = {}) {
 		if (this._modal) throw new Error('A modal window cannot be minimized.');
 		if (this._minimizedWindow) return;
 
@@ -1630,7 +1639,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * 	@param completionHandler <void ^ (), nullable>	A handler that will be invoked after this window has been minimized.
 	 * }
 	 */
-	restoreAnimated(animated, args) {
+	restoreAnimated(animated = YES, args = {}) {
 		if (this._modal) throw new Error('A modal window cannot be restored.');
 		if (!this._minimizedWindow) return;
 

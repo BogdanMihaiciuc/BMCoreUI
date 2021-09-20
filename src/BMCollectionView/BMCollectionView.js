@@ -529,6 +529,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * that reflow often are used as cell contents.
 	 */
     offscreenBufferFactor: 0.5, // <Number>
+
+	/**
+	 * Defaults to `YES`. Controls whether this collection view will process layout updates while invisible.
+	 * If set to `NO`, layout invalidations requested while this collection view is invisible will be deplayed until
+	 * it becomes visible.
+	 */
+	allowsOffscreenLayout: YES, // <Boolean>
     
     /**
 	 * @deprecated Currently unused.
@@ -714,27 +721,37 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
 	// @override - BMView
-	set _activeVisibility(visibility) {
-		// If initialization was delayed, perform it now if this collection view has a valid frame or is not
-		// part of a view hierarchy
-		if (visibility && this.__activeVisibility != visibility) {
-			Object.getOwnPropertyDescriptor(BMView.prototype, '_activeVisibility').set.call(this, visibility);
-			if (this.__awaitsInit) {
-				if (this.superview) {
-					if (this.frame && this.frame.size.width > 0 && this.frame.size.height > 0) {
-						// Perform init upon becoming visible and acquiring a valid frame
-						this._init();
-					}
-				}
-				else {
-					// Perform init upon becoming visible if not part of a view hierarchy
+	viewDidBecomeVisible() {
+		BMView.prototype.viewDidBecomeVisible.apply(this, arguments);
+
+		if (this.__awaitsInit) {
+			if (this.superview) {
+				if (this.frame && this.frame.size.width > 0 && this.frame.size.height > 0) {
+					// Perform init upon becoming visible and acquiring a valid frame
 					this._init();
 				}
 			}
+			else {
+				// Perform init upon becoming visible if not part of a view hierarchy
+				this._init();
+			}
 		}
-		else {
-			Object.getOwnPropertyDescriptor(BMView.prototype, '_activeVisibility').set.call(this, visibility);
+		else if (this.__awaitsLayout) {
+			// If an intrinsic size was requested while invisible, perform the layout operation again
+			this.invalidateLayout();
 		}
+
+		this.enumerateRetainedCellsWithBlock((cell) => {
+			cell._collectionViewDidBecomeVisible();
+		});
+	},
+
+	viewDidBecomeInvisible() {
+		BMView.prototype.viewDidBecomeInvisible.apply(this, arguments);
+
+		this.enumerateRetainedCellsWithBlock((cell) => {
+			cell._collectionViewDidBecomeInvisible();
+		});
 	},
 
     /**
@@ -742,7 +759,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
     _init: function () {
 		// If currently invisible, delay the init
-		if (!this.__activeVisibility) {
+		/*if (!this.__activeVisibility) {
+			this.__awaitsInit = YES;
+			return;
+		}*/
+		if (!this.isCurrentlyVisible) {
 			this.__awaitsInit = YES;
 			return;
 		}
@@ -962,6 +983,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Ignore this operation if the layout is in the process of being invalidated already
 		if (this._blocksLayoutInvalidation) return;
 
+		// Delay this layout while invisible if this optimization is enabled
+		if (!this.isCurrentlyVisible && !this.allowsOffscreenLayout) {
+			this.__awaitsLayout = YES;
+			return;
+		}
+
 		this._blocksLayoutInvalidation = YES;
 	    
 	    // Do not invalidate the layout during an animated data update
@@ -1150,6 +1177,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// Ignore this operation if the layout is in the process of being invalidated already
 		if (this._blocksLayoutInvalidation) return;
+
+		// Delay this layout while invisible if this optimization is enabled
+		if (!this.isCurrentlyVisible && !this.allowsOffscreenLayout) {
+			this.__awaitsLayout = YES;
+			return;
+		}
 
 		this._blocksLayoutInvalidation = YES;
 	    
@@ -2080,6 +2113,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					return this._measuredIndexPaths[i].size;
 				}
 			}
+		}
+
+		// If this collection view is hidden, the measurement will fail so just return [0, 0] and don't retain the result
+		if (!this.isCurrentlyVisible) {
+			// Schedule a second layout pass to run after collection becomes visible
+			this.__awaitsLayout = YES;
+			return BMSizeMake(0, 0);
 		}
 
 		if (BM_COLLECTION_VIEW_DEBUG_MEASURE) {

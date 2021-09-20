@@ -9,9 +9,11 @@ import {BMView} from '../BMView/BMView_v2.5'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewFlowLayoutGravity, BMCollectionViewFlowLayoutAlignment} from '../BMCollectionView/BMCollectionViewFlowLayout'
 import {BMCollectionView} from '../BMCollectionView/BMCollectionView'
 import { BMLayoutEditorSettingsCell, BMLayoutEditorSettingsConstraintCell, BMLayoutEditorSettingsFooter, BMLayoutEditorSettingsTitleCell, BMLayoutEditorSettingsIntegerCell, BMLayoutEditorSettingsReadonlyCell, BMLayoutEditorSettingsDeactivateConstraintsCell, BMLayoutEditorSettingsSegmentCell, BMLayoutEditorSettingsBooleanCell, BMLayoutEditorSettingsStringCell, BMLayoutEditorSettingsNumberCell, BMLayoutEditorSettingsViewCell, BMLayoutEditorSettingsDropdownCell, BMLayoutEditorSettingsConstantCell, BMLayoutEditorSettingsDeleteConstraintCell } from './BMLayoutEditorSettingCells'
-import { _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
+import { _BMLayoutEditorViewLayoutSettingsTab, _BMLayoutEditorViewSettingsPanel } from './BMLayoutEditorViewSettings'
 import { _BMLayoutEditorConstraintSettingsPanel } from './BMLayoutEditorConstraintSettings'
 import { _BMLayoutEditorViewGroupSettingsPanel } from './BMLayoutEditorViewGroupSettings'
+import { BMCollectionViewCell } from '../BMCollectionView/BMCollectionViewCell'
+import { BMLayoutEditorSettingsInsetCell, BMLayoutEditorSettingsSizeCell } from './BMLayoutEditorSettingsComplexCells'
 
 /**
  * Returns the URL to the given image based on whether CoreUI is running within thingworx or standalone.
@@ -669,12 +671,21 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
     /**
      * Configures the layout settings of the given collection view.
      * @param collectionView <BMCollectionView>     The collection view.
+     * {
+     *  @param forTab <BMLayoutEditorSettingsTab>   The tab for which to configure this collection view.
+     * }
      */
-    _configureCollectionViewLayout(collectionView) {
+    _configureCollectionViewLayout(collectionView, {forTab: tab}) {
         collectionView.node.style.position = 'absolute';
 
         // Configure the layout
-        collectionView.layout.expectedCellSize = BMSizeMake(384, 48);
+        // Automatic cell size is only used on the constraints tab
+        if (tab instanceof _BMLayoutEditorViewLayoutSettingsTab) {
+            collectionView.layout.expectedCellSize = BMSizeMake(384, 48);
+        }
+        else {
+            collectionView.layout.expectedCellSize = BMSizeMake(384, 32);
+        }
         collectionView.layout.maximumCellsPerRow = 1;
         collectionView.layout.gravity = BMCollectionViewFlowLayoutGravity.Expand;
         collectionView.layout.rowSpacing = 0;
@@ -706,7 +717,10 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         collectionView.registerCellClass(BMLayoutEditorSettingsSegmentCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Segment});
         collectionView.registerCellClass(BMLayoutEditorSettingsViewCell, {forReuseIdentifier: BMLayoutEditorSettingKind.View});
         collectionView.registerCellClass(BMLayoutEditorSettingsDropdownCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Enum});
+        collectionView.registerCellClass(BMLayoutEditorSettingsInsetCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Insets});
+        collectionView.registerCellClass(BMLayoutEditorSettingsSizeCell, {forReuseIdentifier: BMLayoutEditorSettingKind.Size});
         collectionView.registerSupplementaryViewClass(BMLayoutEditorSettingsFooter, {forReuseIdentifier: BMCollectionViewFlowLayoutSupplementaryView.Footer});
+        collectionView.registerSupplementaryViewClass(BMLayoutEditorSettingsFooter, {forReuseIdentifier: BMCollectionViewFlowLayoutSupplementaryView.Empty});
 
         // Register the custom cell classes
         for (const key in this.layoutEditor._settingCellClasses) {
@@ -740,9 +754,12 @@ _BMLayoutEditorCollectionSettingsPanel.prototype = BMExtend(Object.create(_BMLay
         for (const tab of this._tabs) {
             // Create a collection view for each tab that will display its contents
             const collectionView = BMCollectionView.collectionView();
+
+            collectionView.allowsOffscreenLayout = NO;
+
             tabHost.addSubview(collectionView);
 
-            this._configureCollectionViewLayout(collectionView);
+            this._configureCollectionViewLayout(collectionView, {forTab: tab});
 
             collectionView.leading.equalTo(tabHost.leading).isActive = true;
             collectionView.trailing.equalTo(tabHost.trailing).isActive = true;
@@ -910,9 +927,25 @@ BMLayoutEditorSettingsTab.prototype = {
     },
 
     /**
+     * An identifier unique to each update settings request.
+     */
+    _updateSettingsID: 0, // <Number>
+
+    /**
      * Should be invoked to cause this tab to reload its settings whenever a setting is added or removed.
      */
-    updateSettings() {
+    async updateSettings() {
+        this._updateSettingsID = this._updateSettingsID + 1;
+        const ID = this._updateSettingsID;
+
+        // Await for any current data update
+        while (this._collectionView && this._collectionView.isUpdatingData) {
+            await this._collectionView._dataUpdatePromise;
+        }
+
+        // If a new update request arrives before this one gets a chance to execute, omit this update
+        if (this._updateSettingsID != ID) return;
+
         this.beginUpdates();
         this._settingsPanel._updateSettingsForTab(this);
         this.commitUpdates();
@@ -1114,7 +1147,8 @@ BMLayoutEditorSettingsSection.prototype = {
     },
 
     /**
-     * An array of settings belonging to this section.
+     * An array of settings belonging to this section. You should not directly add settings to this
+     * array; instead you should assign to this property directly.
      */
     _settings: undefined, // <[BMLayoutEditorSetting]>
     get settings() {
@@ -1227,6 +1261,11 @@ export var BMLayoutEditorSettingKind = Object.freeze({ // <enum>
 	 * A boolean setting kind.
 	 */
 	Boolean: '_Boolean', // <enum>
+
+    /**
+     * A `BMSize` setting kind.
+     */
+    Size: '_BMSize', // <enum>
 	
 	/**
 	 * A setting kind representing the possible values for a constraint constant.
@@ -1405,7 +1444,7 @@ BMLayoutEditorSetting.settingWithName = function (name, {kind, target, variation
 
 // @endtype
 
-// @type BMLayoutEditorEnumSetting
+// @type BMLayoutEditorEnumSetting extends BMLayoutEditorSetting
 
 /**
  * Represents a setting that can be displayed and modified in the layout editor.

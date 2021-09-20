@@ -169,7 +169,17 @@ BMWindowDelegate.prototype = {
 	 * Invoked after the window has been restored. This method is invoked after any associated animation has finished running.
 	 * @param window <BMWindow>		The calling window.
 	 */
-	windowDidRestore(window) {}
+	windowDidRestore(window) {},
+
+	/**
+	 * Invoked when the user performs a gesture that should activate the window showcase. Delegates can implement this method
+	 * to control whether those gestures should trigger the window showcase from certain windows.
+	 * 
+	 * The default behaviour when this method is not implemented is that all appropriate gestures will trigger the window showcase.
+	 * @param window <BMWindow>		The calling window.
+	 * @return <Boolean>			`YES` if the window showcase should be activated, `NO` otherwise.
+	 */
+	windowShouldEnterShowcase(window) {}
 
 };
 

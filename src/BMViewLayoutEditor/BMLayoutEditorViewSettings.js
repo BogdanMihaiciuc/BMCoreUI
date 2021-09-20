@@ -69,10 +69,10 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
      * @param tab <BMLayoutEditorSettingsTab>       The tab whose settings have been invalidated.
      */
     _updateSettingsForTab(tab) {
+        tab._settingSections = [];
+
         if (tab == this._attributesTab) {
             const view = this._displayedView;
-
-            tab._settingSections = [];
 
             // Add the attribute settings
             const attributesSection = BMLayoutEditorSettingsSection.section();
@@ -83,6 +83,7 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
     
             const edgeInsetsSection = BMLayoutEditorSettingsSection.section();
             edgeInsetsSection._settings[0] = BMLayoutEditorSetting.settingWithName('Content Insets', {kind: BMLayoutEditorSettingKind.Insets, target: view, variations: YES, nullable: YES, property: 'contentInsets'});
+            this._attributesTab._settingSections.push(edgeInsetsSection);
         }
 
         for (const section of this._displayedView.additionalSettingSectionsForTab(tab, {layoutEditor: this.layoutEditor})) {

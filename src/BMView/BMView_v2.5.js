@@ -866,6 +866,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
         // When the frame is assigned for the first time, make the node have an absolute positioning
         if (!this._frame) {
             this._node.style.position = 'absolute';
+            this._node.style.contain = 'layout';
             this._node.style.right = 'auto';
             this._node.style.bottom = 'auto';
             this._node.style.left = '0px';
@@ -1536,6 +1537,8 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     set _activeVisibility(visibility) {
         if (visibility != this.__activeVisibility) {
+            const isVisible = this.isCurrentlyVisible;
+
             this.__activeVisibility = visibility;
             if (visibility) {
                 if (this.rootView._layoutEditor) {
@@ -1543,6 +1546,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
                 }
                 else {
                     this.node.style.display = 'block';
+                }
+
+                if (!isVisible) {
+                    this.viewDidBecomeVisible();
                 }
             }
             else {
@@ -1552,18 +1559,85 @@ BMView.prototype = BMExtend(BMView.prototype, {
                 else {
                     this.node.style.display = 'none';
                 }
+
+                if (!isVisible) {
+                    this.viewDidBecomeInvisible();
+                }
+            }
+
+            // Propagate the visibility status down to the subviews
+            for (const subview of this._subviews) {
+                subview._parentVisible = visibility;
             }
 
             // Changing visibility invalidates the node's intrinsic size
             this.invalidateIntrinsicSize();
         }
     },
+
+    get _activeVisibility() {
+        return this.__activeVisibility;
+    },
+
+    /**
+     * Set to `NO` when any ancestor of this view is hidden.
+     */
+    __parentVisible: YES, // <Boolean>
+
+    get _parentVisible() {
+        return this.__parentVisible;
+    },
+
+    set _parentVisible(visible) {
+        const isVisible = visible && this.__activeVisibility;
+        const isCurrentlyVisible = this.isCurrentlyVisible;
+
+        // If the visibility status changes, propagate it down to the subviews
+        if (isVisible != this.__parentVisible) {
+            for (const subview of this._subviews) {
+                subview._parentVisible = visible;
+            }
+        }
+
+        this.__parentVisible = isVisible;
+
+        if (this.isCurrentlyVisible != isCurrentlyVisible) {
+            if (this.isCurrentlyVisible) {
+                this.viewDidBecomeVisible();
+            }
+            else {
+                this.viewDidBecomeInvisible();
+            }
+        }
+    },
     
     /**
      * Returns `YES` if this view is visible in the current configuration, `NO` otherwise.
+     * This will also return `NO` if any ancestors are hidden.
      */
     get isCurrentlyVisible() { // <Boolean>
-        return this._activeVisibility;
+        return this.__activeVisibility && this.__parentVisible;
+    },
+
+    /**
+     * @protected
+     * Invoked when this view becomes visible. Subclasses overriding this method should
+     * invoke the superclass method at some point in their implementation.
+     */
+    viewDidBecomeVisible() {
+        // If this view supports an intrinsic size, invalidate it upon becoming visible
+        if (this.supportsIntrinsicSize) {
+            this.invalidateIntrinsicSize();
+        }
+    },
+
+    /**
+     * @protected
+     * Invoked when this view becomes invisible. Subclasses overriding this method should
+     * invoke the superclass method at some point in their implementation.
+     */
+    viewDidBecomeInvisible() {
+
     },
 
     /**
