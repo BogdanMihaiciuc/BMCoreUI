@@ -343,7 +343,6 @@ BMExtend(BMCodeMirrorCodeEditor.prototype, BMCodeEditor.prototype, {
 export function BMMonacoCodeEditor() {} // <constructor>
 
 var _BMMonacoCodeEditorThemesCreated = NO;
-var _BMMonacoCodeEditorDefaultsSet = NO;
 
 /**
  * Invoked when creating a monaco code editor.
@@ -466,34 +465,30 @@ BMExtend(BMMonacoCodeEditor.prototype, BMCodeEditor.prototype, {
 		};
 
 		this._language = args.language || BMCodeEditorLanguage.Javascript;
-		
-		if (!_BMMonacoCodeEditorDefaultsSet) {
-			_BMMonacoCodeEditorDefaultsSet = YES;
 
-			monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-				target: monaco.languages.typescript.ScriptTarget.ESNext,
-				allowNonTsExtensions: YES,
-				experimentalDecorators: YES,
-				strict: YES,
-				inlineSourceMap: YES,
-				module: monaco.languages.typescript.ModuleKind.CommonJS,
-				noImplicitUseStrict: YES
-			});
-			
-			monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-				target: monaco.languages.typescript.ScriptTarget.ESNext,
-				allowNonTsExtensions: YES,
-				experimentalDecorators: YES,
-				strict: YES,
-				inlineSourceMap: YES,
-				inlineSources: YES,
-				noImplicitUseStrict: YES,
-				alwaysStrict: NO,
-				module: monaco.languages.typescript.ModuleKind.None,
-				useDefineForClassFields: NO,
-			});
-		}
+		monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+			target: monaco.languages.typescript.ScriptTarget.ESNext,
+			allowNonTsExtensions: YES,
+			experimentalDecorators: YES,
+			strict: YES,
+			inlineSourceMap: YES,
+			module: monaco.languages.typescript.ModuleKind.CommonJS,
+			noImplicitUseStrict: YES
+		});
 		
+		monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+			target: monaco.languages.typescript.ScriptTarget.ESNext,
+			allowNonTsExtensions: YES,
+			experimentalDecorators: YES,
+			strict: YES,
+			inlineSourceMap: YES,
+			inlineSources: YES,
+			noImplicitUseStrict: YES,
+			alwaysStrict: NO,
+			module: monaco.languages.typescript.ModuleKind.None,
+			useDefineForClassFields: NO,
+		});
+			
 		this._monaco = monaco.editor.create(container, options);
 		
 		var self = this;
