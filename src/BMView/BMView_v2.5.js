@@ -10,6 +10,7 @@ import {BMLayoutSizeClass, BMLayoutOrientation} from './BMLayoutSizeClass'
 import {BMViewport} from './BMViewport'
 import {BMLayoutAttribute, BMLayoutConstraintRelation, BMLayoutConstraint, BMLayoutConstraintPriorityRequired, BMLayoutConstraintKind} from './BMLayoutConstraint_v2.5'
 import * as kiwi from 'kiwi.js'
+import { BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
 
 
 // When set to YES, this will cause view to use transforms instead of left/right for positioning
@@ -704,6 +705,8 @@ export function BMView() {} // <constructor>
         this._variations = {};
         this._configuration = {opacity: this._opacity, isVisible: this._isVisible, contentInsets: this.__activeInsets};
         this._variableProperties = {};
+
+		this._keyboardShortcuts = [];
 
         return this;
     }
@@ -2105,6 +2108,95 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
         return this._layoutVariables[variable] || 0;
     },
+
+    // #endregion
+
+    // #region Keyboard shortcuts
+
+	/**
+	 * The keyboard shortcuts that have been registered to this view.
+	 */
+	_keyboardShortcuts: undefined, // <[BMKeyboardShortcut]>
+
+	/**
+	 * Registers a keyboard shortcut that can be activated when this view has keyboard focus.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to register.
+	 */
+	registerKeyboardShortcut(shortcut) {
+		if (!this._keyboardShortcuts.length) this._enableKeyboardShortcuts();
+
+		this._keyboardShortcuts.push(shortcut);
+	},
+
+	/**
+	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+	 */
+	unregisterKeyboardShortcut(shortcut) {
+		for (let i = 0; i < this._keyboardShortcuts.length; i++) {
+			if (this._keyboardShortcuts[i] == shortcut) {
+				this._keyboardShortcuts.splice(i, 1);
+				break;
+			}
+		}
+
+		if (!this._keyboardShortcuts.length) this._disableKeyboardShortcuts();
+	},
+
+	/**
+	 * If keyboard shortcuts have been registered on this view, this method will be invoked to identify
+	 * and handle key presses. Subclasses that override this method should invoke the base implementation to allow
+	 * keyboard shortcuts to be handled correctly.
+	 * @param event <KeyboardEvent>			The event that triggered this action.
+	 */
+	keyPressedWithEvent(event) {
+		// Check if a shortcut key has been pressed.
+		for (const shortcut of this._keyboardShortcuts) {
+			if (event.code != shortcut.keyCode) continue;
+
+			// Build the modifier bitmap for this event
+			let bitmap = 0;
+			for (const modifier in BMKeyboardShortcutModifier) {
+				if (event[BMKeyboardShortcutModifier[modifier].key]) {
+					bitmap = bitmap | BMKeyboardShortcutModifier[modifier].value;
+				}
+			}
+
+			if (bitmap == shortcut._modifierBitmap) {
+				if (shortcut.preventsDefault) event.preventDefault();
+				shortcut.target[shortcut.action](event);
+			}
+		}
+	},
+
+	/**
+	 * Set to `YES` if keyboard shortcuts are enabled.
+	 */
+	_keyboardShortcutsEnabled: NO, // <Boolean>
+
+	/**
+	 * Enables keyboard shortcut handling. This makes the view's `node` focusable and attaches
+	 * the relevant event handlers to it.
+	 */
+	_enableKeyboardShortcuts() {
+		this.node.tabIndex = -1;
+
+		this._keypressHandler = (event) => {
+			this.keyPressedWithEvent(event);
+		};
+
+		this.node.addEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = YES;
+	},
+
+	/**
+	 * Disables keyboard shortcut handling. This detaches the relevant event handlers from this view's `node`.
+     * The node's `tabIndex` property will not be cleared by this method.
+	 */
+	_disableKeyboardShortcuts() {
+		this.node.removeEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = NO;
+	},
 
     // #endregion
 
