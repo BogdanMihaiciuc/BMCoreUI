@@ -1148,8 +1148,10 @@ function typeScriptDocumentationWithDocumentation(documentation) {
     if (!documentation) return '';
 
     documentation = documentation.replace(/<code>/g, '\`').replace(/<\/code>/g, '\`');
+    documentation = documentation.replace(/<pre>/g, '\`\`\`').replace(/<\/pre>/g, '\`\`\`');
     documentation = documentation.replace(/<b>/g, '__').replace(/<\/b>/g, '__');
     documentation = documentation.replace(/<ul>/g, '\n *').replace(/<\/ul>/g, '\n *');
+    documentation = documentation.replace(/<ol>/g, '\n *').replace(/<\/ol>/g, '\n *');
     documentation = documentation.replace(/<li>(.*)<\/li>/g, (match, item) => ' * ' + item);
     documentation = documentation.replace(/<li>(.*)/g, (match, item) => ' * ' + item);
     documentation = documentation.replace(/(.*)<\/li>/g, (match, item) => item);
