@@ -8,6 +8,7 @@ import {BMView} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMSizeMake } from '../Core/BMSize'
 import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
+import { BMViewport } from '../BMView/BMViewport'
 
 //@ts-check
 // @type BMWindowOverlay extends BMView
