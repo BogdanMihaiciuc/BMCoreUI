@@ -2179,7 +2179,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * the relevant event handlers to it.
 	 */
 	_enableKeyboardShortcuts() {
-		this.node.tabIndex = -1;
+        // Make this view focusable if it is not already
+        if (!this.node.hasAttribute('tabIndex')) {
+            this.node.tabIndex = -1;
+        }
 
 		this._keypressHandler = (event) => {
 			this.keyPressedWithEvent(event);
