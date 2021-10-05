@@ -5375,7 +5375,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var rect = this._layout.rectWithScrollingPositionOfSupplementaryViewWithIdentifier(identifier, {atIndexPath: options.atIndexPath});
 		
 		if (rect) {
-			var verticalGravity = options.verticalGravity || BMCollectionViewScrollingGravityHorizontal.Top;
+			var verticalGravity = options.verticalGravity || BMCollectionViewScrollingGravityVertical.Top;
 			var horizontalGravity = options.horizontalGravity || BMCollectionViewScrollingGravityHorizontal.Left;
 			var animated = options.animated;
 			return this.scrollToRect(rect, {withVerticalGravity: verticalGravity, horizontalGravity: horizontalGravity, animated: animated});
