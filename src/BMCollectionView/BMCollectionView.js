@@ -515,6 +515,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
     _bounds: undefined, // <BMRect>
     get bounds() { return this._bounds; },
+
+	/**
+	 * A rect that represents the part of the bounds that are visible on screen.
+	 */
+	get visibleBounds() { // <BMRect>
+		return new BMRect(BMPointMake(this._bounds.origin.x + this._offscreenBufferSize, this._bounds.origin.y + this._offscreenBufferSize), this._frame.size.copy());
+	},
     
     /**
 	 * The number of pixels by which to extend the bounds to preload layout attributes and render off-screen elements.
