@@ -5343,10 +5343,40 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	scrollToCellAtIndexPath: function (indexPath, options) {
 		var rect = this._layout.rectWithScrollingPositionOfCellAtIndexPath(indexPath);
+		let visibleBounds;
 		
 		if (rect) {
-			var verticalGravity = (options && options.withVerticalGravity) || BMCollectionViewScrollingGravityVertical.Top;
-			var horizontalGravity = (options && options.horizontalGravity) || BMCollectionViewScrollingGravityHorizontal.Left;
+			var verticalGravity = (options && options.withVerticalGravity);
+			var horizontalGravity = (options && options.horizontalGravity);
+
+			if (!verticalGravity) {
+				visibleBounds = this.visibleBounds;
+
+				if (rect.origin.y > visibleBounds.bottom) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+				}
+				else if (rect.bottom < visibleBounds.origin.y) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
+				}
+			}
+
+			if (!horizontalGravity) {
+				visibleBounds = visibleBounds || this.visibleBounds;
+
+				if (rect.origin.x > visibleBounds.right) {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+				}
+				else if (rect.right < visibleBounds.origin.x) {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+				}
+			}
+
 			var animated = options && options.animated;
 			return this.scrollToRect(rect, {withVerticalGravity: verticalGravity, horizontalGravity: horizontalGravity, animated: animated});
 		}
@@ -5360,10 +5390,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @param identifier <String>														The supplementary view's type identifier.
 	 * {
 	 *	@param atIndexPath <BMIndexPath<T>>												The index path of the supplementary view to scroll to.
-	 *	@param verticalGravity <BMCollectionViewScrollingGravityVertical, nullable>		Defaults to BMCollectionViewScrollingGravityVertical.Top. The scroll gravity to use, 
+	 *	@param verticalGravity <BMCollectionViewScrollingGravityVertical, nullable>		Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
-	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to BMCollectionViewScrollingGravityHorizontal.Left. The scroll gravity to use, 
+	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
 	 *	@param animated <Boolean, nullable>												Defaults to NO. If set to YES, the scroll will be animated, otherwise it will be 
@@ -5373,10 +5403,40 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	scrollToSupplementaryViewWithIdentifier: function (identifier, options) {
 		var rect = this._layout.rectWithScrollingPositionOfSupplementaryViewWithIdentifier(identifier, {atIndexPath: options.atIndexPath});
+		let visibleBounds;
 		
 		if (rect) {
-			var verticalGravity = options.verticalGravity || BMCollectionViewScrollingGravityVertical.Top;
-			var horizontalGravity = options.horizontalGravity || BMCollectionViewScrollingGravityHorizontal.Left;
+			var verticalGravity = options.verticalGravity;
+			var horizontalGravity = options.horizontalGravity;
+
+			if (!verticalGravity) {
+				visibleBounds = this.visibleBounds;
+
+				if (rect.origin.y > visibleBounds.bottom) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+				}
+				else if (rect.bottom < visibleBounds.origin.y) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
+				}
+			}
+
+			if (!horizontalGravity) {
+				visibleBounds = visibleBounds || this.visibleBounds;
+
+				if (rect.origin.x > visibleBounds.right) {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+				}
+				else if (rect.right < visibleBounds.origin.x) {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+				}
+			}
+
 			var animated = options.animated;
 			return this.scrollToRect(rect, {withVerticalGravity: verticalGravity, horizontalGravity: horizontalGravity, animated: animated});
 		}
