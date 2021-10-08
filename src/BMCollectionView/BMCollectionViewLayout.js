@@ -152,6 +152,108 @@ BMCollectionViewLayout.prototype = {
 		this._copy = undefined;
 	},
 
+
+	/************************************* CELL HIGHLIGHTING ********************************/
+
+	/**
+	 * Invoked by the collection view to obtain the first index path in the layout.
+	 * The default implementation returns the first index path in the data set.
+	 * @returns <BMIndexPath | undefined>		The first index path, or `undefined` if no index path exists.
+	 */
+	firstIndexPath() {
+		const sectionCount = this.collectionView.numberOfSections();
+
+		for (let i = 0; i < sectionCount; i++) {
+			const rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(i);
+
+			if (rowCount) return this.collectionView.indexPathForObjectAtRow(0, {inSectionAtIndex: i});
+		}
+	},
+
+	/**
+	 * Invoked by the collection to obtain the index path that is visually to the left of the given index path.
+	 * 
+	 * Subclasses may override this method to return an appropriate index path.
+	 * If the given index path is at the left edge of the content area, the same index path should be returned.
+	 * 
+	 * The default implementation returns the previous index path in the data set.
+	 */
+	indexPathToTheLeftOfIndexPath(indexPath) {
+		if (indexPath.row > 0) {
+			return this.collectionView.indexPathForObjectAtRow(indexPath.row - 1, {inSectionAtIndex: indexPath.section});
+		}
+
+		if (indexPath.section > 0) {
+			let previousSection = indexPath.section - 1;
+			do {
+				const rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(previousSection);
+				if (rowCount) {
+					return this.collectionView.indexPathForObjectAtRow(rowCount - 1, {inSectionAtIndex: previousSection});
+				}
+				else {
+					previousSection = previousSection - 1;
+				}
+			} while (previousSection >= 0);
+		}
+
+		return indexPath;
+	},
+
+	/**
+	 * Invoked by the collection to obtain the index path that is visually on top of the given index path.
+	 * 
+	 * Subclasses may override this method to return an appropriate index path.
+	 * If the given index path is at the top edge of the content area, the same index path should be returned.
+	 * 
+	 * The default implementation returns the result of calling `indexPathToTheLeftOfIndexPath`.
+	 */
+	indexPathAboveIndexPath(indexPath) {
+		return this.indexPathToTheLeftOfIndexPath(indexPath);
+	},
+
+	/**
+	 * Invoked by the collection to obtain the index path that is visually to the right of the given index path.
+	 * 
+	 * Subclasses may override this method to return an appropriate index path.
+	 * If the given index path is at the right edge of the content area, the same index path should be returned.
+	 * 
+	 * The default implementation returns the next index path in the data set.
+	 */
+	indexPathToTheRightOfIndexPath(indexPath) {
+		const rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(indexPath.section);
+		if (indexPath.row < rowCount - 1) {
+			return this.collectionView.indexPathForObjectAtRow(indexPath.row + 1, {inSectionAtIndex: indexPath.section});
+		}
+
+		const sectionCount = this.collectionView.numberOfSections();
+		if (indexPath.section < sectionCount - 1) {
+			let nextSection = indexPath.section + 1;
+			do {
+				const rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(nextSection);
+				if (rowCount) {
+					return this.collectionView.indexPathForObjectAtRow(0, {inSectionAtIndex: nextSection});
+				}
+				else {
+					nextSection = nextSection + 1;
+				}
+			} while (nextSection < sectionCount);
+		}
+
+		return indexPath;
+	},
+
+	/**
+	 * Invoked by the collection to obtain the index path that is visually below the given index path.
+	 * 
+	 * Subclasses may override this method to return an appropriate index path.
+	 * If the given index path is at the bottom edge of the content area, the same index path should be returned.
+	 * 
+	 * The default implementation returns the result of calling `indexPathToTheRightOfIndexPath`.
+	 */
+	indexPathBelowIndexPath(indexPath) {
+		return this.indexPathToTheRightOfIndexPath(indexPath);
+	},
+
     /****************************************** UPDATES ***********************************************/
 
     /**
