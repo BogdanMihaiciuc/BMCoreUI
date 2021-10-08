@@ -111,6 +111,41 @@ BMCollectionViewDelegate.prototype = {
 	collectionViewDidDeselectCellAtIndexPath: function (collectionView, indexPath) {},
 
 	/**
+	 * Invoked by the collection view to verify if a cell can be highlighted.
+	 * 
+	 * If this method is not implemented by the delegate object, the collection view will assume that any cell may be highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * {
+	 * 	@param forEvent <Event, nullable>			If the cell should be highlighted because of an event, this represents the event
+	 * 												for which the cell should be highlighted.
+	 * }
+	 * @return <Boolean>							`YES` if the cell can be highlighted, `NO` otherwise.
+	 */
+	collectionViewCanHighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
+	 * Invoked by the collection view whenever any cell was highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * {
+	 * 	@param forEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
+	 * 												for which the cell was highlighted.
+	 * }
+	 */
+	collectionViewDidHighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
+	 * Invoked by a collection view after highlighting a cell that it is not visible on screen to determine
+	 * if it should scroll to reveal that cell.
+	 * 
+	 * When this method is not implemented, the default behaviour is to scroll to off-screen cells that are highlighted.
+	 * @param collectionView 		The calling collection view.
+	 * @param indexPath 			The index path that was just highlighted.
+	 */
+	collectionViewShouldScrollToHighlightedCellAtIndexPath: function (collectionView, indexPath) {},
+
+	/**
 	 * Invoked by the collection view before running the initial presentation animation. Delegate objects can implement this method
 	 * to customize the animation's parameters.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
