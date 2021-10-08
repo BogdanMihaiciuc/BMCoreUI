@@ -4012,6 +4012,110 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		return eventHandled;
 	},
 	
+
+	/************************************* HIGHLIGHT HANDLERS ********************************/
+
+	/**
+	 * The index path, if any, of the cell that is currently receiving keyboard focus. 
+	 * 
+	 * Setting this property to a valid index path will cause the relevant cell to become highlighted.
+	 * Additionally, setting this property to `undefined` will clear the highlighted cell.
+	 */
+	_highlightedIndexPath: undefined, // <BMIndexPath<T> | undefined>
+
+	get highlightedIndexPath() {
+		return this._highlightedIndexPath;
+	},
+
+	set highlightedIndexPath(indexPath) {
+		this._highlightedIndexPath = indexPath;
+
+		const cell = this.cellAtIndexPath(indexPath);
+
+		// If the newly highlighted index path isn't visible on screen, attempt to scroll to it
+		if (!cell || !cell._attributes.frame.intersectsRect(this._bounds)) {
+			let shouldScroll = YES;
+
+			if (this.delegate && this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath) {
+				shouldScroll = this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath(this, indexPath);
+			}
+
+			if (shouldScroll) {
+				this.scrollToCellAtIndexPath(indexPath, {animated: YES});
+			}
+		}
+	},
+
+	/**
+	 * Invoked when an arrow is pressed while this collection view has keyboard focus.
+	 * Highlights the index path to the specified direction of the currently highlighted index path.
+	 * @param arrow <String>				The key code of the keyboard arrow that was pressed.
+	 * {
+	 * 	@param withEvent <KeyboardEvent>	The event that triggerred this action.
+	 * }
+	 */
+	keyboardArrowPressed(arrow, args) {
+		let nextIndexPath = this._highlightedIndexPath;
+		const event = args && args.withEvent;
+
+		do {
+			const startingIndexPath = nextIndexPath;
+
+			if (!nextIndexPath) {
+				// If no index path is currently highlighted, highlight the first index path in the data set.
+				nextIndexPath = this.layout.firstIndexPath();
+			}
+			else {
+				// Otherwise highlight the next appropriate index path.
+				switch (arrow) {
+					case 'ArrowLeft':
+						nextIndexPath = this.layout.indexPathToTheLeftOfIndexPath(nextIndexPath);
+						break;
+					case 'ArrowTop':
+						nextIndexPath = this.layout.indexPathAboveIndexPath(nextIndexPath);
+						break;
+					case 'ArrowRight':
+						nextIndexPath = this.layout.indexPathToTheRightOfIndexPath(nextIndexPath);
+						break;
+					case 'ArrowBottom':
+						nextIndexPath = this.layout.indexPathBelowIndexPath(nextIndexPath);
+						break;
+				}
+			}
+
+			// If no index path could be found, don't take any action
+			if (!nextIndexPath) return;
+
+			// Check if this index path can be highlighted
+			let canHighlight = YES;
+			if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
+				canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, nextIndexPath, {withEvent: event});
+			}
+
+			if (canHighlight) {
+				// If the index path can be highlighted continue
+				break;
+			}
+			else {
+				// If the index path can't be highlighted and no appropriate next index path exists don't take any action
+				if (startingIndexPath.isEqualToIndexPath(nextIndexPath)) {
+					return;
+				}
+			}
+
+			// Otherwise look for the next index path
+		} while (nextIndexPath);
+
+
+		// If this keyboard arrow would highlight the same index path, don't take any action
+		if (nextIndexPath.isEqualToIndexPath(this._highlightedIndexPath)) return;
+
+		// Highlight the index path
+		this.highlightedIndexPath = nextIndexPath;
+		if (this.delegate && this.delegate.collectionViewDidHighlightCellAtIndexPath) {
+			this.delegate.collectionViewDidHighlightCellAtIndexPath(this, nextIndexPath, {withEvent: event});
+		}
+	},
 	
 	
 	/************************************* SELECTION HANDLERS ********************************/
@@ -5337,10 +5441,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Optionally, this scrolling may be animated.
 	 * @param indexPath <BMIndexPath<T>>												The index path of the cell to scroll to.
 	 * {
-	 *	@param withVerticalGravity <BMCollectionViewScrollingGravityVertical, nullable>	Defaults to `BMCollectionViewScrollingGravityVertical.Top`. The scroll gravity to use, 
+	 *	@param withVerticalGravity <BMCollectionViewScrollingGravityVertical, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
-	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to `BMCollectionViewScrollingGravityHorizontal.Left`. The scroll gravity to use, 
+	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
 	 *	@param animated <Boolean, nullable>												Defaults to `NO`. If set to `YES`, the scroll will be animated, otherwise it will be 
