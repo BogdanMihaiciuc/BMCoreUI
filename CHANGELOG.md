@@ -1,3 +1,13 @@
+# 2.8
+
+## BMCollectionView
+
+Added a new readonly `visibleBounds` property that returns a rect describing the part of the bounds that are visible on screen.
+
+When using `scrollToSupplementaryViewWithIdentifier` or `scrollToCellAtIndexPath` and not specifying any gravity, the default values will now depend on the cell's position relative to the current bounds, rather that defaulting to top and left.
+
+Resolved an issue in `scrollToSupplementaryViewWithIdentifier` where the default top gravity was set to an improper default value when omitted.
+
 # 2.7.1
 
 ## BMMonacoCodeEditor
