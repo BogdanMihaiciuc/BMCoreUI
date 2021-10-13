@@ -9,22 +9,27 @@ import { NO } from "../Core/BMCoreUI";
  * for views and windows.
  */
 export const BMKeyboardShortcutModifier = Object.freeze({ // <enum>
+
 	/**
 	 * Represents the command key on macOS and iOS, windows key on Windows and meta key on Linux.
 	 */
 	Command: {key: 'metaKey', value: 1}, // <enum>
+
 	/**
 	 * Represents the option key on macOS and alt on other systems.
 	 */
 	Option: {key: 'altKey', value: 2}, // <enum>
+
 	/**
 	 * Represents the shit key.
 	 */
 	Shift: {key: 'shiftKey', value: 4}, // <enum>
+
 	/**
 	 * Represents the control key.
 	 */
 	Control: {key: 'ctrlKey', value: 8}, // <enum>
+
 	/**
 	 * Represents the command key on macOS and iOS and control key on other systems.
 	 */
