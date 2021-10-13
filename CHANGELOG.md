@@ -1,3 +1,9 @@
+# 2.7.1
+
+## BMMonacoCodeEditor
+
+When initializing, the compiler defaults will now be set each time.
+
 # 2.7
 
 ## BMLayoutEditorSettingsView
