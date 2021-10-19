@@ -158,7 +158,7 @@ BMCollectionViewLayout.prototype = {
 	/**
 	 * Invoked by the collection view to obtain the first index path in the layout.
 	 * The default implementation returns the first index path in the data set.
-	 * @returns <BMIndexPath | undefined>		The first index path, or `undefined` if no index path exists.
+	 * @returns <BMIndexPath, nullable>		The first index path, or `undefined` if no index path exists.
 	 */
 	firstIndexPath() {
 		const sectionCount = this.collectionView.numberOfSections();
@@ -177,6 +177,8 @@ BMCollectionViewLayout.prototype = {
 	 * If the given index path is at the left edge of the content area, the same index path should be returned.
 	 * 
 	 * The default implementation returns the previous index path in the data set.
+	 * @param indexPath <BMIndexPath>		The starting index path.
+	 * @returns <BMIndexPath>				The index path to the left of the starting index path.
 	 */
 	indexPathToTheLeftOfIndexPath(indexPath) {
 		if (indexPath.row > 0) {
@@ -206,6 +208,8 @@ BMCollectionViewLayout.prototype = {
 	 * If the given index path is at the top edge of the content area, the same index path should be returned.
 	 * 
 	 * The default implementation returns the result of calling `indexPathToTheLeftOfIndexPath`.
+	 * @param indexPath <BMIndexPath>		The starting index path.
+	 * @returns <BMIndexPath>				The index path above the starting index path.
 	 */
 	indexPathAboveIndexPath(indexPath) {
 		return this.indexPathToTheLeftOfIndexPath(indexPath);
@@ -218,6 +222,8 @@ BMCollectionViewLayout.prototype = {
 	 * If the given index path is at the right edge of the content area, the same index path should be returned.
 	 * 
 	 * The default implementation returns the next index path in the data set.
+	 * @param indexPath <BMIndexPath>		The starting index path.
+	 * @returns <BMIndexPath>				The index path to the right of the starting index path.
 	 */
 	indexPathToTheRightOfIndexPath(indexPath) {
 		const rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(indexPath.section);
@@ -243,15 +249,49 @@ BMCollectionViewLayout.prototype = {
 	},
 
 	/**
-	 * Invoked by the collection to obtain the index path that is visually below the given index path.
+	 * Invoked by the collection view to obtain the index path that is visually below the given index path.
 	 * 
 	 * Subclasses may override this method to return an appropriate index path.
 	 * If the given index path is at the bottom edge of the content area, the same index path should be returned.
 	 * 
 	 * The default implementation returns the result of calling `indexPathToTheRightOfIndexPath`.
+	 * @param indexPath <BMIndexPath>		The starting index path.
+	 * @returns <BMIndexPath>				The index path below the starting index path.
 	 */
 	indexPathBelowIndexPath(indexPath) {
 		return this.indexPathToTheRightOfIndexPath(indexPath);
+	},
+
+	/**
+	 * Invoked by the collection view to obtain a list of index paths that are visually between
+	 * the two given index paths.
+	 * 
+	 * The default implementation returns a list containing the index paths from the data set that
+	 * start at the given index path, stopping at the target index path.
+	 * 
+	 * The starting and ending index paths should be included in the result.
+	 * @param indexPath <BMIndexPath>		The starting index path.
+	 * {
+	 * 	@param toIndexPath <BMIndexPath>	The ending index path.
+	 * }
+	 * @return <[BMIndexPath]>				An array of index paths.
+	 */
+	indexPathsFromIndexPath(indexPath, {toIndexPath}) {
+		const indexPaths = [];
+
+		let i = indexPath.row;
+		const targetSection = toIndexPath.section;
+
+		for (let j = indexPath.section; j < targetSection; j++) {
+			const rowCount = this.collectionView.numberOfRowsInSectionAtIndex(j);
+			for (; i < rowCount; i++) {
+				indexPaths.push(this.collectionView.indexPathForObjectAtRow(i, {inSectionAtIndex: j}));
+			}
+
+			i = 0;
+		}
+
+		return indexPaths;
 	},
 
     /****************************************** UPDATES ***********************************************/
