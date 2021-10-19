@@ -193,7 +193,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the collection view will track double clicks for this event.
 	 */
@@ -208,7 +208,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -222,7 +222,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -236,7 +236,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -251,7 +251,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
