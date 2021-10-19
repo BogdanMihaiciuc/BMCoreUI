@@ -15,6 +15,7 @@ import {_BMCollectionViewTransitionLayout} from './BMCollectionViewLayout'
 import {IScroll} from '../iScroll/iscroll-probe'
 import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
 import { BMMenuSourceNodeCSSClass } from '../BMView/BMMenu'
+import { BMKeyboardShortcut, BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
 
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
@@ -969,6 +970,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    delay: 0
 		    }, delegateOptions));
 	    }
+
+        this.configureKeyboardShortcuts();
 	    
 	    this.initialized = YES;
 	    
@@ -3925,15 +3928,26 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// If the delegate did handle this event, do not invoke the default behavior
 		if (eventHandled) return;
-		
-		// The default click behavior is to toggle cells' selection state
+
+        // The default behaviour when clicking cells is to highlight them
+        if (this._highlightedIndexPath && this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath)) {
+            let canHighlight = YES;
+            if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
+                canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, cell.indexPath, {withEvent: options.withEvent});
+            }
+
+            if (canHighlight) {
+                this._highlightIndexPath(cell.indexPath, {withEvent: options.withEvent});
+            }
+        }
+
+		// The previous default click behavior is to toggle cells' selection state
 		// Ask the delegate if the cell is selectable or deselectable, 
 		// depending on whether the cell is currently selected or not.
 		var selectable = YES;
-		var selected;
+		const selected = this.isCellAtIndexPathSelected(cell.indexPath);
 		
-		
-		if (selected = this.isCellAtIndexPathSelected(cell.indexPath)) {
+		if (selected) {
 			if (this.delegate && typeof this.delegate.collectionViewCanDeselectCellAtIndexPath === 'function') {
 				selectable = this.delegate.collectionViewCanDeselectCellAtIndexPath(this, cell.indexPath);
 			}
@@ -4015,36 +4029,114 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 	/************************************* HIGHLIGHT HANDLERS ********************************/
 
+    /**
+     * Used to control whether block selection is enabled. Block selection allows users to select multiple cells
+     * at once via shift + arrow keys or via clicking and dragging from an empty space in the collection view.
+     */
+    blockSelectionEnabled: NO, // <Boolean>
+
+    /**
+     * @protected
+     * Configures the keyboard shortcuts used by the collection view for highlighting.
+     * Subclasses overriding this may invoke the superclass implementation to retain the default keyboard
+     * shortcuts.
+     */
+    configureKeyboardShortcuts() {
+        // Register the arrow keys, which are used for highlighting
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowTop', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowBottom', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+
+        // Register the shift + arrow keys, which are used for block selection
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowTop', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowBottom', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+    },
+
+    /**
+     * Invoked when an arrow key is pressed on the keyboard while this collection view has keyboard focus.
+     * @param event <KeyboardEvent>         The keyboard event that triggered this action.
+     */
+    _keyboardArrowPressedWithEvent(event) {
+        switch (event.keyCode) {
+            case 'ArrowLeft':
+            case 'ArrowTop':
+            case 'ArrowRight':
+            case 'ArrowBottom':
+                this.keyboardArrowPressed(event.keyCode, {withEvent: event});
+                break;
+        }
+    },
+
 	/**
 	 * The index path, if any, of the cell that is currently receiving keyboard focus. 
 	 * 
 	 * Setting this property to a valid index path will cause the relevant cell to become highlighted.
 	 * Additionally, setting this property to `undefined` will clear the highlighted cell.
 	 */
-	_highlightedIndexPath: undefined, // <BMIndexPath<T> | undefined>
+	_highlightedIndexPath: undefined, // <BMIndexPath<T>, nullable>
 
 	get highlightedIndexPath() {
 		return this._highlightedIndexPath;
 	},
 
 	set highlightedIndexPath(indexPath) {
+        this._highlightIndexPath(indexPath);
+	},
+
+    /**
+     * Highlights the given index path.
+     * @param indexPath <BMIndexPath>       The index path to highlight.
+     * {
+     *  @param withEvent <UIEvent>          The event that triggered this action. 
+     * }
+     */
+    _highlightIndexPath(indexPath, {withEvent: event}) {
+        const currentHighlight = this._highlightedIndexPath;
+
 		this._highlightedIndexPath = indexPath;
 
-		const cell = this.cellAtIndexPath(indexPath);
+        // Let the delegate know that the previous cell was dehilighted if any cell was highlighted
+        if (currentHighlight) {
+            if (this.delegate && this.delegate.collectionViewDidDehighlightCellAtIndexPath) {
+                this.delegate.collectionViewDidDehighlightCellAtIndexPath(this, currentHighlight);
+            }
+        }
 
-		// If the newly highlighted index path isn't visible on screen, attempt to scroll to it
-		if (!cell || !cell._attributes.frame.intersectsRect(this._bounds)) {
-			let shouldScroll = YES;
+        if (indexPath) {
+            const cell = this.cellAtIndexPath(indexPath);
+    
+            // If the newly highlighted index path isn't visible on screen, attempt to scroll to it
+            if (!cell || !cell._attributes.frame.intersectsRect(this._bounds)) {
+                let shouldScroll = YES;
+    
+                if (this.delegate && this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath) {
+                    shouldScroll = this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath(this, indexPath);
+                }
+    
+                if (shouldScroll) {
+                    this.scrollToCellAtIndexPath(indexPath, {animated: YES});
+                }
+            }
+        }
 
-			if (this.delegate && this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath) {
-				shouldScroll = this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath(this, indexPath);
-			}
-
-			if (shouldScroll) {
-				this.scrollToCellAtIndexPath(indexPath, {animated: YES});
-			}
+		if (this.delegate && this.delegate.collectionViewDidHighlightCellAtIndexPath) {
+			this.delegate.collectionViewDidHighlightCellAtIndexPath(this, indexPath, {withEvent: event});
 		}
-	},
+    },
+
+	/**
+	 * Checks if the cell at the specified index path is highlighted.
+	 * @param indexPath <BMIndexPath<T>>	The index path. This will be loosely compared to the highlighted index path.
+	 * @return <Boolean>					YES if the cell is highlighted, NO otherwise.
+	 */
+    isCellAtIndexPathHighlighted(indexPath) {
+        if (!this._highlightedIndexPath) return NO;
+
+        return this._highlightedIndexPath.isLooselyEqualToIndexPath(indexPath);
+    },
 
 	/**
 	 * Invoked when an arrow is pressed while this collection view has keyboard focus.
@@ -4106,15 +4198,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			// Otherwise look for the next index path
 		} while (nextIndexPath);
 
-
 		// If this keyboard arrow would highlight the same index path, don't take any action
 		if (nextIndexPath.isEqualToIndexPath(this._highlightedIndexPath)) return;
 
 		// Highlight the index path
-		this.highlightedIndexPath = nextIndexPath;
-		if (this.delegate && this.delegate.collectionViewDidHighlightCellAtIndexPath) {
-			this.delegate.collectionViewDidHighlightCellAtIndexPath(this, nextIndexPath, {withEvent: event});
-		}
+        this._highlightIndexPath(nextIndexPath, {withEvent: event});
 	},
 	
 	
@@ -4172,7 +4260,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 	
 	/**
-	 * Invoked by the collection view during an update to refresh the index paths of the selected cells.
+	 * Invoked by the collection view during an update to refresh the index paths of the selected and highlighted cells.
 	 * Index paths that are no longer in the data set will be removed and all other index paths will be updated
 	 * to the correct section and row indexes.
 	 */
@@ -4186,6 +4274,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			
 			if (indexPath) this._selectedIndexPaths.push(indexPath);
 		}
+
+        if (this._highlightedIndexPath) {
+            this._highlightedIndexPath = this.dataSet.indexPathForObject(this._highlightedIndexPath);
+        }
 	},
 	
 	/**
