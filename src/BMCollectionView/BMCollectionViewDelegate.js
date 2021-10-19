@@ -115,9 +115,9 @@ BMCollectionViewDelegate.prototype = {
 	 * 
 	 * If this method is not implemented by the delegate object, the collection view will assume that any cell may be highlighted.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
-	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * @param indexPath <BMIndexPath, nullable>		The cell's index path or `undefined` if the highlighted index path should be cleared.
 	 * {
-	 * 	@param forEvent <Event, nullable>			If the cell should be highlighted because of an event, this represents the event
+	 * 	@param withEvent <Event, nullable>			If the cell should be highlighted because of an event, this represents the event
 	 * 												for which the cell should be highlighted.
 	 * }
 	 * @return <Boolean>							`YES` if the cell can be highlighted, `NO` otherwise.
@@ -127,21 +127,32 @@ BMCollectionViewDelegate.prototype = {
 	/**
 	 * Invoked by the collection view whenever any cell was highlighted.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
-	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * @param indexPath <BMIndexPath>				The cell's index path or `undefined` if the highlighted index path was cleared.
 	 * {
-	 * 	@param forEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
+	 * 	@param widthEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
 	 * 												for which the cell was highlighted.
 	 * }
 	 */
 	collectionViewDidHighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
 
 	/**
+	 * Invoked by the collection view whenever any cell is no longer highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * {
+	 * 	@param widthEvent <Event, nullable>			If the cell was dehighlighted because of an event, this represents the event
+	 * 												for which the cell was dehighlighted.
+	 * }
+	 */
+	collectionViewDidDehighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
 	 * Invoked by a collection view after highlighting a cell that it is not visible on screen to determine
 	 * if it should scroll to reveal that cell.
 	 * 
 	 * When this method is not implemented, the default behaviour is to scroll to off-screen cells that are highlighted.
-	 * @param collectionView 		The calling collection view.
-	 * @param indexPath 			The index path that was just highlighted.
+	 * @param collectionView <BMCollectionView> 		The calling collection view.
+	 * @param indexPath <BMIndexPath>			        The index path that was just highlighted.
 	 */
 	collectionViewShouldScrollToHighlightedCellAtIndexPath: function (collectionView, indexPath) {},
 
