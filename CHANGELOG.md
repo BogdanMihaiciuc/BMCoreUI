@@ -1,5 +1,9 @@
 # 2.8
 
+## BMView
+
+The methods for registering and managing keyboard shortcuts have moved from `BMWindow` to `BMView` so that any subclass can make use of this functionality.
+
 ## BMCollectionView
 
 Added a new readonly `visibleBounds` property that returns a rect describing the part of the bounds that are visible on screen.
@@ -7,6 +11,31 @@ Added a new readonly `visibleBounds` property that returns a rect describing the
 When using `scrollToSupplementaryViewWithIdentifier` or `scrollToCellAtIndexPath` and not specifying any gravity, the default values will now depend on the cell's position relative to the current bounds, rather that defaulting to top and left.
 
 Resolved an issue in `scrollToSupplementaryViewWithIdentifier` where the default top gravity was set to an improper default value when omitted.
+
+Added support for a new state for cells called highlighting and a series of new properties and method to support this. Cells are highlighted when they are clicked or by using the keyboard arrow keys. The following properties and methods related to this functionality have been added:
+ - A new `highlightedIndexPath` property can be used to set or retrieve the currently highlighted index path.
+ - A new `isCellAtIndexPathHighlighted(_)` method can be used to test if a given index path is highlighted.
+ - A new `keyboardArrowPressed(_, {withEvent})` method is invoked when arrow keys are pressed on the keyboard and can be invoked to simulate an arrow press.
+ - A new `configureKeyboardShortcuts` method is now invoked during initialization to enable cell highlighting via the keyboard. Subclasses may also override this method to add their own keyboard shortcuts.
+
+## BMCollectionViewDelegate
+
+Delegates can now implement the following methods to control and respond to cells being highlighted:
+ - `collectionViewCanHighlightCellAtIndexPath(_, _, {withEvent})` can be used to control whether specific cells may be highlighted or not.
+ - `collectionViewDidHighlightCellAtIndexPath(_, _, {withEvent})` can be used to respond to cells being highlighted.
+ - `collectionViewDidDehighlightCellAtIndexPath(_, _, {withEvent})` can be used to respond to cells being dehighlighted.
+ - `collectionViewShouldScrollToHighlightedCellAtIndexPath(_, _)` is invoked when an off-screen cell is highlighted to determine whether the collection should scroll to reveal that cell.
+
+## BMCollectionViewLayout
+
+The following new methods have been added and may be overriden by layout subclasses to improve keyboard navigation:
+ - `firstIndexPath()` is used to obtain the first visible index path.
+ - `indexPathToTheLeftOfIndexPath(_)` is used to obtain the index path that is visually to the left of a given index path.
+ - `indexPathToTheRightOfIndexPath(_)` is used to obtain the index path that is visually to the right of a given index path.
+ - `indexPathAboveIndexPath(_)` is used to obtain the index path that is visually above a given index path.
+ - `indexPathBelowIndexPath(_)` is used to obtain the index path that is visually below a given index path.
+
+A new `indexPathsFromIndexPath(_, {toIndexPath})` method can be used to obtain a list of index paths that are visually between two index paths.
 
 # 2.7.1
 
