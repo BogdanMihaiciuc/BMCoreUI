@@ -3930,7 +3930,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		if (eventHandled) return;
 
         // The default behaviour when clicking cells is to highlight them
-        if (this._highlightedIndexPath && this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: this.identityComparator})) {
+        if (this._highlightedIndexPath && !this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: this.identityComparator})) {
             let canHighlight = YES;
             if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
                 canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, cell.indexPath, {withEvent: options.withEvent});
@@ -4103,7 +4103,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
             const cell = this.cellAtIndexPath(indexPath);
     
             // If the newly highlighted index path isn't visible on screen, attempt to scroll to it
-            if (!cell || !cell._attributes.frame.intersectsRect(this._bounds)) {
+            if (!cell || !cell._attributes.frame.intersectsRect(this.visibleBounds)) {
                 let shouldScroll = YES;
     
                 if (this.delegate && this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath) {
@@ -4113,6 +4113,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
                 if (shouldScroll) {
                     this.scrollToCellAtIndexPath(indexPath, {animated: YES});
                 }
+            }
+
+            // If the cell was highlighted, prevent the default action for keyboard events
+            if (event instanceof KeyboardEvent) {
+                event.preventDefault();
             }
         }
 
@@ -5564,13 +5569,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = visibleBounds || this.visibleBounds;
 
 				if (rect.origin.x > visibleBounds.right) {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
 				}
 				else if (rect.right < visibleBounds.origin.x) {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
 				}
 				else {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
 				}
 			}
 
@@ -5624,13 +5629,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = visibleBounds || this.visibleBounds;
 
 				if (rect.origin.x > visibleBounds.right) {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
 				}
 				else if (rect.right < visibleBounds.origin.x) {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
 				}
 				else {
-					verticalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
 				}
 			}
 
