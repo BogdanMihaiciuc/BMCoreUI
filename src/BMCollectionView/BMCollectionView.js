@@ -3930,7 +3930,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		if (eventHandled) return;
 
         // The default behaviour when clicking cells is to highlight them
-        if (this._highlightedIndexPath && this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath)) {
+        if (this._highlightedIndexPath && this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: this.identityComparator})) {
             let canHighlight = YES;
             if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
                 canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, cell.indexPath, {withEvent: options.withEvent});
@@ -4030,12 +4030,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/************************************* HIGHLIGHT HANDLERS ********************************/
 
     /**
-     * Used to control whether block selection is enabled. Block selection allows users to select multiple cells
-     * at once via shift + arrow keys or via clicking and dragging from an empty space in the collection view.
-     */
-    blockSelectionEnabled: NO, // <Boolean>
-
-    /**
      * @protected
      * Configures the keyboard shortcuts used by the collection view for highlighting.
      * Subclasses overriding this may invoke the superclass implementation to retain the default keyboard
@@ -4045,14 +4039,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
         // Register the arrow keys, which are used for highlighting
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent'}));
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent'}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowTop', {target: this, action: '_keyboardArrowPressedWithEvent'}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowBottom', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent'}));
 
         // Register the shift + arrow keys, which are used for block selection
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
         this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowTop', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowBottom', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
     },
 
     /**
@@ -4060,11 +4054,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
      * @param event <KeyboardEvent>         The keyboard event that triggered this action.
      */
     _keyboardArrowPressedWithEvent(event) {
-        switch (event.keyCode) {
+        switch (event.code) {
             case 'ArrowLeft':
-            case 'ArrowTop':
+            case 'ArrowUp':
             case 'ArrowRight':
-            case 'ArrowBottom':
+            case 'ArrowDown':
                 this.keyboardArrowPressed(event.keyCode, {withEvent: event});
                 break;
         }
@@ -4135,7 +4129,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
     isCellAtIndexPathHighlighted(indexPath) {
         if (!this._highlightedIndexPath) return NO;
 
-        return this._highlightedIndexPath.isLooselyEqualToIndexPath(indexPath);
+        return this._highlightedIndexPath.isLooselyEqualToIndexPath(indexPath, {usingComparator: this.identityComparator});
     },
 
 	/**
@@ -4163,13 +4157,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					case 'ArrowLeft':
 						nextIndexPath = this.layout.indexPathToTheLeftOfIndexPath(nextIndexPath);
 						break;
-					case 'ArrowTop':
+					case 'ArrowUp':
 						nextIndexPath = this.layout.indexPathAboveIndexPath(nextIndexPath);
 						break;
 					case 'ArrowRight':
 						nextIndexPath = this.layout.indexPathToTheRightOfIndexPath(nextIndexPath);
 						break;
-					case 'ArrowBottom':
+					case 'ArrowDown':
 						nextIndexPath = this.layout.indexPathBelowIndexPath(nextIndexPath);
 						break;
 				}
@@ -4190,7 +4184,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 			else {
 				// If the index path can't be highlighted and no appropriate next index path exists don't take any action
-				if (startingIndexPath.isEqualToIndexPath(nextIndexPath)) {
+				if (startingIndexPath.isEqualToIndexPath(nextIndexPath, {usingComparator: this.identityComparator})) {
 					return;
 				}
 			}
@@ -4199,7 +4193,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		} while (nextIndexPath);
 
 		// If this keyboard arrow would highlight the same index path, don't take any action
-		if (nextIndexPath.isEqualToIndexPath(this._highlightedIndexPath)) return;
+		if (nextIndexPath.isEqualToIndexPath(this._highlightedIndexPath, {usingComparator: this.identityComparator})) return;
 
 		// Highlight the index path
         this._highlightIndexPath(nextIndexPath, {withEvent: event});
