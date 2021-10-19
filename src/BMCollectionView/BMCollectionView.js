@@ -4059,7 +4059,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
             case 'ArrowUp':
             case 'ArrowRight':
             case 'ArrowDown':
-                this.keyboardArrowPressed(event.keyCode, {withEvent: event});
+                this.keyboardArrowPressed(event.code, {withEvent: event});
                 break;
         }
     },
