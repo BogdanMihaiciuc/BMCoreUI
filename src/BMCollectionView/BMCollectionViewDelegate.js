@@ -129,7 +129,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param indexPath <BMIndexPath>				The cell's index path or `undefined` if the highlighted index path was cleared.
 	 * {
-	 * 	@param widthEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
+	 * 	@param withEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
 	 * 												for which the cell was highlighted.
 	 * }
 	 */
@@ -140,7 +140,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param indexPath <BMIndexPath>				The cell's index path.
 	 * {
-	 * 	@param widthEvent <Event, nullable>			If the cell was dehighlighted because of an event, this represents the event
+	 * 	@param withEvent <Event, nullable>			If the cell was dehighlighted because of an event, this represents the event
 	 * 												for which the cell was dehighlighted.
 	 * }
 	 */
