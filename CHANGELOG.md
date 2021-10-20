@@ -26,6 +26,8 @@ Delegates can now implement the following methods to control and respond to cell
  - `collectionViewDidDehighlightCellAtIndexPath(_, _, {withEvent})` can be used to respond to cells being dehighlighted.
  - `collectionViewShouldScrollToHighlightedCellAtIndexPath(_, _)` is invoked when an off-screen cell is highlighted to determine whether the collection should scroll to reveal that cell.
 
+Resolved an issue where several event arguments were declared as jQuery events when in fact they were standard events.
+
 ## BMCollectionViewLayout
 
 The following new methods have been added and may be overriden by layout subclasses to improve keyboard navigation:
@@ -36,6 +38,10 @@ The following new methods have been added and may be overriden by layout subclas
  - `indexPathBelowIndexPath(_)` is used to obtain the index path that is visually below a given index path.
 
 A new `indexPathsFromIndexPath(_, {toIndexPath})` method can be used to obtain a list of index paths that are visually between two index paths.
+
+## BMKeyboardShortcut
+
+This type is now properly included in the definitions file.
 
 # 2.7.1
 
