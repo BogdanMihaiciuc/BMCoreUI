@@ -111,6 +111,20 @@ BMCollectionViewDelegate.prototype = {
 	collectionViewDidDeselectCellAtIndexPath: function (collectionView, indexPath) {},
 
 	/**
+	 * Invoked by the collection view whenever any arrow key is pressed to determine if it should process that event and highlight
+	 * an appropriate cell.
+	 * 
+	 * Delegates can implement this method to control when keyboard events should be handled, for example to disallow handling the
+	 * left and right arrow keys when the event originates from an input element.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param key <String>							The code of the key that was pressed.
+	 * {
+	 * 	@param withEvent <KeyboardEvent>			The keyboard event that triggered this action.
+	 * }
+	 */
+	collectionViewShouldHighlightCellForArrowKey: function (collectionView, key, args) {},
+
+	/**
 	 * Invoked by the collection view to verify if a cell can be highlighted.
 	 * 
 	 * If this method is not implemented by the delegate object, the collection view will assume that any cell may be highlighted.

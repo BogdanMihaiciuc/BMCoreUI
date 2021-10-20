@@ -4149,6 +4149,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		let nextIndexPath = this._highlightedIndexPath;
 		const event = args && args.withEvent;
 
+        if (event) {
+            // If this triggered by an event, ask the delegate if collection view should process this event
+            let canProcess = YES;
+
+            if (this.delegate && this.delegate.collectionViewShouldHighlightCellForArrowKey) {
+                canProcess = this.delegate.collectionViewShouldHighlightCellForArrowKey(this, arrow, {withEvent: event});
+            }
+
+            // If the delegate disallows processing this event, stop
+            if (!canProcess) {
+                return;
+            }
+        }
+
 		do {
 			const startingIndexPath = nextIndexPath;
 
