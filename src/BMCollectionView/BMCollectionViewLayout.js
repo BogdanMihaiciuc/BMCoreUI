@@ -295,7 +295,11 @@ BMCollectionViewLayout.prototype = {
 		const targetSection = toIndexPath.section;
 
 		for (let j = indexPath.section; j < targetSection; j++) {
-			const rowCount = this.collectionView.numberOfRowsInSectionAtIndex(j);
+			let rowCount = this.collectionView.numberOfRowsInSectionAtIndex(j);
+			if (j == toIndexPath.section) {
+				rowCount = toIndexPath.row + 1;
+			}
+
 			for (; i < rowCount; i++) {
 				indexPaths.push(this.collectionView.indexPathForObjectAtRow(i, {inSectionAtIndex: j}));
 			}
