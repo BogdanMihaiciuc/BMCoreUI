@@ -279,6 +279,18 @@ BMCollectionViewLayout.prototype = {
 	indexPathsFromIndexPath(indexPath, {toIndexPath}) {
 		const indexPaths = [];
 
+		// Swap the index paths if the target index path is before the source index path
+		if (toIndexPath.section < indexPath.section) {
+			const swapIndexPath = toIndexPath;
+			toIndexPath = indexPath;
+			indexPath = swapIndexPath;
+		}
+		else if (indexPath.section == toIndexPath.section && toIndexPath.row < indexPath.row) {
+			const swapIndexPath = toIndexPath;
+			toIndexPath = indexPath;
+			indexPath = swapIndexPath;
+		}
+
 		let i = indexPath.row;
 		const targetSection = toIndexPath.section;
 
