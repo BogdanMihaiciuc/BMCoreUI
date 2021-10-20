@@ -5555,10 +5555,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = this.visibleBounds;
 
 				if (rect.origin.y > visibleBounds.bottom) {
-					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
 				}
 				else if (rect.bottom < visibleBounds.origin.y) {
-					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
 				}
 				else {
 					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
@@ -5569,10 +5569,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = visibleBounds || this.visibleBounds;
 
 				if (rect.origin.x > visibleBounds.right) {
-					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
 				}
 				else if (rect.right < visibleBounds.origin.x) {
-					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
 				}
 				else {
 					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
@@ -5615,10 +5615,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = this.visibleBounds;
 
 				if (rect.origin.y > visibleBounds.bottom) {
-					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
 				}
 				else if (rect.bottom < visibleBounds.origin.y) {
-					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
 				}
 				else {
 					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
@@ -5629,10 +5629,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				visibleBounds = visibleBounds || this.visibleBounds;
 
 				if (rect.origin.x > visibleBounds.right) {
-					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
 				}
 				else if (rect.right < visibleBounds.origin.x) {
-					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
 				}
 				else {
 					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
@@ -5670,7 +5670,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			offset.y = rect.origin.y + rect.size.height / 2 - this.frame.size.height / 2;
 		}
 		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityVertical.Bottom) {
-			offset.y = rect.origin.y + rect.size.height - this.frame.size.height / 2;
+			offset.y = rect.origin.y + rect.size.height - this.frame.size.height;
 		}
 		
 		// Then the horizontal X offset
@@ -5681,7 +5681,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			offset.x = rect.origin.x + rect.size.width / 2 - this.frame.size.width / 2;
 		}
 		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityHorizontal.Right) {
-			offset.x = rect.origin.x + rect.size.width - this.frame.size.width / 2;
+			offset.x = rect.origin.x + rect.size.width - this.frame.size.width;
 		}
 		
 		// Scroll to the offset point
