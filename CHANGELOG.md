@@ -21,6 +21,7 @@ Added support for a new state for cells called highlighting and a series of new 
 ## BMCollectionViewDelegate
 
 Delegates can now implement the following methods to control and respond to cells being highlighted:
+ - `collectionViewShouldHighlightCellForArrowKey(_, _, {withEvent})` can be used to control when keyboard events are processed.
  - `collectionViewCanHighlightCellAtIndexPath(_, _, {withEvent})` can be used to control whether specific cells may be highlighted or not.
  - `collectionViewDidHighlightCellAtIndexPath(_, _, {withEvent})` can be used to respond to cells being highlighted.
  - `collectionViewDidDehighlightCellAtIndexPath(_, _, {withEvent})` can be used to respond to cells being dehighlighted.
