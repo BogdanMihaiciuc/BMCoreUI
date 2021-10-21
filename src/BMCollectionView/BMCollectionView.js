@@ -4289,7 +4289,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 
         if (this._highlightedIndexPath) {
-            this._highlightedIndexPath = this.dataSet.indexPathForObject(this._highlightedIndexPath);
+            this._highlightedIndexPath = this.dataSet.indexPathForObject(this._highlightedIndexPath.object);
         }
 	},
 	
