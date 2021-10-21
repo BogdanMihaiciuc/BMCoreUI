@@ -294,9 +294,9 @@ BMCollectionViewLayout.prototype = {
 		let i = indexPath.row;
 		const targetSection = toIndexPath.section;
 
-		for (let j = indexPath.section; j < targetSection; j++) {
-			let rowCount = this.collectionView.numberOfRowsInSectionAtIndex(j);
-			if (j == toIndexPath.section) {
+		for (let j = indexPath.section; j < targetSection + 1; j++) {
+			let rowCount = this.collectionView.numberOfObjectsInSectionAtIndex(j);
+			if (j == targetSection) {
 				rowCount = toIndexPath.row + 1;
 			}
 
