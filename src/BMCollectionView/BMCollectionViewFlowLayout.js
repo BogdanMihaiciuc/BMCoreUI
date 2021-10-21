@@ -4420,6 +4420,313 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
         
         return attributes;
     },
+
+	// @override - BMCollectionViewLayout
+	indexPathToTheLeftOfIndexPath(indexPath) {
+		// In a horizontal layout this function the same as above for vertical,
+		// shifting to the previous row to a column with similar positioning
+		if (this._orientation == BMCollectionViewFlowLayoutOrientation.Horizontal) {
+			if (!this._cellSize || this._expectedCellSize) return this._cachedIndexPathAboveIndexPath(indexPath);
+	
+			return this._computedIndexPathAboveIndexPath(indexPath);
+		}
+
+		// Otherwise the base implementation is sufficient
+		return BMCollectionViewLayout.prototype.indexPathToTheLeftOfIndexPath.apply(this, arguments);
+	},
+
+	// @override - BMCollectionViewLayout
+	indexPathAboveIndexPath(indexPath) {
+		// In a horizontal layout the base implementation is sufficient
+		if (this._orientation == BMCollectionViewFlowLayoutOrientation.Horizontal) {
+			return BMCollectionViewLayout.prototype.indexPathToTheLeftOfIndexPath.apply(this, arguments);
+		}
+
+		if (!this._cellSize || this._expectedCellSize) return this._cachedIndexPathAboveIndexPath(indexPath);
+
+		return this._computedIndexPathAboveIndexPath(indexPath);
+	},
+
+	// @override - BMCollectionViewLayout
+	indexPathToTheRightOfIndexPath(indexPath) {
+		// In a horizontal layout this function the same as below for vertical,
+		// shifting to the next row to a column with similar positioning
+		if (this._orientation == BMCollectionViewFlowLayoutOrientation.Horizontal) {
+			if (!this._cellSize || this._expectedCellSize) return this._cachedIndexPathBelowIndexPath(indexPath);
+	
+			return this._computedIndexPathBelowIndexPath(indexPath);
+		}
+
+		// Otherwise the base implementation is sufficient
+		return BMCollectionViewLayout.prototype.indexPathToTheRightOfIndexPath.apply(this, arguments);
+	},
+
+	// @override - BMCollectionViewLayout
+	indexPathBelowIndexPath(indexPath) {
+		// In a horizontal layout the base implementation is sufficient
+		if (this._orientation == BMCollectionViewFlowLayoutOrientation.Horizontal) {
+			return BMCollectionViewLayout.prototype.indexPathToTheRightOfIndexPath.apply(this, arguments);
+		}
+
+		if (!this._cellSize || this._expectedCellSize) return this._cachedIndexPathBelowIndexPath(indexPath);
+
+		return this._computedIndexPathBelowIndexPath(indexPath);
+	},
+
+	/**
+	 * Returns the index path that is above the given index path in a cached layout.
+	 * In a horizontal layout this returns the index path that is to the left of the given index path.
+	 * @param indexPath <BMIndexPath>		The index path to start from.
+	 * @returns <BMIndexPath>				The index path above the given one.
+	 */
+	_cachedIndexPathAboveIndexPath(indexPath) {
+		const section = indexPath.section;
+		const row = indexPath.row;
+
+		// Find the row where the current index path is
+		const sectionRows = this.cachedLayout.sections[section];
+
+		if (!sectionRows) return indexPath;
+		
+		let rowIndex = 0;
+		const rowCount = sectionRows.length;
+		for (rowIndex; rowIndex < rowCount; rowIndex++) {
+			if (row.startIndex <= row && row.endIndex >= row) {
+				break;
+			}
+		}
+
+		const attributes = sectionRows[rowIndex].attributes;
+		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
+		const position = attributes.frame.center[positionProperty];
+
+		let previousRow;
+
+		// Find the next row, if any
+		if (rowIndex >= 0) {
+			const previousRowIndex = rowIndex - 1;
+			previousRow = sectionRows[previousRowIndex];
+		}
+		else {
+			// If the current row is the first one in its section, find the next section that has at least one row
+			let sectionIndex = section - 1;
+			while (sectionIndex >= 0) {
+				if (this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex)) {
+					previousRow = this.cachedLayout.sections[sectionIndex].sectionRows[this.cachedLayout.sections[sectionIndex].sectionRows.length - 1];
+					break;
+				}
+				sectionIndex--;
+			}
+		}
+
+
+		// If no viable row is found, the current row is the first one
+		if (previousRow) {
+			// In this row, return the index path for the attributes with
+			// the closest horizontal distance from the source index path
+			let minDistance = Number.MAX_SAFE_INTEGER;
+			let minDistanceIndex = -1;
+			for (let i = 0; i < previousRow.attributes.length; i++) {
+				const attributes = previousRow.attributes[i];
+				const distance = Math.abs(attributes.frame.center[positionProperty] - position);
+
+				if (distance < minDistance) {
+					minDistance = distance;
+					minDistanceIndex = i;
+				}
+			}
+
+			return previousRow.attributes[minDistanceIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+
+	/**
+	 * Returns the index path that is above the given index path in a computed layout.
+	 * In a horizontal layout this returns the index path that is to the left of the given index path.
+	 * @param indexPath <BMIndexPath>		The index path to start from.
+	 * @returns <BMIndexPath>				The index path above the given one.
+	 */
+	_computedIndexPathAboveIndexPath(indexPath) {
+		const cache = this.cachedLayout;
+		
+		var sectionIndex = indexPath.section;
+		
+		const numberOfColumns = cache.numberOfColumns;
+		
+		var objectIndex = indexPath.row;
+		
+		// Find the row and column index within the section
+		const cellRow = (objectIndex / numberOfColumns) | 0;
+		const cellColumn = objectIndex % numberOfColumns;
+
+		let previousRow;
+
+		if (cellRow >= 0) {
+			previousRow = cellRow - 1;
+		}
+		else {
+			// If the current row is the last one in its section, find the next section that has at least one row
+			let previousSectionIndex = sectionIndex - 1;
+			while (previousSectionIndex >= 0) {
+				if (this.collectionView.numberOfObjectsInSectionAtIndex(previousSectionIndex)) {
+					previousRow = cache.sections[previousSectionIndex].numberOfRows - 1;
+					sectionIndex = previousSectionIndex;
+					break;
+				}
+				previousSectionIndex--;
+			}
+		}
+
+		if (typeof previousRow != 'number') return indexPath;
+
+		const nextRowIndexStart = numberOfColumns * previousRow;
+		const nextSectionNumberOfObjects = this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex);
+		
+		
+		// Find this cell's row prototype. In most cases this will be the prototype for the numberOfColumns columns,
+		// unless this cell is in the last row - in those cases it is possible that there may be fewer columns
+		if (previousRow == ((nextSectionNumberOfObjects / numberOfColumns) | 0)) {
+			var numberOfColumnsInLastRow = (nextSectionNumberOfObjects % numberOfColumns) || numberOfColumns;
+			
+			return this.collectionView.indexPathForObjectAtRow(nextRowIndexStart + Math.min(numberOfColumnsInLastRow, cellColumn), {inSectionAtIndex: sectionIndex})
+		}
+		else {
+			return this.collectionView.indexPathForObjectAtRow(nextRowIndexStart + cellColumn, {inSectionAtIndex: sectionIndex});
+		}
+		
+	},
+
+	/**
+	 * Returns the index path that is below the given index path in a cached layout.
+	 * In a horizontal layout this returns the index path that is to the right of the given index path.
+	 * @param indexPath <BMIndexPath>		The index path to start from.
+	 * @returns <BMIndexPath>				The index path below the given one.
+	 */
+	_cachedIndexPathBelowIndexPath(indexPath) {
+		const sectionCount = this.collectionView.numberOfSections();
+
+		const section = indexPath.section;
+		const row = indexPath.row;
+
+		// Find the row where the current index path is
+		const sectionRows = this.cachedLayout.sections[section];
+
+		if (!sectionRows) return indexPath;
+		
+		let rowIndex = 0;
+		const rowCount = sectionRows.length;
+		for (rowIndex; rowIndex < rowCount; rowIndex++) {
+			if (row.startIndex <= row && row.endIndex >= row) {
+				break;
+			}
+		}
+
+		const attributes = sectionRows[rowIndex].attributes;
+		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
+		const position = attributes.frame.center[positionProperty];
+
+		let nextRow;
+
+		// Find the next row, if any
+		if (rowIndex < rowCount - 1) {
+			const nextRowIndex = rowIndex + 1;
+			nextRow = sectionRows[nextRowIndex];
+		}
+		else {
+			// If the current row is the last one in its section, find the next section that has at least one row
+			let sectionIndex = section + 1;
+			while (sectionIndex < sectionCount) {
+				if (this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex)) {
+					nextRow = this.cachedLayout.sections[sectionIndex].sectionRows[0];
+					break;
+				}
+				sectionIndex++;
+			}
+		}
+
+
+		// If no viable row is found, the current row is the last one
+		if (nextRow) {
+			// In this row, return the index path for the attributes with
+			// the closest horizontal distance from the source index path
+			let minDistance = Number.MAX_SAFE_INTEGER;
+			let minDistanceIndex = -1;
+			for (let i = 0; i < nextRow.attributes.length; i++) {
+				const attributes = nextRow.attributes[i];
+				const distance = Math.abs(attributes.frame.center[positionProperty] - position);
+
+				if (distance < minDistance) {
+					minDistance = distance;
+					minDistanceIndex = i;
+				}
+			}
+
+			return nextRow.attributes[minDistanceIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+
+	/**
+	 * Returns the index path that is below the given index path in a computed layout.
+	 * In a horizontal layout this returns the index path that is to the left of the given index path.
+	 * @param indexPath <BMIndexPath>		The index path to start from.
+	 * @returns <BMIndexPath>				The index path below the given one.
+	 */
+	_computedIndexPathBelowIndexPath(indexPath) {
+		const sectionCount = this.collectionView.numberOfSections();
+
+		const cache = this.cachedLayout;
+		
+		var sectionIndex = indexPath.section;
+		var section = cache.sections[sectionIndex];
+		
+		const numberOfColumns = cache.numberOfColumns;
+		
+		var objectIndex = indexPath.row;
+		
+		// Find the row and column index within the section
+		const cellRow = (objectIndex / numberOfColumns) | 0;
+		const cellColumn = objectIndex % numberOfColumns;
+
+		let nextRow;
+
+		if (cellRow < section.numberOfRows - 1) {
+			nextRow = cellRow + 1;
+		}
+		else {
+			// If the current row is the last one in its section, find the next section that has at least one row
+			let nextSectionIndex = sectionIndex + 1;
+			while (nextSectionIndex < sectionCount) {
+				if (this.collectionView.numberOfObjectsInSectionAtIndex(nextSectionIndex)) {
+					nextRow = 0;
+					sectionIndex = nextSectionIndex;
+					break;
+				}
+				nextSectionIndex++;
+			}
+		}
+
+		if (typeof nextRow != 'number') return indexPath;
+
+		const nextRowIndexStart = numberOfColumns * nextRow;
+		const nextSectionNumberOfObjects = this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex);
+		
+		
+		// Find this cell's row prototype. In most cases this will be the prototype for the numberOfColumns columns,
+		// unless this cell is in the last row - in those cases it is possible that there may be fewer columns
+		if (nextRow == ((nextSectionNumberOfObjects / numberOfColumns) | 0)) {
+			var numberOfColumnsInLastRow = (nextSectionNumberOfObjects % numberOfColumns) || numberOfColumns;
+			
+			return this.collectionView.indexPathForObjectAtRow(nextRowIndexStart + Math.min(numberOfColumnsInLastRow, cellColumn), {inSectionAtIndex: sectionIndex})
+		}
+		else {
+			return this.collectionView.indexPathForObjectAtRow(nextRowIndexStart + cellColumn, {inSectionAtIndex: sectionIndex});
+		}
+		
+	},
 	
 	// @override - BMCollectionViewLayout
 	copy: function () {
