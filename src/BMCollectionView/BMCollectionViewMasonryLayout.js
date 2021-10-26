@@ -3,7 +3,7 @@
 import {YES, NO, BMExtend} from '../Core/BMCoreUI'
 import {BMSizeMake} from '../Core/BMSize'
 import {BMRectMake} from '../Core/BMRect'
-import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath} from './BMCollectionViewLayoutAttributes'
+import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesType} from './BMCollectionViewLayoutAttributes'
 import {BMCollectionViewLayout} from './BMCollectionViewLayout'
 
 // @type BMCollectionViewMasonryLayout extends BMCollectionViewLayout
@@ -331,15 +331,29 @@ BMCollectionViewMasonryLayout.prototype = BMExtend({}, BMCollectionViewLayout.pr
 	
 	/**
 	 * Retrieves the cached attributes for the cell at the given index path.
+	 * @param indexPath <BMIndexPath>							The cell's index path.
+	 * {
+	 *	@param usingCache <Object, nullable>					Defaults to this layout's current cache. The cache object to use.
+	 * }
+	 * @return <BMCollectionViewLayoutAttributes, nullable>		The layout attributes if the index path exists in the data set, `undefined` otherwise.
+	 */
+	cachedAttributesForCellAtIndexPath: function (indexPath, options) {
+		return this._extendedCachedAttributesForCellAtIndexPath(indexPath, options).attribute;
+	},
+	
+	/**
+	 * Retrieves the cached attributes for the cell at the given index path and information about
+	 * the column it is on.
 	 * @param indexPath <BMIndexPath>			The cell's index path.
 	 * {
 	 *	@param usingCache <Object, nullable>	Defaults to this layout's current cache. The cache object to use.
 	 * }
+	 * @return <Object, nullable>				An object that describes the requested attributes and its position in the layout.
 	 */
-	cachedAttributesForCellAtIndexPath: function (indexPath, options) {
+	_extendedCachedAttributesForCellAtIndexPath: function(indexPath, args) {
 		var offset = this.collectionView.scrollOffset;
 		
-		var cache = (options && options.usingCache) || this.cachedLayout;
+		var cache = (args && args.usingCache) || this.cachedLayout;
 		
 		// Find the attributes in each column
 		var columns = cache.columns;
@@ -367,12 +381,15 @@ BMCollectionViewMasonryLayout.prototype = BMExtend({}, BMCollectionViewLayout.pr
 					attribute.frame.origin.y = (attribute.frame.origin.y + speedAdjustment) | 0;
 					attribute.speed = column.speed;
 					
-					return attribute;
+					return {
+						attribute,
+						columnIndex: i,
+						rowIndex: attributeIndex
+					};
 				}
 			}
 			
 		}
-		
 	},
 	
 	
@@ -460,6 +477,129 @@ BMCollectionViewMasonryLayout.prototype = BMExtend({}, BMCollectionViewLayout.pr
         
         return attributes;
     },
+
+	/************************************* CELL HIGHLIGHTING ********************************/
+
+	// @override - BMCollectionViewLayout
+	indexPathToTheLeftOfIndexPath(indexPath) {
+		// Create a rect starting at the left edge of the given index path and request attributes in it
+		const extendedAttributes = this._extendedCachedAttributesForCellAtIndexPath(indexPath);
+
+		if (extendedAttributes.columnIndex == 0) return indexPath;
+
+		const startingAttributes = extendedAttributes.attribute;
+		const center = startingAttributes.frame.center.y;
+		
+		const offset = this.collectionView.scrollOffset;
+		
+		const cache = this.cachedLayout;
+		
+		// Find the attributes in previous column with the smallest vertical distance from the starting attributes
+		const column = cache.columns[extendedAttributes.columnIndex - 1];
+
+		// The speedTop is the unscaled top position at which to start retrieving cells.
+		var speedTop = offset.y * column.speed;
+		
+		// The speedAdjustment is the amount by which to displace each attribute's Y origin.
+		var speedAdjustment = offset.y - speedTop;
+
+		let minIndex = -1;
+		let minDistance = Number.MAX_SAFE_INTEGER;
+		for (let i = 0; i < column.attributes.length; i++) {
+			const attribute = column.attributes[i];
+			const position = attribute.frame.center.y + speedAdjustment | 0;
+
+			const distance = Math.abs(position - center);
+			if (distance < minDistance) {
+				minIndex = i;
+				minDistance = distance;
+			}
+		}
+
+		if (minIndex != -1) {
+			return column.attributes[minIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+
+	// @override - BMCollectionViewLayout
+	indexPathAboveIndexPath(indexPath) {
+		// Return the row above the given index path in the same column
+		const extendedAttributes = this._extendedCachedAttributesForCellAtIndexPath(indexPath);
+
+		if (extendedAttributes.rowIndex > 0) {
+			return this.cachedLayout.columns[extendedAttributes.columnIndex].attributes[extendedAttributes.rowIndex - 1].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathToTheRightOfIndexPath(indexPath) {
+		// Create a rect starting at the left edge of the given index path and request attributes in it
+		const extendedAttributes = this._extendedCachedAttributesForCellAtIndexPath(indexPath);
+		
+		const cache = this.cachedLayout;
+
+		if (extendedAttributes.columnIndex >= this.cachedLayout.columns.length - 1) return indexPath;
+
+		const startingAttributes = extendedAttributes.attribute;
+		const center = startingAttributes.frame.center.y;
+		
+		const offset = this.collectionView.scrollOffset;
+		
+		// Find the attributes in next column with the smallest vertical distance from the starting attributes
+		const column = cache.columns[extendedAttributes.columnIndex + 1];
+
+		// The speedTop is the unscaled top position at which to start retrieving cells.
+		var speedTop = offset.y * column.speed;
+		
+		// The speedAdjustment is the amount by which to displace each attribute's Y origin.
+		var speedAdjustment = offset.y - speedTop;
+
+		let minIndex = -1;
+		let minDistance = Number.MAX_SAFE_INTEGER;
+		for (let i = 0; i < column.attributes.length; i++) {
+			const attribute = column.attributes[i];
+			const position = attribute.frame.center.y + speedAdjustment | 0;
+
+			const distance = Math.abs(position - center);
+			if (distance < minDistance) {
+				minIndex = i;
+				minDistance = distance;
+			}
+		}
+
+		if (minIndex != -1) {
+			return column.attributes[minIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathBelowIndexPath(indexPath) {
+		// Return the row below the given index path in the same column
+		const extendedAttributes = this._extendedCachedAttributesForCellAtIndexPath(indexPath);
+
+		if (extendedAttributes.rowIndex < this.cachedLayout.columns[extendedAttributes.columnIndex].attributes.length - 1) {
+			return this.cachedLayout.columns[extendedAttributes.columnIndex].attributes[extendedAttributes.rowIndex + 1].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathsFromIndexPath(indexPath, {toIndexPath}) {
+		// Create and return the index paths available in the union of the two index paths' frames.
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+		const targetAttributes = this.attributesForCellAtIndexPath(toIndexPath);
+
+		const attributes = this.attributesForElementsInRect(startingAttributes.frame.rectByUnionWithRect(targetAttributes.frame));
+		
+		return attributes.filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell).map(a => a.indexPath);
+	},
 	
 	// @override - BMCollectionViewLayout
 	copy: function () {
