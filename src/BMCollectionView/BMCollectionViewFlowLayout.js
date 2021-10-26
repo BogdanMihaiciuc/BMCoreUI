@@ -4563,7 +4563,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 
 		let previousRow;
 
-		if (cellRow >= 0) {
+		if (cellRow > 0) {
 			previousRow = cellRow - 1;
 		}
 		else {
