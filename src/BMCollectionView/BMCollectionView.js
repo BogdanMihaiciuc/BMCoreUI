@@ -4131,7 +4131,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
             }
 
             // If the cell was highlighted, prevent the default action for keyboard events
-            if (event instanceof KeyboardEvent) {
+            if (event && event instanceof KeyboardEvent) {
                 event.preventDefault();
             }
         }
