@@ -4097,12 +4097,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
     /**
      * Highlights the given index path.
-     * @param indexPath <BMIndexPath>       The index path to highlight.
+     * @param indexPath <BMIndexPath>           The index path to highlight.
      * {
-     *  @param withEvent <UIEvent>          The event that triggered this action. 
+     *  @param withEvent <UIEvent, nullable>    The event that triggered this action, if any. 
      * }
      */
-    _highlightIndexPath(indexPath, {withEvent: event}) {
+    _highlightIndexPath(indexPath, {withEvent: event} = {withEvent: undefined}) {
         const currentHighlight = this._highlightedIndexPath;
 
 		this._highlightedIndexPath = indexPath;
