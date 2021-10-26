@@ -3920,6 +3920,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasClicked) {
@@ -3980,6 +3985,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasDoubleClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasDoubleClicked) {
@@ -3996,6 +4006,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	cellWasLongClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
 		
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
@@ -5704,41 +5719,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			return BMAnimateWithBlock(_ => {
 				self.scrollOffset = offset;
 			}, {duration: 300});
-
-			/*
-			// Scrolling is performed differently based on whether iScroll is used or not
-			if (this.iScroll) {
-				this.iScroll.scrollTo(-(offset.x | 0), -(offset.y | 0), 300, IScroll.utils.ease.quadratic);
-				
-				// For iScroll, the layout should be refreshed after the animation
-				var self = this;
-				window.setTimeout(function () {
-					self._handleNewScrollFromEvent({x: offset.x, y: offset.y});
-				}, 316);
-			}
-			else {
-				// For native scrolling, jQuery animations are used instead
-				var startingPoint = this.scrollOffset.copy();
-				var targetPoint = offset;
-				var self = this;
-				this._container.velocity({
-					tween: 1
-				}, {
-					duration: 300,
-					queue: NO,
-					progress: function (elements, completion) {
-						self._container[0].scrollLeft = ((targetPoint.x - startingPoint.x) * completion + startingPoint.x) | 0;
-						self._container[0].scrollTop = ((targetPoint.y - startingPoint.y) * completion + startingPoint.y) | 0;
-
-						self._handleNewScrollFromEvent(null);
-					},
-					complete: function () {
-
-						self._handleNewScrollFromEvent(null);
-					}
-				});
-			}
-			*/
 		}
 		else {
 			// Scrolling is performed differently based on whether iScroll is used or not
