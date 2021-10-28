@@ -619,9 +619,7 @@ export function BMView() {} // <constructor>
     // keyboard shortcuts
     const _NodeKeyboardShortcutsMap = new WeakMap; // <WeakMap<DOMNode, Object>
 
-    /**
-     * A class that is a subset of `BMView` and contains only the keyboard shortcuts related functionality.
-     */
+    // A class that is a subset of `BMView` and contains only the keyboard shortcuts related functionality.
     const _BMViewKeyboardShortcutsStub = function (node) {
         this.node = node;
         this._keyboardShortcuts = {};
@@ -638,11 +636,11 @@ export function BMView() {} // <constructor>
         },
         
         unregisterKeyboardShortcut(shortcut) {
-            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+            return BMView.prototype.unregisterKeyboardShortcut.apply(this, arguments);
         },
         
         keyPressedWithEvent(event) {
-            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+            return BMView.prototype.keyPressedWithEvent.apply(this, arguments);
         },
         
         _keyboardShortcutsEnabled: NO,
@@ -2253,10 +2251,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * @param event <KeyboardEvent>			The event that triggered this action.
 	 */
 	keyPressedWithEvent(event) {
-        if (!this._keyboardShortcuts[event.key]) return;
+        if (!this._keyboardShortcuts[event.code]) return;
 
 		// Check if a shortcut key has been pressed.
-		for (const shortcut of this._keyboardShortcuts[event.key]) {
+		for (const shortcut of this._keyboardShortcuts[event.code]) {
 			// Build the modifier bitmap for this event
 			let bitmap = 0;
 			for (const modifier in BMKeyboardShortcutModifier) {
