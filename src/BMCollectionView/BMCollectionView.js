@@ -2233,8 +2233,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		else {
 			// Otherwise use the cell's own CSS size for this purpose
 			size = BMSizeMake(
-				cell._variables[BMLayoutAttribute.Width].value() | cell.node.offsetWidth, 
-				cell._variables[BMLayoutAttribute.Height].value() | cell.node.offsetHeight
+				cell._variables[BMLayoutAttribute.Width].value() || cell.node.offsetWidth, 
+				cell._variables[BMLayoutAttribute.Height].value() || cell.node.offsetHeight
 			);
 		}
 
