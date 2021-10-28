@@ -1188,7 +1188,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	border-radius: 8px !important;
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
-	z-index: 999999 !important;
+	z-index: 9999999 !important;
 	overflow: hidden !important;
 }
 
@@ -1259,14 +1259,41 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	margin-right: 16px;
 }
 
-.BMLayoutEditorConstraintPopupOption:hover, .BMMenuItem:hover, .BMMenuTouch > .BMMenuItem:active {
+@keyframes BMMenuItemActiveAnimation {
+	from {
+		background: transparent;
+		color: rgba(0, 0, 0, .8);
+	}
+
+	49% {
+		background: transparent;
+		color: rgba(0, 0, 0, .8);
+	}
+
+	50% {
+		background: rgb(0, 128, 255);
+		color: white;
+	}
+
+	to {
+		background: rgb(0, 128, 255);
+		color: white;
+	}
+}
+
+.BMLayoutEditorConstraintPopupOption:hover, .BMMenuTouch > .BMMenuItem:active, .BMMenuItem.BMMenuItemHighlighted {
 	background: rgb(0, 128, 255);
 	color: white;
 }
 
-.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active, .BMMenuTouch > .BMMenuItem:hover {
+.BMLayoutEditorConstraintPopupOption:active, .BMMenuTouch > .BMMenuItem:hover {
 	background: transparent;
 	color: rgba(0, 0, 0, .8);
+}
+
+.BMMenuItem.BMMenuItemActive {
+	animation: .2s linear BMMenuItemActiveAnimation;
+	animation-fill-mode: both;
 }
 
 .BMLayoutEditorConstraintPopupOptionHighlighted, .BMMenuItemHighlighted {
