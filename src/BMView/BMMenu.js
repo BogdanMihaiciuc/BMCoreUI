@@ -225,6 +225,11 @@ BMMenu.prototype = {
      */
     _highlightedIndex: -1, // <Number>
 
+    /**
+     * The DOM node that was focused when this alert was opened.
+     */
+    _previouslyActiveNode: undefined, // DOMNode
+
     get highlightedIndex() {
         return this._highlightedIndex;
     },
@@ -296,6 +301,10 @@ BMMenu.prototype = {
         const tab = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Tab', {modifiers: [], target: this, action: 'tabPressedWithEvent'});
         tab.preventsDefault = YES;
         BMView.registerKeyboardShortcut(tab, {forNode: menuNode});
+
+        const escape = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {modifiers: [], target: this, action: 'escapePressedWithEvent'});
+        escape.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(escape, {forNode: menuNode});
 
         // The overlay which intercepts clicks outside of the menu
         const menuContainer = document.createElement('div');
@@ -477,6 +486,7 @@ BMMenu.prototype = {
             delay += 16;
         }
 
+        this._previouslyActiveNode = document.activeElement;
         menuNode.focus();
 
         // Animate the source node shadow
@@ -555,6 +565,7 @@ BMMenu.prototype = {
             delay += 16;
         }
 
+        this._previouslyActiveNode = document.activeElement;
         menuNode.focus();
 
         return menuNode;
@@ -571,6 +582,10 @@ BMMenu.prototype = {
 
         if (this.delegate && this.delegate.menuWillClose) {
             this.delegate.menuWillClose(this);
+        }
+
+        if (this._previouslyActiveNode) {
+            this._previouslyActiveNode.focus();
         }
 
         this._node.style.pointerEvents = 'none'; 
@@ -676,6 +691,16 @@ BMMenu.prototype = {
      */
     tabPressedWithEvent(event) {
         // No action, this just prevents the keyboard focus from moving to another element
+    },
+
+    /**
+     * Invoked when the escape key is pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    escapePressedWithEvent(event) {
+        if (this._node) {
+            this.closeAnimated(YES);
+        }
     }
 
 
