@@ -303,7 +303,6 @@ const _BMViewDequeueLayoutQueue = function (layoutQueue) {
  * 
  * Views are usually not constructed using any constructor function. Instead, their lifecycle is managed by CoreUI.
  * You obtain views by invoking the static <code>viewForNode(_)</code> method on the <code>BMView</code> type.
- * It is also not necessary to invoke any destruction method when the DOM nodes managed by views are removed.
  * 
  * To extend from BMView and create a view subtype, extend from the BMView prototype, then, when requesting views use
  * <code>BMView.viewForNode.call(MyCustomViewType, node)</code>. Note that if the node already had
@@ -317,6 +316,8 @@ export function BMView() {} // <constructor>
 (function () {
     // A private map maintaining the link between DOM nodes and their associated view objects.
     var _BMViewMap = new WeakMap; // <WeakMap<DOMNode, BMView>>
+
+    // #region Factory methods
 
     /**
      * Returns the view object associated with the given DOM node.
@@ -347,6 +348,10 @@ export function BMView() {} // <constructor>
         //_BMViewMap.set(node, view);
         return view;
     }
+
+    // #endregion
+
+    // #region Layout variables
 
     // A set that contains the views that are root views.
     // These are the view that will handle updates to layout variables.
@@ -606,6 +611,85 @@ export function BMView() {} // <constructor>
         return values;
     }
 
+    // #endregion
+
+    // #region Keyboard shortcuts
+
+    // A private map containing a mapping between DOM nodes and view stubs that are used for implementing
+    // keyboard shortcuts
+    const _NodeKeyboardShortcutsMap = new WeakMap; // <WeakMap<DOMNode, Object>
+
+    /**
+     * A class that is a subset of `BMView` and contains only the keyboard shortcuts related functionality.
+     */
+    const _BMViewKeyboardShortcutsStub = function (node) {
+        this.node = node;
+        this._keyboardShortcuts = {};
+    };
+
+    _BMViewKeyboardShortcutsStub.prototype = {
+
+        node: undefined, // <DOMNode>
+
+        _keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
+
+        registerKeyboardShortcut(shortcut) {
+            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+        },
+        
+        unregisterKeyboardShortcut(shortcut) {
+            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+        },
+        
+        keyPressedWithEvent(event) {
+            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+        },
+        
+        _keyboardShortcutsEnabled: NO,
+        
+        _enableKeyboardShortcuts() {
+            return BMView.prototype._enableKeyboardShortcuts.apply(this, arguments);
+        },
+        
+        _disableKeyboardShortcuts() {
+            return BMView.prototype._disableKeyboardShortcuts.apply(this, arguments);
+        },
+    }
+
+    /**
+     * Registers a keyboard shortcut that can be activated when the given node has keyboard focus.
+     * @param shortcut <BMKeyboardShortcut>     The shortcut to register.
+     * {
+     *  @param forNode <DOMNode>                The DOM node for which the shortcut should be registered.
+     * }
+     */
+    BMView.registerKeyboardShortcut = function (shortcut, {forNode: node}) {
+        let viewStub = _NodeKeyboardShortcutsMap.get(node);
+        if (!viewStub) {
+            viewStub = new _BMViewKeyboardShortcutsStub(node);
+            _NodeKeyboardShortcutsMap.set(node, viewStub);
+        }
+
+        viewStub.registerKeyboardShortcut(shortcut);
+    },
+
+	/**
+	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+	 */
+    BMView.unregisterKeyboardShortcut = function (shortcut, {forNode: node}) {
+        const viewStub = _NodeKeyboardShortcutsMap.get(node);
+
+        if (viewStub) {
+            viewStub.unregisterKeyboardShortcut(shortcut);
+        }
+    },
+
+
+    // #endregion
+
+    // #region Destructors
+
     /**
      * Used when releasing an entire view hierarchy.
      * Releases this view without affecting constraints or the DOM.
@@ -654,6 +738,10 @@ export function BMView() {} // <constructor>
 
         rootViews.delete(this);
     }
+
+    // #endregion
+
+    // #region Initializer
 
     /**
      * Designated initializer, invoked immediately after any view is created.
@@ -710,6 +798,8 @@ export function BMView() {} // <constructor>
 
         return this;
     }
+
+    // #endregion
 
 })();
 
