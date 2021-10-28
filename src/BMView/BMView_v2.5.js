@@ -706,7 +706,7 @@ export function BMView() {} // <constructor>
         this._configuration = {opacity: this._opacity, isVisible: this._isVisible, contentInsets: this.__activeInsets};
         this._variableProperties = {};
 
-		this._keyboardShortcuts = [];
+		this._keyboardShortcuts = {};
 
         return this;
     }
@@ -2116,16 +2116,20 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	/**
 	 * The keyboard shortcuts that have been registered to this view.
 	 */
-	_keyboardShortcuts: undefined, // <[BMKeyboardShortcut]>
+	_keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
 
 	/**
 	 * Registers a keyboard shortcut that can be activated when this view has keyboard focus.
 	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to register.
 	 */
 	registerKeyboardShortcut(shortcut) {
-		if (!this._keyboardShortcuts.length) this._enableKeyboardShortcuts();
+		if (!Object.keys(this._keyboardShortcuts).length) this._enableKeyboardShortcuts();
 
-		this._keyboardShortcuts.push(shortcut);
+        if (!this._keyboardShortcuts[shortcut.keyCode]) {
+            this._keyboardShortcuts[shortcut.keyCode] = [];
+        }
+
+		this._keyboardShortcuts[shortcut.keyCode].push(shortcut);
 	},
 
 	/**
@@ -2133,14 +2137,23 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
 	 */
 	unregisterKeyboardShortcut(shortcut) {
-		for (let i = 0; i < this._keyboardShortcuts.length; i++) {
-			if (this._keyboardShortcuts[i] == shortcut) {
-				this._keyboardShortcuts.splice(i, 1);
-				break;
-			}
-		}
+        const shortcuts = this._keyboardShortcuts[shortcut.keyCode];
 
-		if (!this._keyboardShortcuts.length) this._disableKeyboardShortcuts();
+        if (shortcuts) {
+            for (let i = 0; i < shortcuts.length; i++) {
+                if (shortcuts[i] == shortcut) {
+                    shortcuts.splice(i, 1);
+                    break;
+                }
+            }
+
+            // If this removes the last shortcut for this key code, remove the entry
+            if (!shortcuts.length) {
+                delete this._keyboardShortcuts[shortcut.keyCode];
+            }
+        }
+
+		if (!Object.keys(this._keyboardShortcuts).length) this._disableKeyboardShortcuts();
 	},
 
 	/**
@@ -2150,10 +2163,10 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * @param event <KeyboardEvent>			The event that triggered this action.
 	 */
 	keyPressedWithEvent(event) {
-		// Check if a shortcut key has been pressed.
-		for (const shortcut of this._keyboardShortcuts) {
-			if (event.code != shortcut.keyCode) continue;
+        if (!this._keyboardShortcuts[event.key]) return;
 
+		// Check if a shortcut key has been pressed.
+		for (const shortcut of this._keyboardShortcuts[event.key]) {
 			// Build the modifier bitmap for this event
 			let bitmap = 0;
 			for (const modifier in BMKeyboardShortcutModifier) {
