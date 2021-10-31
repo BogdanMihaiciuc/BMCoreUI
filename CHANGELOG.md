@@ -1,8 +1,18 @@
 # 2.8
 
+## BMAnimationContext
+
+Animations will no longer run in slow-motion when triggered from an event while the shift key was pressed.
+
 ## BMView
 
-The methods for registering and managing keyboard shortcuts have moved from `BMWindow` to `BMView` so that any subclass can make use of this functionality.
+The methods for registering and managing keyboard shortcuts have moved from `BMWindow` to `BMView` so that any subclass can make use of this functionality. Improved performance when registering a large number of keyboard shortcuts.
+
+Added two new static methods `registerKeyboardShortcut(_, {forNode})` and `unregisterKeyboardShortcut(_, {forNode})` that can be used to add keyboard shortcuts to elements without creating a view for them.
+
+## BMMenu
+
+While a menu is open, menu items can now be navigated using the keyboard up and down arrow keys and can be selected using the return or spacebar keys. Additionally it can be closed with the escape key.
 
 ## BMCollectionView
 
@@ -40,9 +50,21 @@ The following new methods have been added and may be overriden by layout subclas
 
 A new `indexPathsFromIndexPath(_, {toIndexPath})` method can be used to obtain a list of index paths that are visually between two index paths.
 
+The `BMCollectionViewFlowLayout`, `BMCollectionViewMasonryLayout` and `BMCollectionViewTileLayout` classes each provide their own specific implementation of those methods.
+
 ## BMKeyboardShortcut
 
 This type is now properly included in the definitions file.
+
+## BMAlertPopup
+
+When dismissed, the element that was focused when the alert was shown will acquire focus again.
+
+## BMTextField
+
+Resolved various bugs with this class.
+
+A new `maxSuggestions` property can be set to control how many entries appear in the autocomplete menu.
 
 # 2.7.1
 
