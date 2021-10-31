@@ -287,7 +287,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             filteredSuggestions = suggestions.filter(e => e.toLowerCase().startsWith(inputNode.value.toLowerCase()));
 
             // Limit to the topmost 10 items
-            filteredSuggestions.length = Math.min(filteredSuggestions.length, 10);
+            filteredSuggestions.length = Math.min(filteredSuggestions.length, this.maxSuggestions);
             
             // Empty the menu
             if (menu) menu.innerHTML = '';
