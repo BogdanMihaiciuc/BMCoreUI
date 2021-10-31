@@ -1,9 +1,15 @@
-import { BMExtend, NO } from "../Core/BMCoreUI";
-import { BMView } from "./BMView_v2.5";
-import { BMMenuKind } from "./BMMenu";
-
 // @ts-check
 
+import { BMExtend, NO, YES } from "../Core/BMCoreUI";
+import { BMView } from "./BMView_v2.5";
+import { BMMenuKind } from "./BMMenu";
+import { BMRectMakeWithNodeFrame } from "../Core/BMRect";
+import { BMPointMake } from "../Core/BMPoint";
+import { BMHook } from "../Core/BMAnimationContext";
+
+/**
+ * The default limit of visible suggestions.
+ */
 const BM_TEXT_FIELD_MAX_SUGGESTIONS = 10;
 
 // @type BMTextField extends BMView
@@ -62,6 +68,11 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             }
         }
     },
+
+    /**
+     * The maximum number of suggestions that will be visible when the autocomplete menu is open.
+     */
+    maxSuggestions: BM_TEXT_FIELD_MAX_SUGGESTIONS, // <Number>
 
     /**
      * An optional delegate that can be used to respond to various callbacks from the text field.
@@ -138,7 +149,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
             highlightedItemIndex = -1;
 
-            let limit = BM_TEXT_FIELD_MAX_SUGGESTIONS;
+            let limit = this.maxSuggestions;
             for (const option of suggestions) {
                 options.push(this._menuItemWithLabel(option, {action: () => {
                     menu = undefined;
@@ -255,6 +266,9 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         });
 
         inputNode.addEventListener('input', this._inputHandler = event => {
+            // Set to YES if the change event is fired due to autocompleting the text in the text field
+            let textFieldDidHighlightSuggestion = NO;
+
             // If suggestions are not enabled, no additional action is required
             if (!this._usesSuggestions) {
                 if (!textFieldDidHighlightSuggestion) {
@@ -282,7 +296,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
             highlightedItemIndex = 0;
 
             // Then add the filtered options
-            let limit = BM_TEXT_FIELD_MAX_SUGGESTIONS;
+            let limit = this.maxSuggestions;
             if (menu) for (const option of filteredSuggestions) {
                 menu.appendChild(this._menuItemWithLabel(option, {action: () => {
                     menu = undefined;
@@ -298,9 +312,6 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                 if (!limit) break;
             }
 
-            // Set to YES if the change event is fired due to autocompleting the text in the text field
-            let textFieldDidHighlightSuggestion = NO;
-
             // Highlight the first item
             if (filteredSuggestions.length) {
                 if (menu) {
@@ -311,7 +322,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                     // due to items being removed
                     let frame = BMRectMakeWithNodeFrame(inputNode);
                     let point = BMPointMake(frame.origin.x, frame.bottom);
-                    this._repositionMenuAtPoint(point);
+                    this._repositionMenu(menu, {atPoint: point});
                 }
 
                 // Autocomplete the suggestion, if the caret is at the end of the text field
@@ -408,7 +419,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         let constraintPopup = document.createElement('div');
         constraintPopup.className = 'BMLayoutEditorConstraintPopup BMTextFieldSuggestions';
 
-        menu = constraintPopup;
+        let menu = constraintPopup;
 
         let constraintPopupContainer = document.createElement('div');
         constraintPopupContainer.className = 'BMLayoutEditorConstraintPopupContainer';
@@ -423,7 +434,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
 
         document.body.appendChild(constraintPopupContainer);
 
-        this._repositionMenuAtPoint(point);
+        this._repositionMenu(menu, {atPoint: point});
 
         constraintPopup.addEventListener('click', event => event.preventDefault());
 
@@ -472,7 +483,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
         return constraintPopup;
     },
 
-    _repositionMenuAtPoint(point) {
+    _repositionMenu(menu, {atPoint: point}) {
         let height = menu.offsetHeight;
 
         menu.style.transformOrigin = '50% 0%';
