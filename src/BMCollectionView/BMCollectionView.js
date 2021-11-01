@@ -2423,6 +2423,28 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var useCapture = NO;
 
 		var canDrag = NO;
+
+        // Stops processing the current event sequence
+        const cancelProcessing = () => {
+            cellEventIsMouseDown = NO;
+            cellEventCanTouchDrag = NO;
+            cellEventTrackedTouch = undefined;
+
+            window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+            window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+
+            cellEventClicks = 0;
+
+            if (cellEventLongClickTimeout) {
+                window.clearTimeout(cellEventLongClickTimeout);
+                cellEventLongClickTimeout = undefined;
+            }
+
+            if (cellEventDoubleClickTimeout) {
+                window.clearTimeout(cellEventDoubleClickTimeout);
+                cellEventDoubleClickTimeout = undefined;
+            }
+        }
 		
 	    // Click, double click, long click, tap, double tap and long tap handlers
 	    cell.mousedownHandler = function (event) {
@@ -2482,6 +2504,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					// TODO: Consider if mouse events should also trigger drag & drop in this case
 
 					if (canDrag) {
+                        // If a different collection view already handled this event, stop processing this sequence
+                        if (event.BM_Handled) {
+                            cancelProcessing();
+                            return;
+                        }
+
+                        event.BM_Handled = YES;
+
 						// These events will be processed by the interactive movement handlers from this point on
 						// So the global mousemove and mouseup handlers should be unregistered
 						window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
@@ -2539,6 +2569,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			event.originalEvent = event;
 			const which = event.which || event.button;
 
+            // If this event was already handled, stop processing
+            if (event.BM_Handled) {
+                cancelProcessing();
+                return;
+            }
+
 		    // Only handle move events here while the mouse is pressed
 		    if (!cellEventIsMouseDown) return;
 		    
@@ -2586,6 +2622,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					}*/
 
 					if (canDrag) {
+                        // Mark this event as handled, so that when it bubbles up to other collection views they don't also trigger
+                        // drag & drop
+                        event.BM_Handled = YES;
+
 						if (self.delegate && self.delegate.collectionViewWillBeginInteractiveMovementForCell) {
 							self.delegate.collectionViewWillBeginInteractiveMovementForCell(self, cell, {atIndexPath: cell.indexPath});
 						}
