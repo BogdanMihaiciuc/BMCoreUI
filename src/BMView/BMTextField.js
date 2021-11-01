@@ -212,7 +212,7 @@ BMTextField.prototype = BMExtend(Object.create(BMView.prototype), {
                     highlightedItemIndex = Math.max((highlightedItemIndex || 0) - 1, 0);
                 }
                 else {
-                    highlightedItemIndex = Math.min((isNaN(highlightedItemIndex) ? -1 : highlightedItemIndex) + 1, filteredSuggestions.length - 1);
+                    highlightedItemIndex = Math.min((isNaN(highlightedItemIndex) ? -1 : highlightedItemIndex) + 1, filteredSuggestions.length - 1, this.maxSuggestions - 1);
                 }
 
                 // Move the menu highlight
