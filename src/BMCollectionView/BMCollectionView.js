@@ -2564,16 +2564,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// to fire even after the touch point has moved outside of the element
 		// Because of this, mousemove is attached to window for the duration of a click and then released at the end
 		cell.mousemoveHandler = function (event) {
-			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
-			if (canDrag) event.preventDefault();
-			event.originalEvent = event;
-			const which = event.which || event.button;
-
             // If this event was already handled, stop processing
             if (event.BM_Handled) {
                 cancelProcessing();
                 return;
             }
+
+			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
+			if (canDrag) event.preventDefault();
+			event.originalEvent = event;
+			const which = event.which || event.button;
 
 		    // Only handle move events here while the mouse is pressed
 		    if (!cellEventIsMouseDown) return;
