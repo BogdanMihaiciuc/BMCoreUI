@@ -643,7 +643,7 @@
 	border: none;
 }
 
-.BMWindowButton:active, .BMButton:actie {
+.BMWindowButton:active, .BMButton:active {
 	background: rgb(0, 108, 235);
 }
 
