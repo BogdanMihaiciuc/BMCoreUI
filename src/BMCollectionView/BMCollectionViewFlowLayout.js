@@ -18,7 +18,7 @@ const BM_AUTOMATIC_CELL_SIZE_MESSAGES = NO;
 /**
  * Constants representing the types of supplementary views that table layouts support.
  */
-export var BMCollectionViewTableLayoutSupplementaryView = Object.freeze({
+export var BMCollectionViewTableLayoutSupplementaryView = Object.freeze({ // <enum>
 	/**
 	 * Indicates that this supplementary view is a footer.
 	 */
@@ -1279,38 +1279,38 @@ BMExtend(BMCollectionViewTreeLayout.prototype, BMCollectionViewLayout.prototype,
 /**
  * Controls how cells are distributed within their row.
  */
-export var BMCollectionViewFlowLayoutGravity = Object.freeze({
+export var BMCollectionViewFlowLayoutGravity = Object.freeze({ // <enum>
 	
 	/**
 	 * The cells will flow to the center of the row with no spacing between them.
 	 */
-	Center: {},
+	Center: {}, // <enum>
 	
 	/**
 	 * The cells will be aligned to the start of the row.
 	 */
-	Start: {},
+	Start: {}, // <enum>
 	
 	/**
 	 * The cells will be aligned to the end of the row.
 	 */
-	End: {},
+	End: {}, // <enum>
 	
 	/**
 	 * The cells will flow to the edges of the row with equal spacing between them.
 	 */
-	Edge: {},
+	Edge: {}, // <enum>
 	
 	/**
 	 * The cells will flow such that they have equal spacing between them and the row edges.
 	 */
-	Spaced: {},
+	Spaced: {}, // <enum>
 	
 	/**
 	 * The cells will flow such that they will have no spacing between them.
 	 * If the cells in a row do not occupy the entire horizontal alrea of that row, they will be expanded proportionally until they do.
 	 */
-	Expand: {}
+	Expand: {} // <enum>
 	
 });
 
@@ -1325,39 +1325,39 @@ export var BMCollectionViewFlowLayoutAlignment = (function () {
 	/**
 	 * Controls how cells will be aligned within their row.
 	 */
-	var BMCollectionViewFlowLayoutAlignment = Object.freeze({
+	var BMCollectionViewFlowLayoutAlignment = Object.freeze({ // <enum>
 		
 		/**
 		 * @deprecated Use `Start`
 		 * The cells will be aligned to the starting edge of the row.
 		 */
-		Top: start,
+		Top: start, // <enum>
 		
 		/**
 		 * The cells will be aligned to the start of the row.
 		 */
-		Start: start,
+		Start: start, // <enum>
 		
 		/**
 		 * The cells will be aligned to the center of the row.
 		 */
-		Center: {},
+		Center: {}, // <enum>
 		
 		/**
 		 * @deprecated Use `End`
 		 * The cells will be aligned to the end of the row.
 		 */
-		Bottom: end,
+		Bottom: end, // <enum>
 		
 		/**
 		 * The cells will be aligned to the end of the row.
 		 */
-		End: end,
+		End: end, // <enum>
 		
 		/**
 		 * The cells will expand to fit the entire height of the row.
 		 */
-		Expand: {}
+		Expand: {} // <enum>
 		
 	});
 
@@ -1371,18 +1371,18 @@ export var BMCollectionViewFlowLayoutAlignment = (function () {
 /**
  * An enum containing the possible orientations that the flow layout can use.
  */
-export var BMCollectionViewFlowLayoutOrientation = Object.freeze({
+export var BMCollectionViewFlowLayoutOrientation = Object.freeze({ // <enum>
 	/**
 	 * Indicates that the flow layout will arrange cells primarily along the horizontal axis.
 	 * When the orientation is set to this value the flow layout will scroll horizontally.
 	 */
-	Horizontal: {},
+	Horizontal: {}, // <enum>
 
 	/**
 	 * Indicates that the flow layout will arrange cells primarily along the vertical axis.
 	 * When the orientation is set to this value the tile flow will scroll vertically.
 	 */
-	Vertical: {}
+	Vertical: {} // <enum>
 });
 
 // @endtype
