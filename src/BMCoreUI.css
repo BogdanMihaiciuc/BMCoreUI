@@ -387,7 +387,7 @@
 }
 
 /* BMWindowSublabel should be used together with BMWindowLabel */
-.BMWindowSublabel {
+.BMWindowSublabel, .BMSublabel {
 	font-size: 14px;
 	color: rgba(0, 0, 0, .33);
 }
@@ -397,7 +397,7 @@
 		color: rgba(255, 255, 255, .9);
 	}
 	
-	.BMWindowSublabel, .BMLabel {
+	.BMWindowSublabel, .BMSubLabel {
 		color: rgba(255, 255, 255, .5);
 	}
 }
