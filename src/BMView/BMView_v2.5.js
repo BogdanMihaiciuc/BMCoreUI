@@ -674,6 +674,9 @@ export function BMView() {} // <constructor>
 	/**
 	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
 	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+     * {
+     *  @param forNode <DOMNode>                    The DOM node for which the shortcut should be unregistered.
+     * }
 	 */
     BMView.unregisterKeyboardShortcut = function (shortcut, {forNode: node}) {
         const viewStub = _NodeKeyboardShortcutsMap.get(node);
