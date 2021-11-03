@@ -1,5 +1,11 @@
 # 2.8
 
+## Generic
+
+Resolved a typo with the `BMButton` CSS class that prevented its active state rules from applying.
+
+Added the `Control` and `Escape` properties to `BMHTMLEntity`.
+
 ## BMAnimationContext
 
 Animations will no longer run in slow-motion when triggered from an event while the shift key was pressed.
@@ -9,6 +15,8 @@ Animations will no longer run in slow-motion when triggered from an event while 
 The methods for registering and managing keyboard shortcuts have moved from `BMWindow` to `BMView` so that any subclass can make use of this functionality. Improved performance when registering a large number of keyboard shortcuts.
 
 Added two new static methods `registerKeyboardShortcut(_, {forNode})` and `unregisterKeyboardShortcut(_, {forNode})` that can be used to add keyboard shortcuts to elements without creating a view for them.
+
+When setting the `layoutQueue` property, any pending layout pass will now occur on the new layout queue.
 
 ## BMMenu
 
@@ -22,11 +30,18 @@ When using `scrollToSupplementaryViewWithIdentifier` or `scrollToCellAtIndexPath
 
 Resolved an issue in `scrollToSupplementaryViewWithIdentifier` where the default top gravity was set to an improper default value when omitted.
 
+Resolved an issue when using nested collection views that all had drag & drop enabled which would cause multiple collection views to start their drag & drop operation at the same when initiating it from a cell in one of the nested collection views. Now, starting a drag & drop from one collection view will prevent any parent collection views from starting their own drag & drop.
+
+Collection View will now ignore clicks originating on content editable elements, in addition to its previous exclusion list.
+
 Added support for a new state for cells called highlighting and a series of new properties and method to support this. Cells are highlighted when they are clicked or by using the keyboard arrow keys. The following properties and methods related to this functionality have been added:
  - A new `highlightedIndexPath` property can be used to set or retrieve the currently highlighted index path.
  - A new `isCellAtIndexPathHighlighted(_)` method can be used to test if a given index path is highlighted.
  - A new `keyboardArrowPressed(_, {withEvent})` method is invoked when arrow keys are pressed on the keyboard and can be invoked to simulate an arrow press.
- - A new `configureKeyboardShortcuts` method is now invoked during initialization to enable cell highlighting via the keyboard. Subclasses may also override this method to add their own keyboard shortcuts.
+ - A new `configureKeyboardShortcuts` method is now invoked during initialization to enable cell highlighting via the keyboard. Subclasses may also override this method to add their own keyboard shortcuts. A similar `disableKeyboardShortcuts` method is invoked when keyboard navigation is disabled.
+ - A new `supportsKeyboardNavigation` property, with a default value of `YES` can be used to control whether keyboard navigation is enabled or not.
+
+When creating cells, collection view will now properly handle layout changes that occur in the cell's initializer.
 
 ## BMCollectionViewDelegate
 
@@ -52,9 +67,17 @@ A new `indexPathsFromIndexPath(_, {toIndexPath})` method can be used to obtain a
 
 The `BMCollectionViewFlowLayout`, `BMCollectionViewMasonryLayout` and `BMCollectionViewTileLayout` classes each provide their own specific implementation of those methods.
 
+## BMCollectionViewFlowLayout
+
+Resolves an issue with `BMCollectionViewFlowLayoutGravity`, `BMCollectionViewFlowLayoutAlignment` and `BMCollectionViewFlowLayoutOrientation` that had improper type definitions.
+
 ## BMKeyboardShortcut
 
 This type is now properly included in the definitions file.
+
+Added a new `serializedKeyboardShortcutWithTargetID(_)` method that can be used to obtain a plain object representing the keyboard shortcut that can be stringified. A new static `keyboardShortcutWithSerializedKeyboardShortcut(_, {targetID})` method and a new `initWithSerializedKeyboardShortcut(_, {targetID})` initializer can be used to obtain back a keyboard shortcut from a plain object representation.
+
+Added a new `initWithKeyboardEvent(_, {target, action, preventsDefault})` initializer and a new `keyboardShortcutWithKeyboardEvent(_, {target, action, preventsDefault})` static method that can be used to obtain a keyboard shortcut from a keyboard event.
 
 ## BMAlertPopup
 
