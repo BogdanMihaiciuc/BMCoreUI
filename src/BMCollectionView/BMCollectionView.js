@@ -691,6 +691,30 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	assignsReuseIdentifierAsClass: YES, // <Boolean>
 
 	/**
+	 * Defaults to `YES`. When set to `NO`, keyboard navigation is disabled.
+	 */
+	_supportsKeyboardNavigation: YES, // <Boolean>
+
+	get supportsKeyboardNavigation() {
+		return this._supportsKeyboardNavigation;
+	},
+
+	set supportsKeyboardNavigation(supports) {
+		if (supports != this._supportsKeyboardNavigation) {
+			this._supportsKeyboardNavigation = supports;
+
+			if (this.initialized) {
+				if (supports) {
+					this.configureKeyboardShortcuts();
+				}
+				else {
+					this.disableKeyboardShortcuts();
+				}
+			}
+		}
+	},
+
+	/**
 	 * Registers a class to be used when creating cells with the given reuse identifier.
 	 * This does not affect already existing cells, but newly created cells with the given identifier will be created
 	 * as instances of the given class.
@@ -971,7 +995,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    }, delegateOptions));
 	    }
 
-        this.configureKeyboardShortcuts();
+		if (this._supportsKeyboardNavigation) {
+			this.configureKeyboardShortcuts();
+		}
 	    
 	    this.initialized = YES;
 	    
@@ -4085,6 +4111,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 	/************************************* HIGHLIGHT HANDLERS ********************************/
 
+	/**
+	 * An array that contains the registered keyboard navigation shortcuts.
+	 */
+	_keyboardNavigationShortcuts: undefined, // <[BMKeyboardShortcut]>
+
     /**
      * @protected
      * Configures the keyboard shortcuts used by the collection view for highlighting.
@@ -4092,18 +4123,39 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
      * shortcuts.
      */
     configureKeyboardShortcuts() {
+		// If the shortcuts have already been registered, do nothing
+		if (this._keyboardNavigationShortcuts) return;
+
+		this._keyboardNavigationShortcuts = [];
+
         // Register the arrow keys, which are used for highlighting
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent'}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent'}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent'}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent'}));
 
         // Register the shift + arrow keys, which are used for block selection
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
-        this.registerKeyboardShortcut(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+
+		this._keyboardNavigationShortcuts.forEach(k => this.registerKeyboardShortcut(k));
     },
+
+    /**
+     * @protected
+     * Removes the keyboard shortcuts used by the collection view for highlighting.
+     * Subclasses overriding this should invoke the superclass implementation to remove the default keyboard
+     * shortcuts.
+     */
+	disableKeyboardShortcuts() {
+		// If the shortcuts have already been removed, do nothing
+		if (!this._keyboardNavigationShortcuts) return;
+
+		this._keyboardNavigationShortcuts.forEach(k => this.unregisterKeyboardShortcut(k));
+		this._keyboardNavigationShortcuts = undefined;
+	},
 
     /**
      * Invoked when an arrow key is pressed on the keyboard while this collection view has keyboard focus.
