@@ -910,16 +910,19 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     /**
      * The layout queue on which this view processes its layout passes.
-     * If this property is modified while this view had already registered a layout pass with a different queue,
-     * that layout pass will still run on that queue the next time it is drained.
      */
     _layoutQueue: _BMViewLayoutQueue, // <BMViewLayoutQueue, nullResettable>
     get layoutQueue() {
         return this._layoutQueue;
     },
     set layoutQueue(queue) {
+        const hasView = this._layoutQueue._views.has(this);
         this._layoutQueue._removeView(this);
         this._layoutQueue = queue || _BMViewLayoutQueue;
+
+        if (hasView) {
+            this._layoutQueue._enqueueView(this);
+        }
     },
 
     // #endregion
