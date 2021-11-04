@@ -10,6 +10,7 @@ import {BMLayoutSizeClass, BMLayoutOrientation} from './BMLayoutSizeClass'
 import {BMViewport} from './BMViewport'
 import {BMLayoutAttribute, BMLayoutConstraintRelation, BMLayoutConstraint, BMLayoutConstraintPriorityRequired, BMLayoutConstraintKind} from './BMLayoutConstraint_v2.5'
 import * as kiwi from 'kiwi.js'
+import { BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
 
 
 // When set to YES, this will cause view to use transforms instead of left/right for positioning
@@ -302,7 +303,6 @@ const _BMViewDequeueLayoutQueue = function (layoutQueue) {
  * 
  * Views are usually not constructed using any constructor function. Instead, their lifecycle is managed by CoreUI.
  * You obtain views by invoking the static <code>viewForNode(_)</code> method on the <code>BMView</code> type.
- * It is also not necessary to invoke any destruction method when the DOM nodes managed by views are removed.
  * 
  * To extend from BMView and create a view subtype, extend from the BMView prototype, then, when requesting views use
  * <code>BMView.viewForNode.call(MyCustomViewType, node)</code>. Note that if the node already had
@@ -316,6 +316,8 @@ export function BMView() {} // <constructor>
 (function () {
     // A private map maintaining the link between DOM nodes and their associated view objects.
     var _BMViewMap = new WeakMap; // <WeakMap<DOMNode, BMView>>
+
+    // #region Factory methods
 
     /**
      * Returns the view object associated with the given DOM node.
@@ -346,6 +348,10 @@ export function BMView() {} // <constructor>
         //_BMViewMap.set(node, view);
         return view;
     }
+
+    // #endregion
+
+    // #region Layout variables
 
     // A set that contains the views that are root views.
     // These are the view that will handle updates to layout variables.
@@ -605,6 +611,86 @@ export function BMView() {} // <constructor>
         return values;
     }
 
+    // #endregion
+
+    // #region Keyboard shortcuts
+
+    // A private map containing a mapping between DOM nodes and view stubs that are used for implementing
+    // keyboard shortcuts
+    const _NodeKeyboardShortcutsMap = new WeakMap; // <WeakMap<DOMNode, Object>
+
+    // A class that is a subset of `BMView` and contains only the keyboard shortcuts related functionality.
+    const _BMViewKeyboardShortcutsStub = function (node) {
+        this.node = node;
+        this._keyboardShortcuts = {};
+    };
+
+    _BMViewKeyboardShortcutsStub.prototype = {
+
+        node: undefined, // <DOMNode>
+
+        _keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
+
+        registerKeyboardShortcut(shortcut) {
+            return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
+        },
+        
+        unregisterKeyboardShortcut(shortcut) {
+            return BMView.prototype.unregisterKeyboardShortcut.apply(this, arguments);
+        },
+        
+        keyPressedWithEvent(event) {
+            return BMView.prototype.keyPressedWithEvent.apply(this, arguments);
+        },
+        
+        _keyboardShortcutsEnabled: NO,
+        
+        _enableKeyboardShortcuts() {
+            return BMView.prototype._enableKeyboardShortcuts.apply(this, arguments);
+        },
+        
+        _disableKeyboardShortcuts() {
+            return BMView.prototype._disableKeyboardShortcuts.apply(this, arguments);
+        },
+    }
+
+    /**
+     * Registers a keyboard shortcut that can be activated when the given node has keyboard focus.
+     * @param shortcut <BMKeyboardShortcut>     The shortcut to register.
+     * {
+     *  @param forNode <DOMNode>                The DOM node for which the shortcut should be registered.
+     * }
+     */
+    BMView.registerKeyboardShortcut = function (shortcut, {forNode: node}) {
+        let viewStub = _NodeKeyboardShortcutsMap.get(node);
+        if (!viewStub) {
+            viewStub = new _BMViewKeyboardShortcutsStub(node);
+            _NodeKeyboardShortcutsMap.set(node, viewStub);
+        }
+
+        viewStub.registerKeyboardShortcut(shortcut);
+    },
+
+	/**
+	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+     * {
+     *  @param forNode <DOMNode>                    The DOM node for which the shortcut should be unregistered.
+     * }
+	 */
+    BMView.unregisterKeyboardShortcut = function (shortcut, {forNode: node}) {
+        const viewStub = _NodeKeyboardShortcutsMap.get(node);
+
+        if (viewStub) {
+            viewStub.unregisterKeyboardShortcut(shortcut);
+        }
+    },
+
+
+    // #endregion
+
+    // #region Destructors
+
     /**
      * Used when releasing an entire view hierarchy.
      * Releases this view without affecting constraints or the DOM.
@@ -653,6 +739,10 @@ export function BMView() {} // <constructor>
 
         rootViews.delete(this);
     }
+
+    // #endregion
+
+    // #region Initializer
 
     /**
      * Designated initializer, invoked immediately after any view is created.
@@ -705,8 +795,12 @@ export function BMView() {} // <constructor>
         this._configuration = {opacity: this._opacity, isVisible: this._isVisible, contentInsets: this.__activeInsets};
         this._variableProperties = {};
 
+		this._keyboardShortcuts = {};
+
         return this;
     }
+
+    // #endregion
 
 })();
 
@@ -819,16 +913,19 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     /**
      * The layout queue on which this view processes its layout passes.
-     * If this property is modified while this view had already registered a layout pass with a different queue,
-     * that layout pass will still run on that queue the next time it is drained.
      */
     _layoutQueue: _BMViewLayoutQueue, // <BMViewLayoutQueue, nullResettable>
     get layoutQueue() {
         return this._layoutQueue;
     },
     set layoutQueue(queue) {
+        const hasView = this._layoutQueue._views.has(this);
         this._layoutQueue._removeView(this);
         this._layoutQueue = queue || _BMViewLayoutQueue;
+
+        if (hasView) {
+            this._layoutQueue._enqueueView(this);
+        }
     },
 
     // #endregion
@@ -2105,6 +2202,111 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
         return this._layoutVariables[variable] || 0;
     },
+
+    // #endregion
+
+    // #region Keyboard shortcuts
+
+	/**
+	 * The keyboard shortcuts that have been registered to this view.
+	 */
+	_keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
+
+	/**
+	 * Registers a keyboard shortcut that can be activated when this view has keyboard focus.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to register.
+	 */
+	registerKeyboardShortcut(shortcut) {
+		if (!Object.keys(this._keyboardShortcuts).length) this._enableKeyboardShortcuts();
+
+        if (!this._keyboardShortcuts[shortcut.keyCode]) {
+            this._keyboardShortcuts[shortcut.keyCode] = [];
+        }
+
+		this._keyboardShortcuts[shortcut.keyCode].push(shortcut);
+	},
+
+	/**
+	 * Unregisters a keyboard shortcut. If this keyboard shortcut had not been previously registered, this method does nothing.
+	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to unregister.
+	 */
+	unregisterKeyboardShortcut(shortcut) {
+        const shortcuts = this._keyboardShortcuts[shortcut.keyCode];
+
+        if (shortcuts) {
+            for (let i = 0; i < shortcuts.length; i++) {
+                if (shortcuts[i] == shortcut) {
+                    shortcuts.splice(i, 1);
+                    break;
+                }
+            }
+
+            // If this removes the last shortcut for this key code, remove the entry
+            if (!shortcuts.length) {
+                delete this._keyboardShortcuts[shortcut.keyCode];
+            }
+        }
+
+		if (!Object.keys(this._keyboardShortcuts).length) this._disableKeyboardShortcuts();
+	},
+
+	/**
+	 * If keyboard shortcuts have been registered on this view, this method will be invoked to identify
+	 * and handle key presses. Subclasses that override this method should invoke the base implementation to allow
+	 * keyboard shortcuts to be handled correctly.
+	 * @param event <KeyboardEvent>			The event that triggered this action.
+	 */
+	keyPressedWithEvent(event) {
+        if (!this._keyboardShortcuts[event.code]) return;
+
+		// Check if a shortcut key has been pressed.
+		for (const shortcut of this._keyboardShortcuts[event.code]) {
+			// Build the modifier bitmap for this event
+			let bitmap = 0;
+			for (const modifier in BMKeyboardShortcutModifier) {
+				if (event[BMKeyboardShortcutModifier[modifier].key]) {
+					bitmap = bitmap | BMKeyboardShortcutModifier[modifier].value;
+				}
+			}
+
+			if (bitmap == shortcut._modifierBitmap) {
+				if (shortcut.preventsDefault) event.preventDefault();
+				shortcut.target[shortcut.action](event, {forKeyboardShortcut: shortcut});
+			}
+		}
+	},
+
+	/**
+	 * Set to `YES` if keyboard shortcuts are enabled.
+	 */
+	_keyboardShortcutsEnabled: NO, // <Boolean>
+
+	/**
+	 * Enables keyboard shortcut handling. This makes the view's `node` focusable and attaches
+	 * the relevant event handlers to it.
+	 */
+	_enableKeyboardShortcuts() {
+        // Make this view focusable if it is not already
+        if (!this.node.hasAttribute('tabIndex')) {
+            this.node.tabIndex = -1;
+        }
+
+		this._keypressHandler = (event) => {
+			this.keyPressedWithEvent(event);
+		};
+
+		this.node.addEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = YES;
+	},
+
+	/**
+	 * Disables keyboard shortcut handling. This detaches the relevant event handlers from this view's `node`.
+     * The node's `tabIndex` property will not be cleared by this method.
+	 */
+	_disableKeyboardShortcuts() {
+		this.node.removeEventListener('keydown', this._keypressHandler);
+		this._keyboardShortcutsEnabled = NO;
+	},
 
     // #endregion
 

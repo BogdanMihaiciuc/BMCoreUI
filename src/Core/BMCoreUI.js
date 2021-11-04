@@ -392,6 +392,10 @@ export function BMUUIDMake() {
  */
 export var BMHTMLEntity = Object.freeze({ // <enum>
 	/**
+	 * The HTML entity representing the control key.
+	 */
+	Control: '&#8963;', // <enum>
+	/**
 	 * The HTML entity representing the bowen knot Command symbol.
 	 */
 	Command: '&#8984;', // <enum>
@@ -414,7 +418,11 @@ export var BMHTMLEntity = Object.freeze({ // <enum>
 	/**
 	 * The HTML entity representing the Return symbol.
 	 */
-	Return: '&#9166;' // <enum>
+	Return: '&#9166;', // <enum>
+	/**
+	 * The HTML entity representing the Escape symbol.
+	 */
+	Escape: '&#9099;', // <enum>
 });
 
 // @endtype

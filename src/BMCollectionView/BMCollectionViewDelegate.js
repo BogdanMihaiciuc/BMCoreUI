@@ -111,6 +111,66 @@ BMCollectionViewDelegate.prototype = {
 	collectionViewDidDeselectCellAtIndexPath: function (collectionView, indexPath) {},
 
 	/**
+	 * Invoked by the collection view whenever any arrow key is pressed to determine if it should process that event and highlight
+	 * an appropriate cell.
+	 * 
+	 * Delegates can implement this method to control when keyboard events should be handled, for example to disallow handling the
+	 * left and right arrow keys when the event originates from an input element.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param key <String>							The code of the key that was pressed.
+	 * {
+	 * 	@param withEvent <KeyboardEvent>			The keyboard event that triggered this action.
+	 * }
+	 */
+	collectionViewShouldHighlightCellForArrowKey: function (collectionView, key, args) {},
+
+	/**
+	 * Invoked by the collection view to verify if a cell can be highlighted.
+	 * 
+	 * If this method is not implemented by the delegate object, the collection view will assume that any cell may be highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath, nullable>		The cell's index path or `undefined` if the highlighted index path should be cleared.
+	 * {
+	 * 	@param withEvent <Event, nullable>			If the cell should be highlighted because of an event, this represents the event
+	 * 												for which the cell should be highlighted.
+	 * }
+	 * @return <Boolean>							`YES` if the cell can be highlighted, `NO` otherwise.
+	 */
+	collectionViewCanHighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
+	 * Invoked by the collection view whenever any cell was highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath>				The cell's index path or `undefined` if the highlighted index path was cleared.
+	 * {
+	 * 	@param withEvent <Event, nullable>			If the cell was highlighted because of an event, this represents the event
+	 * 												for which the cell was highlighted.
+	 * }
+	 */
+	collectionViewDidHighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
+	 * Invoked by the collection view whenever any cell is no longer highlighted.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPath <BMIndexPath>				The cell's index path.
+	 * {
+	 * 	@param withEvent <Event, nullable>			If the cell was dehighlighted because of an event, this represents the event
+	 * 												for which the cell was dehighlighted.
+	 * }
+	 */
+	collectionViewDidDehighlightCellAtIndexPath: function (collectionView, indexPath, args) {},
+
+	/**
+	 * Invoked by a collection view after highlighting a cell that it is not visible on screen to determine
+	 * if it should scroll to reveal that cell.
+	 * 
+	 * When this method is not implemented, the default behaviour is to scroll to off-screen cells that are highlighted.
+	 * @param collectionView <BMCollectionView> 		The calling collection view.
+	 * @param indexPath <BMIndexPath>			        The index path that was just highlighted.
+	 */
+	collectionViewShouldScrollToHighlightedCellAtIndexPath: function (collectionView, indexPath) {},
+
+	/**
 	 * Invoked by the collection view before running the initial presentation animation. Delegate objects can implement this method
 	 * to customize the animation's parameters.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
@@ -147,7 +207,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the collection view will track double clicks for this event.
 	 */
@@ -162,7 +222,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -176,7 +236,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -190,7 +250,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */
@@ -205,7 +265,7 @@ BMCollectionViewDelegate.prototype = {
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
-	 *	@param withEvent <$event>					The jQuery event that triggered this action.
+	 *	@param withEvent <UIEvent>					The event that triggered this action.
 	 * }
 	 * @return <Boolean, nullable>					Defaults to NO. If set to YES the default actions will be suppressed for this event.
 	 */

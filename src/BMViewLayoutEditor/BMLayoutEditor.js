@@ -171,172 +171,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         window.addEventListener('resize', this.resizeListener);
 
         view.allSubviews.forEach(subview => {
-            // Create and add the selector, that takes over interactions for the view
-            let selector = document.createElement('div');
-            selector.className = 'BMLayoutEditorViewSelector';
-
-            subview._selector = selector;
-            subview.node.classList.add('BMLayoutEditorManagedView');
-
-            // Also add a resize drag handle that can be used to resize the view's frame
-            const dragHandle = document.createElement('div');
-            dragHandle.className = 'material-icons BMWindowDragHandle BMLayoutEditorViewDragHandle';
-            dragHandle.innerText = 'dehaze';
-			dragHandle.style.cursor = 'nwse-resize';
-
-            selector.appendChild(dragHandle);
-
-	
-			let touchDragPoint;
-            
-			// Initialize dragging touch events for the drag handler
-			dragHandle.addEventListener('mousedown', event => {
-	
-				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
-                let lastPosition = BMPointMake(event.clientX, event.clientY);
-                
-                let didRemoveConstraints = NO;
-	
-				let mouseMoveEventListener = event => {
-                    if (!didRemoveConstraints) {
-                        this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
-                        didRemoveConstraints = YES;
-                    }
-
-                    let position = BMPointMake(event.clientX, event.clientY);
-                    const frame = subview.frame.copy();
-					frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
-					frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
-					subview.frame = frame;
-					size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
-                    lastPosition = position;
-                    
-                    event.preventDefault();
-                    event.stopPropagation();
-				};
-
-				let mask = document.createElement('div');
-				mask.className = 'BMLayoutGuideMask';
-				mask.style.cursor = 'nwse-resize';
-				document.body.appendChild(mask);
-	
-				let mouseUpEventListener = event => {
-					window.removeEventListener('mousemove', mouseMoveEventListener, YES);
-					window.removeEventListener('mouseup', mouseUpEventListener, YES);
-					mask.remove();
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    this.selectView(subview);
-				}
-	
-				window.addEventListener('mousemove', mouseMoveEventListener, YES);
-				window.addEventListener('mouseup', mouseUpEventListener, YES);
-	
-                event.preventDefault();
-                event.stopPropagation();
-			});
-	
-			let touchDragHandlePoint;
-	
-			dragHandle.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
-				// If there is already a drag in progress, don't process this new event
-				if (typeof touchDragPoint !== 'undefined') {
-					return;
-				}
-	
-				// Only use the first touch point
-				touchDragHandlePoint = event.changedTouches[0].identifier;
-	
-				let size = BMSizeMake(subview.frame.size.width, subview.frame.size.height);
-                let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
-                
-                let didRemoveConstraints = NO;
-	
-				let mouseMoveEventListener = event => {
-					// Look for the actively tracked touch point
-					let touch;
-					for (let changedTouch of event.changedTouches) {
-						if (changedTouch.identifier == touchDragHandlePoint) {
-							touch = changedTouch;
-							break;
-						}
-					}
-	
-					// If the actively tracked touch point did not move, do not process this event
-                    if (!touch) return;
-                    
-                    if (!didRemoveConstraints) {
-                        this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
-                        didRemoveConstraints = YES;
-                    }
-	
-					let position = BMPointMake(touch.clientX, touch.clientY);
-                    const frame = subview.frame.copy();
-					frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
-					frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
-					subview.frame = frame;
-					size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
-					lastPosition = position;
-                    event.preventDefault();
-                    event.stopPropagation();
-				};
-	
-				let mouseUpEventListener = event => {
-					touchDragHandlePoint = undefined;
-					window.removeEventListener('touchmove', mouseMoveEventListener);
-					window.removeEventListener('touchend', mouseUpEventListener);
-                    window.removeEventListener('touchcancel', mouseUpEventListener);
-                    
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    this.selectView(subview);
-				}
-	
-				window.addEventListener('touchmove', mouseMoveEventListener);
-				window.addEventListener('touchend', mouseUpEventListener);
-				window.removeEventListener('touchcancel', mouseUpEventListener);
-	
-				event.preventDefault();
-                event.stopPropagation();
-            });
-            
-            // Enable double click to select views
-            let doubleClickTimeout;
-
-            selector.addEventListener('click', event => {
-                if (event.altKey) return;
-
-                this.selectView(subview, {withEvent: event});
-                if (!doubleClickTimeout) {
-                    doubleClickTimeout = setTimeout(() => doubleClickTimeout = undefined, 250);
-                }
-                else {
-                    doubleClickTimeout = undefined;
-                    if (!this._detailsToolWindow._visible) {
-                        this._detailsToolWindow.bringToFrontAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)});
-                    }
-                }
-
-                event.stopPropagation();
-                event.stopImmediatePropagation();
-            });
-
-            this.initDragEventListenerForNode(selector, {view: subview});
-
-            // Disable all other non-right mouse button interactions
-            selector.addEventListener('mousedown', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
-            selector.addEventListener('mousemove', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
-            selector.addEventListener('mouseup', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
-
-
-            if (subview.node.childNodes.length) {
-                subview.node.insertBefore(selector, subview.node.childNodes[0]);
-            }
-            else {
-                subview.node.appendChild(selector);
-            }
+            this._prepareView(subview);
         });
 
         var width = document.documentElement.clientWidth;
@@ -588,6 +423,180 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
 
         return this;
+    },
+
+    /**
+     * Prepares the given view for being edited by setting up the appropriate event handlers and
+     * adding the required controls to the view's node.
+     * @param view <BMView>     The view to prepare.
+     */
+    _prepareView(view) {
+        // Create and add the selector, that takes over interactions for the view
+        let selector = document.createElement('div');
+        selector.className = 'BMLayoutEditorViewSelector';
+
+        view._selector = selector;
+        view.node.classList.add('BMLayoutEditorManagedView');
+
+        // Also add a resize drag handle that can be used to resize the view's frame
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'material-icons BMWindowDragHandle BMLayoutEditorViewDragHandle';
+        dragHandle.innerText = 'dehaze';
+        dragHandle.style.cursor = 'nwse-resize';
+
+        selector.appendChild(dragHandle);
+
+
+        let touchDragPoint;
+        
+        // Initialize dragging touch events for the drag handler
+        dragHandle.addEventListener('mousedown', event => {
+
+            let size = BMSizeMake(view.frame.size.width, view.frame.size.height);
+            let lastPosition = BMPointMake(event.clientX, event.clientY);
+            
+            let didRemoveConstraints = NO;
+
+            let mouseMoveEventListener = event => {
+                if (!didRemoveConstraints) {
+                    this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                    didRemoveConstraints = YES;
+                }
+
+                let position = BMPointMake(event.clientX, event.clientY);
+                const frame = view.frame.copy();
+                frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
+                frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
+                view.frame = frame;
+                size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
+                lastPosition = position;
+                
+                event.preventDefault();
+                event.stopPropagation();
+            };
+
+            let mask = document.createElement('div');
+            mask.className = 'BMLayoutGuideMask';
+            mask.style.cursor = 'nwse-resize';
+            document.body.appendChild(mask);
+
+            let mouseUpEventListener = event => {
+                window.removeEventListener('mousemove', mouseMoveEventListener, YES);
+                window.removeEventListener('mouseup', mouseUpEventListener, YES);
+                mask.remove();
+                event.preventDefault();
+                event.stopPropagation();
+
+                this.selectView(view);
+            }
+
+            window.addEventListener('mousemove', mouseMoveEventListener, YES);
+            window.addEventListener('mouseup', mouseUpEventListener, YES);
+
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        let touchDragHandlePoint;
+
+        dragHandle.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
+            // If there is already a drag in progress, don't process this new event
+            if (typeof touchDragPoint !== 'undefined') {
+                return;
+            }
+
+            // Only use the first touch point
+            touchDragHandlePoint = event.changedTouches[0].identifier;
+
+            let size = BMSizeMake(view.frame.size.width, view.frame.size.height);
+            let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+            
+            let didRemoveConstraints = NO;
+
+            let mouseMoveEventListener = event => {
+                // Look for the actively tracked touch point
+                let touch;
+                for (let changedTouch of event.changedTouches) {
+                    if (changedTouch.identifier == touchDragHandlePoint) {
+                        touch = changedTouch;
+                        break;
+                    }
+                }
+
+                // If the actively tracked touch point did not move, do not process this event
+                if (!touch) return;
+                
+                if (!didRemoveConstraints) {
+                    this._view.node.querySelectorAll('.BMLayoutEditorConstraint, .BMLayoutEditorLeadLine').forEach(node => node.remove());
+                    didRemoveConstraints = YES;
+                }
+
+                let position = BMPointMake(touch.clientX, touch.clientY);
+                const frame = view.frame.copy();
+                frame.size.width = size.width + (position.x - lastPosition.x) / this.scale;
+                frame.size.height = size.height + (position.y - lastPosition.y) / this.scale;
+                view.frame = frame;
+                size = BMSizeMake(size.width + (position.x - lastPosition.x) / this.scale, size.height + (position.y - lastPosition.y) / this.scale);
+                lastPosition = position;
+                event.preventDefault();
+                event.stopPropagation();
+            };
+
+            let mouseUpEventListener = event => {
+                touchDragHandlePoint = undefined;
+                window.removeEventListener('touchmove', mouseMoveEventListener);
+                window.removeEventListener('touchend', mouseUpEventListener);
+                window.removeEventListener('touchcancel', mouseUpEventListener);
+                
+                event.preventDefault();
+                event.stopPropagation();
+
+                this.selectView(view);
+            }
+
+            window.addEventListener('touchmove', mouseMoveEventListener);
+            window.addEventListener('touchend', mouseUpEventListener);
+            window.removeEventListener('touchcancel', mouseUpEventListener);
+
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        
+        // Enable double click to select views
+        let doubleClickTimeout;
+
+        selector.addEventListener('click', event => {
+            if (event.altKey) return;
+
+            this.selectView(view, {withEvent: event});
+            if (!doubleClickTimeout) {
+                doubleClickTimeout = setTimeout(() => doubleClickTimeout = undefined, 250);
+            }
+            else {
+                doubleClickTimeout = undefined;
+                if (!this._detailsToolWindow._visible) {
+                    this._detailsToolWindow.bringToFrontAnimated(YES, {fromRect: BMRectMakeWithNodeFrame(this._inspectorButton)});
+                }
+            }
+
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        });
+
+        this.initDragEventListenerForNode(selector, {view: view});
+
+        // Disable all other non-right mouse button interactions
+        selector.addEventListener('mousedown', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
+        selector.addEventListener('mousemove', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
+        selector.addEventListener('mouseup', event => (event.button != 2) && (event.stopPropagation(), event.stopImmediatePropagation()));
+
+
+        if (view.node.childNodes.length) {
+            view.node.insertBefore(selector, view.node.childNodes[0]);
+        }
+        else {
+            view.node.appendChild(selector);
+        }
     },
 
     /**
@@ -859,7 +868,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
             const closeButton = document.createElement('div');
             closeButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
             closeButton.innerHTML = '<i class="material-icons">&#xE5CD;</i>';
-            closeButton.style.opacity = 1;
+            closeButton.style.opacity = '1';
 
             closeButton.addEventListener('click', event => this.dismissAnimated(YES, {toNode: this._returnNode}));
             
@@ -872,7 +881,7 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         fullscreenButton.innerHTML = `<i class="material-icons" style="pointer-events: none;">${this._useSettingsView ? 'layers' : '&#xE5DC;'}</i>`;
         this._fullScreenButton = fullscreenButton;
 
-        fullscreenButton.style.opacity = 1;
+        fullscreenButton.style.opacity = '1';
         fullscreenButton.style.pointerEvents = 'all';
 
         fullscreenButton.addEventListener('click', this._useSettingsView ? event => this._treeWindow.toggleAnimated(YES) : event => this.toggleFullscreenWithEvent(event));
@@ -900,6 +909,9 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
         toolbar.appendChild(deviceSelector);
 
 
+        /**
+         * @type {HTMLInputElement}
+         */
         let widthInput = document.createElement('input');
         widthInput.type = 'number';
         widthInput.style.cssText = 'width: 64px !important; margin-left: 32px !important; text-align: center;';
@@ -1118,6 +1130,14 @@ BMLayoutEditor.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             this._showSizeClassMenuAtPoint(point);
         });
+
+        const addViewsButton = document.createElement('div');
+        addViewsButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';
+        addViewsButton.innerHTML = '<i class="material-icons BMScriptFont" style="pointer-events: none;">+</i>';
+        toolbar.appendChild(addViewsButton);
+        this.addViewsButton = addViewsButton;
+
+        addViewsButton.addEventListener('click', event => this.showViewsPopupWithEvent(event));
 
         const layoutVariablesButton = document.createElement('div');
         layoutVariablesButton.className = 'BMWindowToolbarButton BMLayoutEditorToolbarButton';

@@ -15,6 +15,7 @@ import {_BMCollectionViewTransitionLayout} from './BMCollectionViewLayout'
 import {IScroll} from '../iScroll/iscroll-probe'
 import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
 import { BMMenuSourceNodeCSSClass } from '../BMView/BMMenu'
+import { BMKeyboardShortcut, BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
 
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
@@ -515,6 +516,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
     _bounds: undefined, // <BMRect>
     get bounds() { return this._bounds; },
+
+	/**
+	 * A rect that represents the part of the bounds that are visible on screen.
+	 */
+	get visibleBounds() { // <BMRect>
+		return new BMRect(BMPointMake(this._bounds.origin.x + this._offscreenBufferSize, this._bounds.origin.y + this._offscreenBufferSize), this._frame.size.copy());
+	},
     
     /**
 	 * The number of pixels by which to extend the bounds to preload layout attributes and render off-screen elements.
@@ -681,6 +689,30 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Defaults to `YES`. When set to `YES`, collection view will add each cell's reuse identifier as a class on that cell's node.
 	 */
 	assignsReuseIdentifierAsClass: YES, // <Boolean>
+
+	/**
+	 * Defaults to `YES`. When set to `NO`, keyboard navigation is disabled.
+	 */
+	_supportsKeyboardNavigation: YES, // <Boolean>
+
+	get supportsKeyboardNavigation() {
+		return this._supportsKeyboardNavigation;
+	},
+
+	set supportsKeyboardNavigation(supports) {
+		if (supports != this._supportsKeyboardNavigation) {
+			this._supportsKeyboardNavigation = supports;
+
+			if (this.initialized) {
+				if (supports) {
+					this.configureKeyboardShortcuts();
+				}
+				else {
+					this.disableKeyboardShortcuts();
+				}
+			}
+		}
+	},
 
 	/**
 	 * Registers a class to be used when creating cells with the given reuse identifier.
@@ -962,6 +994,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    delay: 0
 		    }, delegateOptions));
 	    }
+
+		if (this._supportsKeyboardNavigation) {
+			this.configureKeyboardShortcuts();
+		}
 	    
 	    this.initialized = YES;
 	    
@@ -2223,8 +2259,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		else {
 			// Otherwise use the cell's own CSS size for this purpose
 			size = BMSizeMake(
-				cell._variables[BMLayoutAttribute.Width].value() | cell.node.offsetWidth, 
-				cell._variables[BMLayoutAttribute.Height].value() | cell.node.offsetHeight
+				cell._variables[BMLayoutAttribute.Width].value() || cell.node.offsetWidth, 
+				cell._variables[BMLayoutAttribute.Height].value() || cell.node.offsetHeight
 			);
 		}
 
@@ -2376,7 +2412,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		node.style.cssText = "position: absolute; left: 0px; top: 0px; visibility: hidden; overflow: visible;";
 
 		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node, kind: BMCollectionViewLayoutAttributesType.Cell});
-		cell._layoutQueue = this._cellLayoutQueue;
+		cell.layoutQueue = this._cellLayoutQueue;
 		//BMCollectionViewCellMakeForCollectionView(this, {withReuseIdentifier: identifier});
 		
 
@@ -2413,6 +2449,28 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var useCapture = NO;
 
 		var canDrag = NO;
+
+        // Stops processing the current event sequence
+        const cancelProcessing = () => {
+            cellEventIsMouseDown = NO;
+            cellEventCanTouchDrag = NO;
+            cellEventTrackedTouch = undefined;
+
+            window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
+            window.removeEventListener('mouseup', cell.mouseupHandler, YES);
+
+            cellEventClicks = 0;
+
+            if (cellEventLongClickTimeout) {
+                window.clearTimeout(cellEventLongClickTimeout);
+                cellEventLongClickTimeout = undefined;
+            }
+
+            if (cellEventDoubleClickTimeout) {
+                window.clearTimeout(cellEventDoubleClickTimeout);
+                cellEventDoubleClickTimeout = undefined;
+            }
+        }
 		
 	    // Click, double click, long click, tap, double tap and long tap handlers
 	    cell.mousedownHandler = function (event) {
@@ -2428,6 +2486,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				event.target.parentNode.nodeName == 'BUTTON' || event.target.parentNode.nodeName == 'INPUT' || event.target.parentNode.nodeName == 'LABEL' ||
 				event.target.classList.contains('BMCollectionViewCellEventHandler') || event.target.parentNode.classList.contains('BMCollectionViewCellEventHandler') ||
 				event.target.classList.contains('widget-foldingpanel-header') ||
+                event.target.hasAttribute('contenteditable') ||
 				// This a specific Thingworx workaround that depends on jQuery
 				(window.$ ? window.$(event.target).parents('.widget-dhxdropdown').length : false)) {
 			    return;
@@ -2472,6 +2531,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					// TODO: Consider if mouse events should also trigger drag & drop in this case
 
 					if (canDrag) {
+                        // If a different collection view already handled this event, stop processing this sequence
+                        if (event.BM_Handled) {
+                            cancelProcessing();
+                            return;
+                        }
+
+                        event.BM_Handled = YES;
+
 						// These events will be processed by the interactive movement handlers from this point on
 						// So the global mousemove and mouseup handlers should be unregistered
 						window.removeEventListener('mousemove', cell.mousemoveHandler, YES);
@@ -2524,6 +2591,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// to fire even after the touch point has moved outside of the element
 		// Because of this, mousemove is attached to window for the duration of a click and then released at the end
 		cell.mousemoveHandler = function (event) {
+            // If this event was already handled, stop processing
+            if (event.BM_Handled) {
+                cancelProcessing();
+                return;
+            }
+
 			if (_BMCoreUIIsDragging) return void (event.preventDefault(), event.stopPropagation());
 			if (canDrag) event.preventDefault();
 			event.originalEvent = event;
@@ -2576,6 +2649,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					}*/
 
 					if (canDrag) {
+                        // Mark this event as handled, so that when it bubbles up to other collection views they don't also trigger
+                        // drag & drop
+                        event.BM_Handled = YES;
+
 						if (self.delegate && self.delegate.collectionViewWillBeginInteractiveMovementForCell) {
 							self.delegate.collectionViewWillBeginInteractiveMovementForCell(self, cell, {atIndexPath: cell.indexPath});
 						}
@@ -3622,7 +3699,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    // Otherwise construct a new one
 		var cellClass = this._supplementaryViewClasses[identifier] || this._cellClass;
 		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node, kind: BMCollectionViewLayoutAttributesType.SupplementaryView});
-		cell._layoutQueue = this._cellLayoutQueue;
+		cell.layoutQueue = this._cellLayoutQueue;
 		
 		// When using custom classes, it is no longer the data set object's responsibility to provide the contents for the cell
 	    if (cellClass == BMCollectionViewCell) cell.element.append(this._dataSet.contentsForSupplementaryViewWithIdentifier(identifier));
@@ -3910,6 +3987,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasClicked) {
@@ -3918,15 +4000,26 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// If the delegate did handle this event, do not invoke the default behavior
 		if (eventHandled) return;
-		
-		// The default click behavior is to toggle cells' selection state
+
+        // The default behaviour when clicking cells is to highlight them
+        if (this._highlightedIndexPath && !this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: this.identityComparator})) {
+            let canHighlight = YES;
+            if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
+                canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, cell.indexPath, {withEvent: options.withEvent});
+            }
+
+            if (canHighlight) {
+                this._highlightIndexPath(cell.indexPath, {withEvent: options.withEvent});
+            }
+        }
+
+		// The previous default click behavior is to toggle cells' selection state
 		// Ask the delegate if the cell is selectable or deselectable, 
 		// depending on whether the cell is currently selected or not.
 		var selectable = YES;
-		var selected;
+		const selected = this.isCellAtIndexPathSelected(cell.indexPath);
 		
-		
-		if (selected = this.isCellAtIndexPathSelected(cell.indexPath)) {
+		if (selected) {
 			if (this.delegate && typeof this.delegate.collectionViewCanDeselectCellAtIndexPath === 'function') {
 				selectable = this.delegate.collectionViewCanDeselectCellAtIndexPath(this, cell.indexPath);
 			}
@@ -3959,6 +4052,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasDoubleClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
+
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasDoubleClicked) {
@@ -3975,6 +4073,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	cellWasLongClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
+
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node) {
+            this.node.focus();
+        }
 		
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
@@ -4005,6 +4108,223 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		return eventHandled;
 	},
 	
+
+	/************************************* HIGHLIGHT HANDLERS ********************************/
+
+	/**
+	 * An array that contains the registered keyboard navigation shortcuts.
+	 */
+	_keyboardNavigationShortcuts: undefined, // <[BMKeyboardShortcut]>
+
+    /**
+     * @protected
+     * Configures the keyboard shortcuts used by the collection view for highlighting.
+     * Subclasses overriding this may invoke the superclass implementation to retain the default keyboard
+     * shortcuts.
+     */
+    configureKeyboardShortcuts() {
+		// If the shortcuts have already been registered, do nothing
+		if (this._keyboardNavigationShortcuts) return;
+
+		this._keyboardNavigationShortcuts = [];
+
+        // Register the arrow keys, which are used for highlighting
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent'}));
+
+        // Register the shift + arrow keys, which are used for block selection
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowLeft', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowRight', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+        this._keyboardNavigationShortcuts.push(BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {target: this, action: '_keyboardArrowPressedWithEvent', modifiers: [BMKeyboardShortcutModifier.Shift]}));
+
+		this._keyboardNavigationShortcuts.forEach(k => this.registerKeyboardShortcut(k));
+    },
+
+    /**
+     * @protected
+     * Removes the keyboard shortcuts used by the collection view for highlighting.
+     * Subclasses overriding this should invoke the superclass implementation to remove the default keyboard
+     * shortcuts.
+     */
+	disableKeyboardShortcuts() {
+		// If the shortcuts have already been removed, do nothing
+		if (!this._keyboardNavigationShortcuts) return;
+
+		this._keyboardNavigationShortcuts.forEach(k => this.unregisterKeyboardShortcut(k));
+		this._keyboardNavigationShortcuts = undefined;
+	},
+
+    /**
+     * Invoked when an arrow key is pressed on the keyboard while this collection view has keyboard focus.
+     * @param event <KeyboardEvent>         The keyboard event that triggered this action.
+     */
+    _keyboardArrowPressedWithEvent(event) {
+        switch (event.code) {
+            case 'ArrowLeft':
+            case 'ArrowUp':
+            case 'ArrowRight':
+            case 'ArrowDown':
+                this.keyboardArrowPressed(event.code, {withEvent: event});
+                break;
+        }
+    },
+
+	/**
+	 * The index path, if any, of the cell that is currently receiving keyboard focus. 
+	 * 
+	 * Setting this property to a valid index path will cause the relevant cell to become highlighted.
+	 * Additionally, setting this property to `undefined` will clear the highlighted cell.
+	 */
+	_highlightedIndexPath: undefined, // <BMIndexPath<T>, nullable>
+
+	get highlightedIndexPath() {
+		return this._highlightedIndexPath;
+	},
+
+	set highlightedIndexPath(indexPath) {
+        this._highlightIndexPath(indexPath);
+	},
+
+    /**
+     * Highlights the given index path.
+     * @param indexPath <BMIndexPath>           The index path to highlight.
+     * {
+     *  @param withEvent <UIEvent, nullable>    The event that triggered this action, if any. 
+     * }
+     */
+    _highlightIndexPath(indexPath, {withEvent: event} = {withEvent: undefined}) {
+        const currentHighlight = this._highlightedIndexPath;
+
+		this._highlightedIndexPath = indexPath;
+
+        // Let the delegate know that the previous cell was dehilighted if any cell was highlighted
+        if (currentHighlight) {
+            if (this.delegate && this.delegate.collectionViewDidDehighlightCellAtIndexPath) {
+                this.delegate.collectionViewDidDehighlightCellAtIndexPath(this, currentHighlight);
+            }
+        }
+
+        if (indexPath) {
+            const cell = this.cellAtIndexPath(indexPath);
+    
+            // If the newly highlighted index path isn't visible on screen, attempt to scroll to it
+            if (!cell || !cell._attributes.frame.intersectsRect(this.visibleBounds)) {
+                let shouldScroll = YES;
+    
+                if (this.delegate && this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath) {
+                    shouldScroll = this.delegate.collectionViewShouldScrollToHighlightedCellAtIndexPath(this, indexPath);
+                }
+    
+                if (shouldScroll) {
+                    this.scrollToCellAtIndexPath(indexPath, {animated: YES});
+                }
+            }
+
+            // If the cell was highlighted, prevent the default action for keyboard events
+            if (event && event instanceof KeyboardEvent) {
+                event.preventDefault();
+            }
+        }
+
+		if (this.delegate && this.delegate.collectionViewDidHighlightCellAtIndexPath) {
+			this.delegate.collectionViewDidHighlightCellAtIndexPath(this, indexPath, {withEvent: event});
+		}
+    },
+
+	/**
+	 * Checks if the cell at the specified index path is highlighted.
+	 * @param indexPath <BMIndexPath<T>>	The index path. This will be loosely compared to the highlighted index path.
+	 * @return <Boolean>					YES if the cell is highlighted, NO otherwise.
+	 */
+    isCellAtIndexPathHighlighted(indexPath) {
+        if (!this._highlightedIndexPath) return NO;
+
+        return this._highlightedIndexPath.isLooselyEqualToIndexPath(indexPath, {usingComparator: this.identityComparator});
+    },
+
+	/**
+	 * Invoked when an arrow is pressed while this collection view has keyboard focus.
+	 * Highlights the index path to the specified direction of the currently highlighted index path.
+	 * @param arrow <String>				The key code of the keyboard arrow that was pressed.
+	 * {
+	 * 	@param withEvent <KeyboardEvent>	The event that triggerred this action.
+	 * }
+	 */
+	keyboardArrowPressed(arrow, args) {
+		let nextIndexPath = this._highlightedIndexPath;
+		const event = args && args.withEvent;
+
+        if (event) {
+            // If this triggered by an event, ask the delegate if collection view should process this event
+            let canProcess = YES;
+
+            if (this.delegate && this.delegate.collectionViewShouldHighlightCellForArrowKey) {
+                canProcess = this.delegate.collectionViewShouldHighlightCellForArrowKey(this, arrow, {withEvent: event});
+            }
+
+            // If the delegate disallows processing this event, stop
+            if (!canProcess) {
+                return;
+            }
+        }
+
+		do {
+			const startingIndexPath = nextIndexPath;
+
+			if (!nextIndexPath) {
+				// If no index path is currently highlighted, highlight the first index path in the data set.
+				nextIndexPath = this.layout.firstIndexPath();
+			}
+			else {
+				// Otherwise highlight the next appropriate index path.
+				switch (arrow) {
+					case 'ArrowLeft':
+						nextIndexPath = this.layout.indexPathToTheLeftOfIndexPath(nextIndexPath);
+						break;
+					case 'ArrowUp':
+						nextIndexPath = this.layout.indexPathAboveIndexPath(nextIndexPath);
+						break;
+					case 'ArrowRight':
+						nextIndexPath = this.layout.indexPathToTheRightOfIndexPath(nextIndexPath);
+						break;
+					case 'ArrowDown':
+						nextIndexPath = this.layout.indexPathBelowIndexPath(nextIndexPath);
+						break;
+				}
+			}
+
+			// If no index path could be found, don't take any action
+			if (!nextIndexPath) return;
+
+			// Check if this index path can be highlighted
+			let canHighlight = YES;
+			if (this.delegate && this.delegate.collectionViewCanHighlightCellAtIndexPath) {
+				canHighlight = this.delegate.collectionViewCanHighlightCellAtIndexPath(this, nextIndexPath, {withEvent: event});
+			}
+
+			if (canHighlight) {
+				// If the index path can be highlighted continue
+				break;
+			}
+			else {
+				// If the index path can't be highlighted and no appropriate next index path exists don't take any action
+				if (startingIndexPath.isEqualToIndexPath(nextIndexPath, {usingComparator: this.identityComparator})) {
+					return;
+				}
+			}
+
+			// Otherwise look for the next index path
+		} while (nextIndexPath);
+
+		// If this keyboard arrow would highlight the same index path, don't take any action
+		if (nextIndexPath.isEqualToIndexPath(this._highlightedIndexPath, {usingComparator: this.identityComparator})) return;
+
+		// Highlight the index path
+        this._highlightIndexPath(nextIndexPath, {withEvent: event});
+	},
 	
 	
 	/************************************* SELECTION HANDLERS ********************************/
@@ -4061,7 +4381,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 	
 	/**
-	 * Invoked by the collection view during an update to refresh the index paths of the selected cells.
+	 * Invoked by the collection view during an update to refresh the index paths of the selected and highlighted cells.
 	 * Index paths that are no longer in the data set will be removed and all other index paths will be updated
 	 * to the correct section and row indexes.
 	 */
@@ -4075,6 +4395,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			
 			if (indexPath) this._selectedIndexPaths.push(indexPath);
 		}
+
+        if (this._highlightedIndexPath) {
+            this._highlightedIndexPath = this.dataSet.indexPathForObject(this._highlightedIndexPath.object);
+        }
 	},
 	
 	/**
@@ -5330,10 +5654,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Optionally, this scrolling may be animated.
 	 * @param indexPath <BMIndexPath<T>>												The index path of the cell to scroll to.
 	 * {
-	 *	@param withVerticalGravity <BMCollectionViewScrollingGravityVertical, nullable>	Defaults to `BMCollectionViewScrollingGravityVertical.Top`. The scroll gravity to use, 
+	 *	@param withVerticalGravity <BMCollectionViewScrollingGravityVertical, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
-	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to `BMCollectionViewScrollingGravityHorizontal.Left`. The scroll gravity to use, 
+	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
 	 *	@param animated <Boolean, nullable>												Defaults to `NO`. If set to `YES`, the scroll will be animated, otherwise it will be 
@@ -5343,10 +5667,40 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	scrollToCellAtIndexPath: function (indexPath, options) {
 		var rect = this._layout.rectWithScrollingPositionOfCellAtIndexPath(indexPath);
+		let visibleBounds;
 		
 		if (rect) {
-			var verticalGravity = (options && options.withVerticalGravity) || BMCollectionViewScrollingGravityVertical.Top;
-			var horizontalGravity = (options && options.horizontalGravity) || BMCollectionViewScrollingGravityHorizontal.Left;
+			var verticalGravity = (options && options.withVerticalGravity);
+			var horizontalGravity = (options && options.horizontalGravity);
+
+			if (!verticalGravity) {
+				visibleBounds = this.visibleBounds;
+
+				if (rect.origin.y > visibleBounds.bottom) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+				}
+				else if (rect.bottom < visibleBounds.origin.y) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
+				}
+			}
+
+			if (!horizontalGravity) {
+				visibleBounds = visibleBounds || this.visibleBounds;
+
+				if (rect.origin.x > visibleBounds.right) {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+				}
+				else if (rect.right < visibleBounds.origin.x) {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+				}
+				else {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+				}
+			}
+
 			var animated = options && options.animated;
 			return this.scrollToRect(rect, {withVerticalGravity: verticalGravity, horizontalGravity: horizontalGravity, animated: animated});
 		}
@@ -5360,10 +5714,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @param identifier <String>														The supplementary view's type identifier.
 	 * {
 	 *	@param atIndexPath <BMIndexPath<T>>												The index path of the supplementary view to scroll to.
-	 *	@param verticalGravity <BMCollectionViewScrollingGravityVertical, nullable>		Defaults to BMCollectionViewScrollingGravityVertical.Top. The scroll gravity to use, 
+	 *	@param verticalGravity <BMCollectionViewScrollingGravityVertical, nullable>		Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
-	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to BMCollectionViewScrollingGravityHorizontal.Left. The scroll gravity to use, 
+	 *	@param horizontalGravity <BMCollectionViewScrollingGravityHorizontal, nullable>	Defaults to a value depending on where the cell is positioned. The scroll gravity to use, 
 	 *																					which controls where on the screen the cell should appear after the scrolling operation
 	 *																					completes.
 	 *	@param animated <Boolean, nullable>												Defaults to NO. If set to YES, the scroll will be animated, otherwise it will be 
@@ -5373,10 +5727,40 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	scrollToSupplementaryViewWithIdentifier: function (identifier, options) {
 		var rect = this._layout.rectWithScrollingPositionOfSupplementaryViewWithIdentifier(identifier, {atIndexPath: options.atIndexPath});
+		let visibleBounds;
 		
 		if (rect) {
-			var verticalGravity = options.verticalGravity || BMCollectionViewScrollingGravityHorizontal.Top;
-			var horizontalGravity = options.horizontalGravity || BMCollectionViewScrollingGravityHorizontal.Left;
+			var verticalGravity = options.verticalGravity;
+			var horizontalGravity = options.horizontalGravity;
+
+			if (!verticalGravity) {
+				visibleBounds = this.visibleBounds;
+
+				if (rect.origin.y > visibleBounds.bottom) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Bottom;
+				}
+				else if (rect.bottom < visibleBounds.origin.y) {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Top;
+				}
+				else {
+					verticalGravity = BMCollectionViewScrollingGravityVertical.Center;
+				}
+			}
+
+			if (!horizontalGravity) {
+				visibleBounds = visibleBounds || this.visibleBounds;
+
+				if (rect.origin.x > visibleBounds.right) {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Right;
+				}
+				else if (rect.right < visibleBounds.origin.x) {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Left;
+				}
+				else {
+					horizontalGravity = BMCollectionViewScrollingGravityHorizontal.Center;
+				}
+			}
+
 			var animated = options.animated;
 			return this.scrollToRect(rect, {withVerticalGravity: verticalGravity, horizontalGravity: horizontalGravity, animated: animated});
 		}
@@ -5408,7 +5792,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			offset.y = rect.origin.y + rect.size.height / 2 - this.frame.size.height / 2;
 		}
 		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityVertical.Bottom) {
-			offset.y = rect.origin.y + rect.size.height - this.frame.size.height / 2;
+			offset.y = rect.origin.y + rect.size.height - this.frame.size.height;
 		}
 		
 		// Then the horizontal X offset
@@ -5419,7 +5803,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			offset.x = rect.origin.x + rect.size.width / 2 - this.frame.size.width / 2;
 		}
 		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityHorizontal.Right) {
-			offset.x = rect.origin.x + rect.size.width - this.frame.size.width / 2;
+			offset.x = rect.origin.x + rect.size.width - this.frame.size.width;
 		}
 		
 		// Scroll to the offset point
@@ -5428,41 +5812,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			return BMAnimateWithBlock(_ => {
 				self.scrollOffset = offset;
 			}, {duration: 300});
-
-			/*
-			// Scrolling is performed differently based on whether iScroll is used or not
-			if (this.iScroll) {
-				this.iScroll.scrollTo(-(offset.x | 0), -(offset.y | 0), 300, IScroll.utils.ease.quadratic);
-				
-				// For iScroll, the layout should be refreshed after the animation
-				var self = this;
-				window.setTimeout(function () {
-					self._handleNewScrollFromEvent({x: offset.x, y: offset.y});
-				}, 316);
-			}
-			else {
-				// For native scrolling, jQuery animations are used instead
-				var startingPoint = this.scrollOffset.copy();
-				var targetPoint = offset;
-				var self = this;
-				this._container.velocity({
-					tween: 1
-				}, {
-					duration: 300,
-					queue: NO,
-					progress: function (elements, completion) {
-						self._container[0].scrollLeft = ((targetPoint.x - startingPoint.x) * completion + startingPoint.x) | 0;
-						self._container[0].scrollTop = ((targetPoint.y - startingPoint.y) * completion + startingPoint.y) | 0;
-
-						self._handleNewScrollFromEvent(null);
-					},
-					complete: function () {
-
-						self._handleNewScrollFromEvent(null);
-					}
-				});
-			}
-			*/
 		}
 		else {
 			// Scrolling is performed differently based on whether iScroll is used or not

@@ -180,6 +180,11 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     /**
+     * The DOM node that was focused when this alert was opened.
+     */
+    _previouslyActiveNode: undefined, // DOMNode
+
+    /**
      * Designated initializer. Initializes this alert popup with the given labels.
      * @param title <String>                    The popup's title.
      * {
@@ -249,6 +254,8 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         escapeKeyboardShortcut.preventsDefault = YES;
         this.registerKeyboardShortcut(escapeKeyboardShortcut);
 
+        this._previouslyActiveNode = document.activeElement;
+
         return this;
     },
     /**
@@ -289,6 +296,10 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (this._result == BMConfirmationPopupResult.Undecided) {
             this._result = BMConfirmationPopupResult.Confirmed;
             this._resolve(BMConfirmationPopupResult.Confirmed);
+        }
+
+        if (this._previouslyActiveNode) {
+            this._previouslyActiveNode.focus();
         }
 
         return BMWindow.prototype.dismissAnimated.apply(this, arguments);
@@ -453,6 +464,10 @@ BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), 
         if (this._result == BMConfirmationPopupResult.Undecided) {
             this._result = BMConfirmationPopupResult.Cancelled;
             this._resolve(BMConfirmationPopupResult.Cancelled);
+        }
+
+        if (this._previouslyActiveNode) {
+            this._previouslyActiveNode.focus();
         }
 
         return BMWindow.prototype.dismissAnimated.apply(this, arguments);

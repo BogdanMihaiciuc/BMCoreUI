@@ -834,10 +834,6 @@ export function BMAnimationApplyBlocking(blocking) {
     }
 	animation.options.complete = completeCallback;
 	
-	if (window.event && window.event.shiftKey) {
-		animation.options.duration = animation.options.duration * 5;
-		window.event.preventDefault();
-	}
     
     var stride = animation.options.stride;
 	var delay = animation.options.delay || 0;

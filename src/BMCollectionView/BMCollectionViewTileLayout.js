@@ -6,7 +6,7 @@ import {BMPointMakeWithX} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
 import {BMRectMake, BMRectMakeWithX, BMRectMakeWithOrigin} from '../Core/BMRect'
 import {BMIndexPathMakeWithIndexes} from '../Core/BMIndexPath'
-import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesMakeForSupplementaryViewWithIdentifier} from './BMCollectionViewLayoutAttributes'
+import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesMakeForSupplementaryViewWithIdentifier, BMCollectionViewLayoutAttributesType} from './BMCollectionViewLayoutAttributes'
 import {BMCollectionViewFlowLayoutSupplementaryView, BMCollectionViewTableLayoutSupplementaryView} from './BMCollectionViewFlowLayout'
 import {BMCollectionViewLayout} from './BMCollectionViewLayout'
 
@@ -1106,7 +1106,152 @@ BMCollectionViewTileLayout.prototype = BMExtend({}, BMCollectionViewLayout.proto
 
 		// Control shouldn't reach this point
 		debugger;
-	}
+	},
+
+	/************************************* CELL HIGHLIGHTING ********************************/
+
+	// @override - BMCollectionViewLayout
+	 indexPathToTheLeftOfIndexPath(indexPath) {
+		// Create a rect starting at the left edge of the given index path and request attributes in it
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+
+		const extent = BMRectMake(
+			startingAttributes.frame.origin.x - this.collectionView.bounds.size.width - 1,
+			startingAttributes.frame.origin.y,
+			this.collectionView.bounds.size.width,
+			startingAttributes.frame.size.height
+		);
+
+		// Filter to only include cell attributes
+		const attributes = this.attributesForElementsInRect(extent).filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell);
+
+		// return the rightmost attributes, if any
+		let maxAttributesX = extent.left;
+		let maxAttributesIndex = -1;
+
+		for (let i = 0; i < attributes.length; i++) {
+			if (attributes[i].frame.origin.x > maxAttributesX) {
+				maxAttributesX = attributes[i].frame.origin.x;
+				maxAttributesIndex = i;
+			}
+		}
+
+		if (maxAttributesIndex != -1) {
+			return attributes[maxAttributesIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+
+	// @override - BMCollectionViewLayout
+	indexPathAboveIndexPath(indexPath) {
+		// Create a rect starting at the top edge of the given index path and request attributes in it
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+
+		const extent = BMRectMake(
+			startingAttributes.frame.origin.x,
+			startingAttributes.frame.origin.y - this.collectionView.bounds.size.height - 1,
+			startingAttributes.frame.size.width,
+			this.collectionView.bounds.size.height
+		);
+
+		// Filter to only include cell attributes
+		const attributes = this.attributesForElementsInRect(extent).filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell);
+
+		// return the bottommost attributes, if any
+		let maxAttributesY = extent.origin.y;
+		let maxAttributesIndex = -1;
+
+		for (let i = 0; i < attributes.length; i++) {
+			if (attributes[i].frame.origin.y > maxAttributesY) {
+				maxAttributesY = attributes[i].frame.origin.y;
+				maxAttributesIndex = i;
+			}
+		}
+
+		if (maxAttributesIndex != -1) {
+			return attributes[maxAttributesIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathToTheRightOfIndexPath(indexPath) {
+		// Create a rect starting at the right edge of the given index path and request attributes in it
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+
+		const extent = BMRectMake(
+			startingAttributes.frame.right + 1,
+			startingAttributes.frame.origin.y,
+			this.collectionView.bounds.size.width,
+			startingAttributes.frame.size.height
+		);
+
+		// Filter to only include cell attributes
+		const attributes = this.attributesForElementsInRect(extent).filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell);
+
+		// return the leftmost attributes, if any
+		let minAttributesX = extent.right;
+		let minAttributesIndex = -1;
+
+		for (let i = 0; i < attributes.length; i++) {
+			if (attributes[i].frame.origin.x < minAttributesX) {
+				minAttributesX = attributes[i].frame.origin.x;
+				minAttributesIndex = i;
+			}
+		}
+
+		if (minAttributesIndex != -1) {
+			return attributes[minAttributesIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathBelowIndexPath(indexPath) {
+		// Create a rect starting at the bottom edge of the given index path and request attributes in it
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+
+		const extent = BMRectMake(
+			startingAttributes.frame.origin.x,
+			startingAttributes.frame.bottom + 1,
+			startingAttributes.frame.size.width,
+			this.collectionView.bounds.size.height
+		);
+
+		// Filter to only include cell attributes
+		const attributes = this.attributesForElementsInRect(extent).filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell);
+
+		// return the topmost attributes, if any
+		let minAttributesY = extent.bottom;
+		let minAttributesIndex = -1;
+
+		for (let i = 0; i < attributes.length; i++) {
+			if (attributes[i].frame.origin.y < minAttributesY) {
+				minAttributesY = attributes[i].frame.origin.y;
+				minAttributesIndex = i;
+			}
+		}
+
+		if (minAttributesIndex != -1) {
+			return attributes[minAttributesIndex].indexPath;
+		}
+
+		return indexPath;
+	},
+	
+	// @override - BMCollectionViewLayout
+	indexPathsFromIndexPath(indexPath, {toIndexPath}) {
+		// Create and return the index paths available in the union of the two index paths' frames.
+		const startingAttributes = this.attributesForCellAtIndexPath(indexPath);
+		const targetAttributes = this.attributesForCellAtIndexPath(toIndexPath);
+
+		const attributes = this.attributesForElementsInRect(startingAttributes.frame.rectByUnionWithRect(targetAttributes.frame));
+		
+		return attributes.filter(a => a.itemType == BMCollectionViewLayoutAttributesType.Cell).map(a => a.indexPath);
+	},
 
 });
 

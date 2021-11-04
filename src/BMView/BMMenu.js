@@ -1,10 +1,12 @@
 // @ts-check
 
-import {YES, NO, BMCopyProperties} from '../Core/BMCoreUI'
+import {YES, NO, BMCopyProperties, BMNumberByConstrainingNumberToBounds} from '../Core/BMCoreUI'
 import {BMPoint, BMPointMake} from '../Core/BMPoint'
 import {BMHook, __BMVelocityAnimate} from '../Core/BMAnimationContext'
 import 'velocity-animate'
 import { BMRectMakeWithNodeFrame } from '../Core/BMRect';
+import { BMView } from './BMView_v2.5';
+import { BMKeyboardShortcut } from '../BMWindow/BMKeyboardShortcut';
 
 /**
  * The standard spacing between the menu and the node it is created from.
@@ -219,6 +221,40 @@ BMMenu.prototype = {
     _sourceNodeDisplacement: undefined, // <Number, nullable>
 
     /**
+     * The index of the currently highlighted menu item.
+     */
+    _highlightedIndex: -1, // <Number>
+
+    /**
+     * The DOM node that was focused when this alert was opened.
+     */
+    _previouslyActiveNode: undefined, // DOMNode
+
+    get highlightedIndex() {
+        return this._highlightedIndex;
+    },
+
+    set highlightedIndex(index) {
+        if (index != this._highlightedIndex) {
+            this._highlightedIndex = index;
+
+            if (this._node) {
+                // Remove the currently highlighted item's style
+                const highlightedItem = this._node.querySelector('.BMMenuItemHighlighted');
+                if (highlightedItem) {
+                    highlightedItem.classList.remove('BMMenuItemHighlighted');
+                }
+
+                // And add it to the newly highlighted item
+                const nextHighlightedItem = this._node.children[index];
+                if (nextHighlightedItem) {
+                    nextHighlightedItem.classList.add('BMMenuItemHighlighted');
+                }
+            }
+        }
+    },
+
+    /**
      * Initializes this menu with the specified items.
      * The menu will be hidden by default; the method showAtPoint(_) should be used to make the menu visible.
      * 
@@ -241,6 +277,35 @@ BMMenu.prototype = {
         menuNode.className = this._CSSClass ? `BMMenu ${this._CSSClass}` : 'BMMenu';
         this._node = menuNode;
 
+        this._highlightedIndex = -1;
+
+        menuNode.tabIndex = -1;
+
+        // Register the keyboard shortcuts to be used while the menu is visible
+        const upArrow = BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowUp', {modifiers: [], target: this, action: 'arrowUpPressedWithEvent'});
+        upArrow.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(upArrow, {forNode: menuNode});
+
+        const downArrow = BMKeyboardShortcut.keyboardShortcutWithKeyCode('ArrowDown', {modifiers: [], target: this, action: 'arrowDownPressedWithEvent'});
+        downArrow.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(downArrow, {forNode: menuNode});
+
+        const returnShortcut = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Enter', {modifiers: [], target: this, action: 'returnPressedWithEvent'});
+        returnShortcut.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(returnShortcut, {forNode: menuNode});
+
+        const spacebar = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Space', {modifiers: [], target: this, action: 'returnPressedWithEvent'});
+        spacebar.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(spacebar, {forNode: menuNode});
+
+        const tab = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Tab', {modifiers: [], target: this, action: 'tabPressedWithEvent'});
+        tab.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(tab, {forNode: menuNode});
+
+        const escape = BMKeyboardShortcut.keyboardShortcutWithKeyCode('Escape', {modifiers: [], target: this, action: 'escapePressedWithEvent'});
+        escape.preventsDefault = YES;
+        BMView.registerKeyboardShortcut(escape, {forNode: menuNode});
+
         // The overlay which intercepts clicks outside of the menu
         const menuContainer = document.createElement('div');
         menuContainer.className = 'BMMenuContainer';
@@ -253,6 +318,10 @@ BMMenu.prototype = {
         this._renderMenuItems();
 
         menuNode.addEventListener('click', event => event.preventDefault());
+
+        menuNode.addEventListener('mouseleave', event => {
+            this.highlightedIndex = -1;
+        });
 
         menuContainer.addEventListener('click', event => {
             this.closeAnimated(YES);
@@ -271,12 +340,13 @@ BMMenu.prototype = {
     _renderMenuItems() {
         // Create and append the items for this menu
         const iconSize = this._iconSize;
-        for (const item of this._items) {
+
+        this._items.forEach((item, index) => {
             if (item.name.startsWith('---')) {
                 const itemNode = document.createElement('div');
                 itemNode.className = 'BMMenuDivider';
                 this._node.appendChild(itemNode);
-                continue;
+                return;
             }
 
             let itemNode = document.createElement('div');
@@ -298,6 +368,8 @@ BMMenu.prototype = {
             itemNode.appendChild(itemText);
     
             itemNode.addEventListener('click', event => {
+                itemNode.classList.add('BMMenuItemActive');
+
                 if (item.action) item.action(item);
 
                 if (this.delegate && this.delegate.menuDidSelectItem) {
@@ -305,8 +377,14 @@ BMMenu.prototype = {
                 }
             });
 
+            itemNode.addEventListener('mouseenter', event => {
+                this.highlightedIndex = index;
+            })
+
+            itemNode.addEventListener
+
             this._node.appendChild(itemNode);
-        }
+        });
     },
 
     /**
@@ -408,6 +486,9 @@ BMMenu.prototype = {
             delay += 16;
         }
 
+        this._previouslyActiveNode = document.activeElement;
+        menuNode.focus();
+
         // Animate the source node shadow
         await __BMVelocityAnimate(this._sourceNodeShadow, {translateY: displacement + 'px'}, {duration: duration, easing: easing});
 
@@ -484,6 +565,9 @@ BMMenu.prototype = {
             delay += 16;
         }
 
+        this._previouslyActiveNode = document.activeElement;
+        menuNode.focus();
+
         return menuNode;
     },
 
@@ -500,10 +584,14 @@ BMMenu.prototype = {
             this.delegate.menuWillClose(this);
         }
 
+        if (this._previouslyActiveNode) {
+            this._previouslyActiveNode.focus();
+        }
+
         this._node.style.pointerEvents = 'none'; 
         this._containerNode.style.pointerEvents = 'none';
         let delay = this._node.childNodes.length * 16 + 100 - 200;
-        delay = (delay < 0 ? 0 : delay);
+        delay = (delay < 0 ? 0 : delay) + 200;
 
         const sourceNodeShadow = this._sourceNodeShadow;
         const containerNode = this._containerNode;
@@ -517,8 +605,8 @@ BMMenu.prototype = {
         const easing = sourceNodeShadow ? 'easeInOutQuad' : 'easeInQuad';
 
         if (sourceNodeShadow) {
-            __BMVelocityAnimate(sourceNodeShadow, {translateY: '0px'}, {duration: duration, easing: easing});
-            __BMVelocityAnimate(containerNode, {opacity: 0}, {duration: duration, easing: easing});
+            __BMVelocityAnimate(sourceNodeShadow, {translateY: '0px'}, {duration: duration, easing: easing, delay});
+            __BMVelocityAnimate(containerNode, {opacity: 0}, {duration: duration, easing: easing, delay});
         }
 
         __BMVelocityAnimate(this._node, {
@@ -543,7 +631,7 @@ BMMenu.prototype = {
             }
         });
 
-        delay = 0;
+        delay = 200;
         for (let i = this._node.childNodes.length - 1; i >= 0; i--) {
             let child = this._node.childNodes[i];
             __BMVelocityAnimate(child, {translateY: '16px', translateZ: 0, opacity: 0}, {
@@ -556,7 +644,66 @@ BMMenu.prototype = {
 
         this._node = undefined;
         this._containerNode = undefined;
+    },
+
+    /**
+     * Invoked when the up arrow is pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    arrowUpPressedWithEvent(event) {
+        if (this._highlightedIndex != 0) {
+            this.highlightedIndex = BMNumberByConstrainingNumberToBounds(this._highlightedIndex - 1, 0, this._items.length - 1);
+        }
+    },
+
+    /**
+     * Invoked when the down arrow is pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    arrowDownPressedWithEvent(event) {
+        if (this._highlightedIndex != this._items.length - 1) {
+            this.highlightedIndex = BMNumberByConstrainingNumberToBounds(this._highlightedIndex + 1, 0, this._items.length - 1);
+        }
+    },
+
+    returnPressedWithEvent(event) {
+        if (this._highlightedIndex >= 0 && this._highlightedIndex < this._items.length - 1) {
+            const item = this._items[this._highlightedIndex];
+
+            if (item.action) item.action(item);
+
+            if (this.delegate && this.delegate.menuDidSelectItem) {
+                this.delegate.menuDidSelectItem(this, item);
+            }
+
+            const highlightedNode = this._node.querySelector('.BMMenuItemHighlighted');
+            if (highlightedNode) {
+                highlightedNode.classList.add('BMMenuItemActive');
+            }
+
+            this.closeAnimated(YES);
+        }
+    },
+
+    /**
+     * Invoked when the tab key is pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    tabPressedWithEvent(event) {
+        // No action, this just prevents the keyboard focus from moving to another element
+    },
+
+    /**
+     * Invoked when the escape key is pressed.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    escapePressedWithEvent(event) {
+        if (this._node) {
+            this.closeAnimated(YES);
+        }
     }
+
+
 };
 
 /**
