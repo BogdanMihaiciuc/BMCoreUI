@@ -159,7 +159,7 @@ BMKeyboardShortcut.prototype = {
                 modifiers.push(BMKeyboardShortcutModifier.Command);
             }
         }
-        if (event.controlKey) {
+        if (event.ctrlKey) {
             if (BMKeyboardShortcutModifier.System.value == BMKeyboardShortcutModifier.Control.value) {
                 modifiers.push(BMKeyboardShortcutModifier.System);
             }
