@@ -2271,7 +2271,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
 			if (bitmap == shortcut._modifierBitmap) {
 				if (shortcut.preventsDefault) event.preventDefault();
-				shortcut.target[shortcut.action](event);
+				shortcut.target[shortcut.action](event, {forKeyboardShortcut: shortcut});
 			}
 		}
 	},
