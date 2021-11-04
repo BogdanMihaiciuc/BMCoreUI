@@ -79,6 +79,8 @@ Added a new `serializedKeyboardShortcutWithTargetID(_)` method that can be used 
 
 Added a new `initWithKeyboardEvent(_, {target, action, preventsDefault})` initializer and a new `keyboardShortcutWithKeyboardEvent(_, {target, action, preventsDefault})` static method that can be used to obtain a keyboard shortcut from a keyboard event.
 
+When keyboard shortcuts are triggered, the action method will now also receive a second parameter containing the triggered shortcut object. The signature of the method becomes `(_, {forKeyboardShortcut})`.
+
 ## BMAlertPopup
 
 When dismissed, the element that was focused when the alert was shown will acquire focus again.
