@@ -1254,6 +1254,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				completionHandler = () => {
 					this.anchorRect = undefined;
 					this.anchorNode = undefined;
+
+					if (this._keyboardShortcutsEnabled) {
+						this.node.focus();
+					}
 				}
 			}
 
@@ -1261,6 +1265,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 			this._blocker.style.display = 'block';
 			this._window.style.display = 'block';
+
+			if (this._keyboardShortcutsEnabled) {
+				this.node.focus();
+			}
 
 			this._overlay._windowWillAppear();
 		
@@ -1277,14 +1285,14 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 			this._blocker.style.pointerEvents = '';
 			this._window.style.pointerEvents = '';
+
+			if (this._keyboardShortcutsEnabled) {
+				this.node.focus();
+			}
 			
 			if (self.delegate && self.delegate.windowDidAppear) self.delegate.windowDidAppear(self);
 			
 			if (args && args.completionHandler) args.completionHandler();
-		}
-
-		if (this._keyboardShortcutsEnabled) {
-			this.node.focus();
 		}
 	},
 	
