@@ -1,3 +1,9 @@
+# 2.8.1
+
+## BMKeyboardShortcut
+
+Resolved an issue with `initWithKeyboardEvent` that caused it to ignore the control key.
+
 # 2.8
 
 ## Generic
