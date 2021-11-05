@@ -1,3 +1,9 @@
+# 2.8.2
+
+## BMMonacoCodeEditor
+
+Fixed an issue that caused an error to be thrown on registering the color themes when using the latest monaco editor.
+
 # 2.8.1
 
 ## BMKeyboardShortcut
