@@ -356,6 +356,7 @@ BMMonacoCodeEditor.createThemes = function () {
 	monaco.editor.defineTheme('BMMonacoCodeEditorTheme', {
 		base: 'vs',
 		inherit: YES,
+		colors: [],
 		rules: [
 			{token: 'comment', foreground: 'CCCCCC'},
 			{token: 'string', foreground: 'BC670F', background: 'FDFBF3'},
@@ -377,6 +378,7 @@ BMMonacoCodeEditor.createThemes = function () {
 	monaco.editor.defineTheme('BMMonacoCodeEditorThemeDark', {
 		base: 'vs-dark',
 		inherit: YES,
+		colors: [],
 		rules: [
 			{token: 'comment', foreground: '555555'},
 			{token: 'string', foreground: 'ee9452', background: 'FDFBF3'},
