@@ -4,6 +4,10 @@
 
 Fixed an issue that caused an error to be thrown on registering the color themes when using the latest monaco editor.
 
+## BMCollectionViewFlowLayout
+
+Resolved an issue that would cause an invalid layout to be created when the available space wasn't sufficient for any cell.
+
 # 2.8.1
 
 ## BMKeyboardShortcut
