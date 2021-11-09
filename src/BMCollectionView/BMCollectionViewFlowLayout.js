@@ -1977,11 +1977,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							
 							numberOfColumns++;
 						} while (usedLength < maximumLength && expectedSize);
+
+						// Ensure that there is at least one column
+						numberOfColumns = Math.max(numberOfColumns, 1);
 					}
 					else {
 						// If there is no minimum spacing required, then the number of columns is simply the available space divided
 						// by the cell width
-						numberOfColumns = ((maximumLength / expectedSize) | 0) || 1;
+						numberOfColumns = Math.max((maximumLength / expectedSize) | 0, 1);
 					}
 				}
 
@@ -2707,11 +2710,13 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 						
 						numberOfColumns++;
 					} while (usedLength < length && cellSize);
+
+					numberOfColumns = Math.max(numberOfColumns, 1);
 				}
 				else {
 					// If there is no minimum spacing required, then the number of columns is simply the available space divided
 					// by the cell width
-					numberOfColumns = ((length / cellSize) | 0) || 1;
+					numberOfColumns = Math.max((length / cellSize) | 0, 1);
 				}
 			}
 			cachedLayout.numberOfColumns = numberOfColumns;
