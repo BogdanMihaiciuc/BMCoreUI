@@ -667,7 +667,7 @@ BMMenu.prototype = {
     },
 
     returnPressedWithEvent(event) {
-        if (this._highlightedIndex >= 0 && this._highlightedIndex < this._items.length - 1) {
+        if (this._highlightedIndex >= 0 && this._highlightedIndex < this._items.length) {
             const item = this._items[this._highlightedIndex];
 
             if (item.action) item.action(item);
