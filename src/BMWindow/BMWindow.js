@@ -1124,6 +1124,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			const animationNode = node.cloneNode(YES);
 			
 			const nodeDisplay = node.style.display;
+			self._nodeDisplay = nodeDisplay;
 			
 			animationNode.style.position = 'fixed';
 			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
@@ -1165,6 +1166,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 									}
 									else {
 										node.style.display = nodeDisplay;
+										delete self._nodeDisplay;
 									}
 
 									completionHandler();
