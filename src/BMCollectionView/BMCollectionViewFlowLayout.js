@@ -1977,15 +1977,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							
 							numberOfColumns++;
 						} while (usedLength < maximumLength && expectedSize);
-
-						// Ensure that there is at least one column
-						numberOfColumns = Math.max(numberOfColumns, 1);
 					}
 					else {
 						// If there is no minimum spacing required, then the number of columns is simply the available space divided
 						// by the cell width
-						numberOfColumns = Math.max((maximumLength / expectedSize) | 0, 1);
+						numberOfColumns = (maximumLength / expectedSize) | 0;
 					}
+
+					// Ensure that there is at least one column
+					numberOfColumns = Math.max(numberOfColumns, 1);
 				}
 
 				// Create the preliminary sections
@@ -2710,16 +2710,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 						
 						numberOfColumns++;
 					} while (usedLength < length && cellSize);
-
-					numberOfColumns = Math.max(numberOfColumns, 1);
 				}
 				else {
 					// If there is no minimum spacing required, then the number of columns is simply the available space divided
 					// by the cell width
-					numberOfColumns = Math.max((length / cellSize) | 0, 1);
+					numberOfColumns = (length / cellSize) | 0;
 				}
 			}
-			cachedLayout.numberOfColumns = numberOfColumns;
+			cachedLayout.numberOfColumns = Math.max(numberOfColumns, 1);
 			
 			// Generate prototype rows for each column count up to the maximum
 			for (var i = 0; i < numberOfColumns; i++) {
@@ -4489,19 +4487,22 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		const row = indexPath.row;
 
 		// Find the row where the current index path is
-		const sectionRows = this.cachedLayout.sections[section];
+		const cachedSection = this.cachedLayout.sections[section];
 
-		if (!sectionRows) return indexPath;
+		if (!cachedSection) return indexPath;
+
+		const sectionRows = cachedSection.rows;
 		
 		let rowIndex = 0;
 		const rowCount = sectionRows.length;
 		for (rowIndex; rowIndex < rowCount; rowIndex++) {
-			if (row.startIndex <= row && row.endIndex >= row) {
+			const sectionRow = sectionRows[rowIndex];
+			if (sectionRow.startIndex <= row && sectionRow.endIndex >= row) {
 				break;
 			}
 		}
 
-		const attributes = sectionRows[rowIndex].attributes;
+		const attributes = sectionRows[rowIndex].attributes.find(a => a.indexPath.row == row);
 		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
 		const position = attributes.frame.center[positionProperty];
 
@@ -4616,19 +4617,22 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		const row = indexPath.row;
 
 		// Find the row where the current index path is
-		const sectionRows = this.cachedLayout.sections[section];
+		const cachedSection = this.cachedLayout.sections[section];
 
-		if (!sectionRows) return indexPath;
+		if (!cachedSection) return indexPath;
+
+		const sectionRows = cachedSection.rows;
 		
 		let rowIndex = 0;
 		const rowCount = sectionRows.length;
 		for (rowIndex; rowIndex < rowCount; rowIndex++) {
-			if (row.startIndex <= row && row.endIndex >= row) {
+			const sectionRow = sectionRows[rowIndex];
+			if (sectionRow.startIndex <= row && sectionRow.endIndex >= row) {
 				break;
 			}
 		}
 
-		const attributes = sectionRows[rowIndex].attributes;
+		const attributes = sectionRows[rowIndex].attributes.find(a => a.indexPath.row == row);
 		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
 		const position = attributes.frame.center[positionProperty];
 
