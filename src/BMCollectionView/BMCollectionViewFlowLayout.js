@@ -2716,8 +2716,10 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					// by the cell width
 					numberOfColumns = (length / cellSize) | 0;
 				}
+
+				numberOfColumns = Math.max(numberOfColumns, 1);
 			}
-			cachedLayout.numberOfColumns = Math.max(numberOfColumns, 1);
+			cachedLayout.numberOfColumns = numberOfColumns;
 			
 			// Generate prototype rows for each column count up to the maximum
 			for (var i = 0; i < numberOfColumns; i++) {
