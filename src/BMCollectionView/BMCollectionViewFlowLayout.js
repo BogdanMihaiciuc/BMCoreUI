@@ -2607,7 +2607,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 								const scaledRowHeight = rowWidth * scaleFactor | 0;
 								for (const attribute of row.attributes) {
 									attribute.frame.origin.x += displacement;
-									attribute.frame.size.height = attribute.frame.size.height * scaleFactor | 0;
+									attribute.frame.size.width = attribute.frame.size.width * scaleFactor | 0;
 								}
 
 								// Advance the displacement based on the row's new width then displace the row end
