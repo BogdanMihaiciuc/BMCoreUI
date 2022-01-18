@@ -1,5 +1,9 @@
 # 2.8.3
 
+## BMCollectionView
+
+Fixed an issue that could cause drag & drop to occasionally fail when the drag status indicator was positioned below the mouse pointer.
+
 ## BMCollectionViewFlowLayout
 
 Resolves an issue that caused keyboard navigation using the up/down arrows in vertical layout and left/right arrows in horizontal layouts to fail when using non-static cell sizes.
