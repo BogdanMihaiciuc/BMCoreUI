@@ -693,7 +693,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	/**
 	 * Defaults to `YES`. When set to `NO`, keyboard navigation is disabled.
 	 */
-	_supportsKeyboardNavigation: YES, // <Boolean>
+	_supportsKeyboardNavigation: NO, // <Boolean>
 
 	get supportsKeyboardNavigation() {
 		return this._supportsKeyboardNavigation;
