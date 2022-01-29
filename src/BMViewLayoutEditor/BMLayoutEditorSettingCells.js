@@ -518,10 +518,10 @@ BMLayoutEditorSettingsDeactivateConstraintsCell.prototype = BMExtend(Object.crea
 
         buttonView.node.addEventListener('click', event => {
             if (hasOption && hasShift && hasCtrl) {
-                new Set(this.setting.target.rootView.allConstraints).forEach(constraint => constraint.remove());
+                new Set(this.setting.target._view.rootView.allConstraints).forEach(constraint => constraint.remove());
             }
             else if (hasOption) {
-                for (let constraint of this.setting.target.localConstraints) {
+                for (let constraint of this.setting.target._view.localConstraints) {
                     if (hasShift) {
                         constraint.remove();
                     }
