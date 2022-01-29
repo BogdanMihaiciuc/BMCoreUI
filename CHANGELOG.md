@@ -4,6 +4,10 @@
 
 Fixed an issue that could cause drag & drop to occasionally fail when the drag status indicator was positioned below the mouse pointer.
 
+The default value for `supportsKeyboardNavigation` has been set to `NO` to avoid side effects when upgrading from older versions.
+
+Collection view will no longer acquire focus when its cells are clicked when keyboard navigation is disabled.
+
 ## BMCollectionViewFlowLayout
 
 Resolves an issue that caused keyboard navigation using the up/down arrows in vertical layout and left/right arrows in horizontal layouts to fail when using non-static cell sizes.
@@ -21,6 +25,10 @@ Resolves an issue that caused the active menu item's text to temporarily become 
 ## BMWindow
 
 Resolves an issue that caused the node referenced via the `anchorNode` property to remain permanently hidden if the window was dismissed while its appear animation was in progress.
+
+## BMViewLayoutEditor
+
+Resolves an issue that caused the "Deactivate Constraints" button to not work.
 
 # 2.8.2
 
