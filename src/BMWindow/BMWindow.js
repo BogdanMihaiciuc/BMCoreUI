@@ -1124,6 +1124,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			const animationNode = node.cloneNode(YES);
 			
 			const nodeDisplay = node.style.display;
+			self._nodeDisplay = nodeDisplay;
 			
 			animationNode.style.position = 'fixed';
 			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
@@ -1165,6 +1166,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 									}
 									else {
 										node.style.display = nodeDisplay;
+										self._nodeDisplay = undefined;
 									}
 
 									completionHandler();
@@ -1326,14 +1328,14 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			// Create a copy of the given node which will be used in the animation in place of the original node
 			const node = this._anchorNode;
 			
-			if ('_nodeDisplay' in self) {
+			if (typeof self._nodeDisplay != 'undefined') {
 				node.style.display = self._nodeDisplay;
 			}
 			
 			const rect = BMRectMakeWithNodeFrame(node);
 			const animationNode = node.cloneNode(YES);
 			
-			const nodeDisplay = ('_nodeDisplay' in self) ? self._nodeDisplay : node.style.display;
+			const nodeDisplay = (typeof self._nodeDisplay != 'undefined') ? self._nodeDisplay : node.style.display;
 			self._nodeDisplay = undefined;
 			
 			animationNode.style.position = 'fixed';

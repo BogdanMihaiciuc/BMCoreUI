@@ -32,6 +32,8 @@
 	position: fixed;
 
 	box-shadow: 0px 4px 12px rgba(0, 0, 0, .33);
+
+	pointer-events: none;
 }
 
 .BMDragIndicatorRed {
@@ -1305,13 +1307,35 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		color: rgba(255, 255, 255, .9);
 	}
 
-	.BMLayoutEditorConstraintPopupOption:active, .BMMenuItem:active, .BMMenuTouch > .BMMenuItem:hover {
+	.BMLayoutEditorConstraintPopupOption:active, .BMMenuTouch > .BMMenuItem:hover {
 		background: transparent;
 		color: white;
 	}
 
 	.BMMenuTouch > .BMMenuItem {
 		border-bottom-color: rgba(255, 255, 255, .1);
+	}
+
+	@keyframes BMMenuItemActiveAnimation {
+		from {
+			background: transparent;
+			color: rgba(255, 255, 255, .9);
+		}
+	
+		49% {
+			background: transparent;
+			color: rgba(255, 255, 255, .9);
+		}
+	
+		50% {
+			background: rgb(0, 128, 255);
+			color: white;
+		}
+	
+		to {
+			background: rgb(0, 128, 255);
+			color: white;
+		}
 	}
 }
 

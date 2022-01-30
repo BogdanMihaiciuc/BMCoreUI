@@ -1,3 +1,35 @@
+# 2.8.3
+
+## BMCollectionView
+
+Fixed an issue that could cause drag & drop to occasionally fail when the drag status indicator was positioned below the mouse pointer.
+
+The default value for `supportsKeyboardNavigation` has been set to `NO` to avoid side effects when upgrading from older versions.
+
+Collection view will no longer acquire focus when its cells are clicked when keyboard navigation is disabled.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue that caused keyboard navigation using the up/down arrows in vertical layout and left/right arrows in horizontal layouts to fail when using non-static cell sizes.
+
+Resolves an issue where using the `Expand` content gravity with a horizontal layout caused the size adjustments to be applied to the cell heights instead of their widths.
+
+Resolves an issue when using automatic cell sizes that could occur when the preliminary layout would fit in the collection view's frame after a first measurement but a scrollbar would be required after subsequent measurements.
+
+## BMMenu
+
+Resolves an issue that caused the last item in menus to not be selectable using the spacebar or return key.
+
+Resolves an issue that caused the active menu item's text to temporarily become dark and unreadable in dark mode when selected.
+
+## BMWindow
+
+Resolves an issue that caused the node referenced via the `anchorNode` property to remain permanently hidden if the window was dismissed while its appear animation was in progress.
+
+## BMViewLayoutEditor
+
+Resolves an issue that caused the "Deactivate Constraints" button to not work.
+
 # 2.8.2
 
 ## BMMonacoCodeEditor

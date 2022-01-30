@@ -1699,9 +1699,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 	 * When using automatic cell sizes, the generator will yield execution and only calculate portions of the layout on demand.
 	 * With the exeption of the first invocation, it is required to pass an index path to the iterator's `next` method. The layout process
 	 * will continue until it fully lays out the cell for that index path, at which point it will yield again.
-	 * @param useOffset <Boolean>			When set to `YES` the layout will take the scrollbar size into account.
+	 * @param useOffset <Boolean>							When set to `YES` the layout will take the scrollbar size into account.
+	 * {
+	 * 	@param targetRect <BMRect, nullable>				When computing a layout using automatic cell sizes, this is an optional rect up to which
+	 * 														to measure cells. This is reserved for when this is invoked as a delegate.
+	 * 	@param targetIndexPath <BMIndexPath, nullable>		When computing a layout using automatic cell sizes, this is an optional index path up to which
+	 * 														to measure cells. This is reserved for when this is invoked as a delegate.
+	 * }
 	 */
-	*_prepareLayoutWithScrollbarOffsetGenerator(useOffset) {
+	*_prepareLayoutWithScrollbarOffsetGenerator(useOffset, target) {
 		
 		// To standardize naming in order to support the orientation setting, the following terms are used:
 		// Length - refers to the dimension across the axis on which collection view scrolls: height for vertical and width for horizontal
@@ -1803,7 +1809,6 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 				targetRect?: BMRect;
 			}
 			*/
-			let target;
 
 			// The sections that contain the preliminary layout
 			const preliminarySections = [];
@@ -1977,15 +1982,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 							
 							numberOfColumns++;
 						} while (usedLength < maximumLength && expectedSize);
-
-						// Ensure that there is at least one column
-						numberOfColumns = Math.max(numberOfColumns, 1);
 					}
 					else {
 						// If there is no minimum spacing required, then the number of columns is simply the available space divided
 						// by the cell width
-						numberOfColumns = Math.max((maximumLength / expectedSize) | 0, 1);
+						numberOfColumns = (maximumLength / expectedSize) | 0;
 					}
+
+					// Ensure that there is at least one column
+					numberOfColumns = Math.max(numberOfColumns, 1);
 				}
 
 				// Create the preliminary sections
@@ -2069,7 +2074,12 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 
 					cachedLayout.size = BMSizeMake(this.collectionView.frame.size.width, height);
 	
-					target = yield;
+					// Yield after building the preliminary layout and wait for a target rect or index path up to which to measure
+					if (!target) {
+						// If a target is already supplied (as a parameter) this is a delegate generator and processing should continue
+						// until this target
+						target = yield;
+					}
 
 					// When requesting a rect initially, pre-measure the cells up to that rect
 					if (target.rect) {
@@ -2085,7 +2095,13 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 
 					cachedLayout.size = BMSizeMake(width, this.collectionView.frame.size.height);
 	
-					target = yield;
+					// Yield after building the preliminary layout and wait for a target rect or index path up to which to measure
+					if (!target) {
+						// If a target is already supplied (as a parameter) this is a delegate generator and processing should continue
+						// until this target
+						target = yield;
+					}
+
 					// When requesting a rect initially, pre-measure the cells up to that rect
 					if (target.rect) {
 						measureCellsInRect(target.rect);
@@ -2220,7 +2236,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 
 						// If the row height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 						if (row[rowStartAttribute] + rowBreadth > frameSize) {
-							if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+							if (this.collectionView.scrollBarSize && !useOffset) {
+								if (target) {
+									// With automatic cell size delegate iteration to the new invocation
+									return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+								}
+								else {
+									return this._prepareLayoutWithScrollbarOffset(YES);
+								}
+							}
 						}
 						
 						// if there is one
@@ -2383,7 +2407,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 						
 						// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 						if (height > frameHeight) {
-							if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+							if (this.collectionView.scrollBarSize && !useOffset) {
+								if (target) {
+									// With automatic cell size delegate iteration to the new invocation
+									return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+								}
+								else {
+									return this._prepareLayoutWithScrollbarOffset(YES);
+								}
+							}
 						}
 					}
 					else {
@@ -2404,7 +2436,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 						
 						// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 						if (width > frameWidth) {
-							if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+							if (this.collectionView.scrollBarSize && !useOffset) {
+								if (target) {
+									// With automatic cell size delegate iteration to the new invocation
+									return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+								}
+								else {
+									return this._prepareLayoutWithScrollbarOffset(YES);
+								}
+							}
 						}
 					}
 				}
@@ -2418,7 +2458,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					
 					// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 					if (height > frameHeight) {
-						if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+						if (this.collectionView.scrollBarSize && !useOffset) {
+							if (target) {
+								// With automatic cell size delegate iteration to the new invocation
+								return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+							}
+							else {
+								return this._prepareLayoutWithScrollbarOffset(YES);
+							}
+						}
 					}
 				}
 				else {
@@ -2429,7 +2477,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 					
 					// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 					if (width > frameWidth) {
-						if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+						if (this.collectionView.scrollBarSize && !useOffset) {
+							if (target) {
+								// With automatic cell size delegate iteration to the new invocation
+								return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+							}
+							else {
+								return this._prepareLayoutWithScrollbarOffset(YES);
+							}
+						}
 					}
 				}
 				
@@ -2440,7 +2496,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 				
 				// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 				if (height > frameHeight) {
-					if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+					if (this.collectionView.scrollBarSize && !useOffset) {
+						if (target) {
+							// With automatic cell size delegate iteration to the new invocation
+							return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+						}
+						else {
+							return this._prepareLayoutWithScrollbarOffset(YES);
+						}
+					}
 				}
 			
 				// If the height is lower than the collection view's height, the content gravity must be applied to all cached attributes
@@ -2534,7 +2598,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			else {
 				// If the total height exceeds the collection view frame height, perform a second layout pass to account for the scrollbars
 				if (width > frameWidth) {
-					if (this.collectionView.scrollBarSize && !useOffset) return this._prepareLayoutWithScrollbarOffset(YES);
+					if (this.collectionView.scrollBarSize && !useOffset) {
+						if (target) {
+							// With automatic cell size delegate iteration to the new invocation
+							return yield *this._prepareLayoutWithScrollbarOffsetGenerator(YES, target);
+						}
+						else {
+							return this._prepareLayoutWithScrollbarOffset(YES);
+						}
+					}
 				}
 			
 				// If the height is lower than the collection view's height, the content gravity must be applied to all cached attributes
@@ -2607,7 +2679,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 								const scaledRowHeight = rowWidth * scaleFactor | 0;
 								for (const attribute of row.attributes) {
 									attribute.frame.origin.x += displacement;
-									attribute.frame.size.height = attribute.frame.size.height * scaleFactor | 0;
+									attribute.frame.size.width = attribute.frame.size.width * scaleFactor | 0;
 								}
 
 								// Advance the displacement based on the row's new width then displace the row end
@@ -2710,14 +2782,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 						
 						numberOfColumns++;
 					} while (usedLength < length && cellSize);
-
-					numberOfColumns = Math.max(numberOfColumns, 1);
 				}
 				else {
 					// If there is no minimum spacing required, then the number of columns is simply the available space divided
 					// by the cell width
-					numberOfColumns = Math.max((length / cellSize) | 0, 1);
+					numberOfColumns = (length / cellSize) | 0;
 				}
+
+				numberOfColumns = Math.max(numberOfColumns, 1);
 			}
 			cachedLayout.numberOfColumns = numberOfColumns;
 			
@@ -4489,19 +4561,22 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		const row = indexPath.row;
 
 		// Find the row where the current index path is
-		const sectionRows = this.cachedLayout.sections[section];
+		const cachedSection = this.cachedLayout.sections[section];
 
-		if (!sectionRows) return indexPath;
+		if (!cachedSection) return indexPath;
+
+		const sectionRows = cachedSection.rows;
 		
 		let rowIndex = 0;
 		const rowCount = sectionRows.length;
 		for (rowIndex; rowIndex < rowCount; rowIndex++) {
-			if (row.startIndex <= row && row.endIndex >= row) {
+			const sectionRow = sectionRows[rowIndex];
+			if (sectionRow.startIndex <= row && sectionRow.endIndex >= row) {
 				break;
 			}
 		}
 
-		const attributes = sectionRows[rowIndex].attributes;
+		const attributes = sectionRows[rowIndex].attributes.find(a => a.indexPath.row == row);
 		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
 		const position = attributes.frame.center[positionProperty];
 
@@ -4616,19 +4691,22 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		const row = indexPath.row;
 
 		// Find the row where the current index path is
-		const sectionRows = this.cachedLayout.sections[section];
+		const cachedSection = this.cachedLayout.sections[section];
 
-		if (!sectionRows) return indexPath;
+		if (!cachedSection) return indexPath;
+
+		const sectionRows = cachedSection.rows;
 		
 		let rowIndex = 0;
 		const rowCount = sectionRows.length;
 		for (rowIndex; rowIndex < rowCount; rowIndex++) {
-			if (row.startIndex <= row && row.endIndex >= row) {
+			const sectionRow = sectionRows[rowIndex];
+			if (sectionRow.startIndex <= row && sectionRow.endIndex >= row) {
 				break;
 			}
 		}
 
-		const attributes = sectionRows[rowIndex].attributes;
+		const attributes = sectionRows[rowIndex].attributes.find(a => a.indexPath.row == row);
 		const positionProperty = this._orientation == BMCollectionViewFlowLayoutOrientation.Vertical ? 'x' : 'y';
 		const position = attributes.frame.center[positionProperty];
 
