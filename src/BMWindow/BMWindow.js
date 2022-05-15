@@ -1427,6 +1427,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					self._blocker.style.backdropFilter = 'blur(' + ((1 - complete) * 15).toFixed(2) + 'px)';
 				},*/
 				complete: function () {
+					self.windowDidClose();
 					if (self.delegate && self.delegate.windowDidClose) {
 						self.delegate.windowDidClose(self);
 					}
@@ -1467,12 +1468,22 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			
 			this._window.style.opacity = 0;
 			this._window.style.display = 'none';
+
+			self.windowDidClose();
 			
 			if (self.delegate && self.delegate.windowDidClose) {
 				self.delegate.windowDidClose(self);
 			}
 			if (args && args.completionHandler) args.completionHandler();
 		}
+	},
+
+	/**
+	 * Invoked after this window closes. Subclasses overriding this method must invoked
+	 * the superclass method at some point in their implementation.
+	 */
+	windowDidClose() {
+
 	},
 
 	/**
