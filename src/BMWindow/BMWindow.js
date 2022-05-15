@@ -1867,6 +1867,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * This instance should not be reused after invoking this method.
 	 */
 	release() {
+		if (this.__released) {
+            // This needs to be handled because of the way Thingworx DOM nodes are removed and recreated in the composer
+            return;
+        }
+
 		if (BMWindow._keyWindow == this) BMWindow._keyWindow = undefined;
 
 		if (this._boundViewportDidResize) {
