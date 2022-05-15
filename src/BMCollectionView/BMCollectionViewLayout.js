@@ -659,9 +659,12 @@ BMCollectionViewLayout.prototype = {
      * Layout objects should return YES from this method if the new bounds require a new layout.
      * The default implementation returns NO in all cases.
      * @param bounds <BMRect>       The new bounds.
+	 * {
+	 * 	@param fromBounds <BMRect>	The previous bounds.
+	 * }
      * @return <Boolean>            True if the new frame requires a new layout, false otherwise.
      */
-    shouldInvalidateLayoutForBoundsChange: function (bounds) {
+    shouldInvalidateLayoutForBoundsChange: function (bounds, {fromBounds}) {
         return NO;
     },
 
