@@ -4,7 +4,7 @@ import {YES, NO, BMExtend, BMScrollBarGetSize, BMAddSmoothMousewheelInteractionT
 import {BMInset} from '../Core/BMInset'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
-import {BMRect, BMRectMake, BMRectMakeWithNodeFrame, BMRectByInterpolatingRect} from '../Core/BMRect'
+import {BMRect, BMRectMake, BMRectMakeWithNodeFrame, BMRectMakeWithOrigin, BMRectByInterpolatingRect} from '../Core/BMRect'
 import {BMIndexPathNone} from '../Core/BMIndexPath'
 import {BMAnimateWithBlock, BMAnimationContextBeginStatic, BMAnimationContextGetCurrent, BMAnimationContextAddCompletionHandler, BMAnimationApply, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
 import {BMView, BMViewLayoutQueue} from '../BMView/BMView_v2.5'
@@ -1451,6 +1451,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			return;
 		}
 
+		const previousBounds = BMRectMakeWithOrigin(previousBoundsOffset, {size: this._bounds.size.copy()});
+
 		// Dequeue the layout queue after a minimal delay to minimize visual artifacts
 		(async () => {
 			await 0;
@@ -1459,19 +1461,21 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		
 		// Invalidate the layout if the layout object requires invalidation when the bounds change
-		if (this._layout.shouldInvalidateLayoutForBoundsChange(this._bounds)) {
+		if (this._layout.shouldInvalidateLayoutForBoundsChange(this._bounds, {fromBounds: previousBounds})) {
 			this.invalidateLayoutForBoundsChange();
 		
 			// Let the delegate know that the bounds were updated
 			if (this.delegate && typeof this.delegate.collectionViewBoundsDidChange == 'function') {
-				this.delegate.collectionViewBoundsDidChange(this, this._bounds);
+				this.delegate.collectionViewBoundsDidChange(this, this._bounds, {fromBounds: previousBounds});
 			}
 			
 			// Let the layout know that the invalidation was successful.
 			this._layout.didInvalidateLayoutForBoundsChange();
 
 			// Prepare to request and apply the snapping offset from the layout
-			snapsScrollPosition && this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			if (snapsScrollPosition) {
+				this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			}
 
 			return;
 		}
@@ -1619,12 +1623,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 			// Let the delegate know that the bounds were updated
 			if (this.delegate && typeof this.delegate.collectionViewBoundsDidChange == 'function') {
-				this.delegate.collectionViewBoundsDidChange(this, this._bounds);
+				this.delegate.collectionViewBoundsDidChange(this, this._bounds, {fromBounds: previousBounds});
 			}
 		    
 
 			// Prepare to request and apply the snapping offset from the layout
-			snapsScrollPosition && this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			if (snapsScrollPosition) {
+				this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			}
 
 		    return;
 	    }
@@ -1644,13 +1650,15 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// Let the delegate know that the bounds were updated
 		if (this.delegate && typeof this.delegate.collectionViewBoundsDidChange == 'function') {
-			this.delegate.collectionViewBoundsDidChange(this, this._bounds);
+			this.delegate.collectionViewBoundsDidChange(this, this._bounds, {fromBounds: previousBounds});
 		}
 
 		// Prepare to request and apply the snapping offset from the layout, unless the collection view is performing an
 		// automated scrolling animation
 		if (!this._isPerformingAnimatedScrolling) {
-			snapsScrollPosition && this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			if (snapsScrollPosition) {
+				this._prepareForSnappingScrollOffsetWithPreviousOffset(previousBoundsOffset);
+			}
 		}
 
 	    
@@ -5026,6 +5034,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				else if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView) {
 					if (this.dataSet.updateSupplementaryView) this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: cell.indexPath});
 				}
+			}
+			
+			if (options && options.completionHandler) {
+				options.completionHandler();
 			}
 			
 			this._executeDataCompletionCallbacks();
