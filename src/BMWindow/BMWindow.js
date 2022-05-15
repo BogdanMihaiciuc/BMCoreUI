@@ -1793,13 +1793,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		if (BMWindow._keyWindow == this && !this._modal) {
 			this.node.classList.remove('BMKeyWindow');
 			this.node.classList.add('BMWindowInactive');
-			if (this.delegate && this.delegate.windowDidResignKeyWindow) {
-				this.delegate.windowDidResignKeyWindow(this);
-			}
 			BMWindow._keyWindow = undefined;
 
 			for (let toolWindow of this._toolWindows) {
 				toolWindow.hide();
+			}
+			if (this.delegate && this.delegate.windowDidResignKeyWindow) {
+				this.delegate.windowDidResignKeyWindow(this);
 			}
 		}
 	},
