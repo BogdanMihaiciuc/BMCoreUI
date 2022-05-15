@@ -1,3 +1,31 @@
+# 2.8.5
+
+## BMCollectionView
+
+Resolves an issue where calling `updateEntireDataAnimated` with the animated parameter set to `NO` would cause the completion handler to never be invoked.
+
+## BMCollectionViewLayout
+
+The `shouldInvalidateLayoutForBoundsChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
+
+## BMCollectionViewDelegate
+
+The `collectionViewBoundsDidChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
+
+## BMWindow
+
+Resolves an issue where `BMWindow` would call `windowDidResignKeyWindow` while still being the key window.
+
+A new `windowDidClose` method is invoked on windows after they closes. Subclasses can override this method to perform any cleanup necessary after being dismissed.
+
+Invoking the `release` method on a window that was already released will now have no effect.
+
+## BMAlertPopup
+
+This window will now reposition itself whenever the viewport is resized.
+
+Alert popups and any subclasses will now automatically `release` themselves after closing.
+
 # 2.8.3
 
 ## BMCollectionView
