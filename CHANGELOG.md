@@ -4,9 +4,15 @@
 
 Resolves an issue where calling `updateEntireDataAnimated` with the animated parameter set to `NO` would cause the completion handler to never be invoked.
 
+When invoking `invalidateContentSize` during a data update, the content size will now be invalidated when the update finishes.
+
 ## BMCollectionViewLayout
 
 The `shouldInvalidateLayoutForBoundsChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where the content size was not properly invalidated in some cases when using automatic cell size.
 
 ## BMCollectionViewDelegate
 
@@ -25,6 +31,22 @@ Invoking the `release` method on a window that was already released will now hav
 This window will now reposition itself whenever the viewport is resized.
 
 Alert popups and any subclasses will now automatically `release` themselves after closing.
+
+## BMPopoverIndicatorDirection
+
+A new `BMPopoverIndicatorDirection` enum can be used to specify in the directions in which a popover's indicator may appear.
+
+## BMPopover
+
+Resolves an issue that caused the popover to appear below an anchor rect or anchor node even if there was no space for it, instead of appearing above it.
+
+Resolves an issue where the value of the `borderRadius` property was not taken into account.
+
+Popovers can now appear to the left or to the right of their anchors, in addition to above or below.
+
+Adds a new `permittedDirections` property that can be used to specify in which directions the popover's indicator may appear relative to the popover. Additionally, the popover will also take the specified order of the directions into account when deciding which direction to select when it can fit within multiple directions.
+
+By default, if there is enough space in all directions, popovers will now appear below their anchor rather than above.
 
 # 2.8.3
 
