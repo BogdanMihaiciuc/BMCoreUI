@@ -3335,10 +3335,18 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		// for the requested index path
 		if (this._expectedCellSize) {
 			if (this.cachedLayout.resolvedIndexPath.section < indexPath.section ||
-				(this.cachedLayout.resolvedIndexPath.section == indexPath.section && this.cachedLayout.resolvedIndexPath.row < indexPath.row)) {
-					// If the layout has not been resolved up to this index path, continue computing it until it has
-					this._layoutIterator.next({indexPath: indexPath});
+				(this.cachedLayout.resolvedIndexPath.section == indexPath.section && this.cachedLayout.resolvedIndexPath.row < indexPath.row)
+			) {
+				const currentResolvedHeight = this.cachedLayout.resolvedHeight;
+
+				// If the layout has not been resolved up to this index path, continue computing it until it has
+				this._layoutIterator.next({indexPath: indexPath});
+
+				// If the resolved height changes, invalidate the content size
+				if (currentResolvedHeight != this.cachedLayout.resolvedHeight) {
+					this.invalidateContentSize();
 				}
+			}
 		}
 	    
 	    // Return the cached attributes when using dynamic sizes
