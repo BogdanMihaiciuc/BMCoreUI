@@ -1185,8 +1185,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Should be invoked by layout objects when the content size changes, but no other aspect of the layout does.
 	 */
 	invalidateContentSize() {
-		// If an update is in progress, ignore this
-		if (!this._collectionEnabled) return;
+		// If an update is in progress, delay this until after the update
+		if (!this._collectionEnabled) {
+			this.registerDataCompletionCallback(() => {
+				this.invalidateContentSize();
+			})
+			return;
+		}
 
 	    var size = this._layout.contentSize();
 	    
