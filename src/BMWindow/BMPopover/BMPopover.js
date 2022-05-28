@@ -8,6 +8,35 @@ import { BMHook, __BMVelocityAnimate } from "../../Core/BMAnimationContext";
 import { BMView } from "../../BMView/BMView_v2.5";
 import { BMInsetMakeWithEqualInsets } from "../../Core/BMInset";
 
+// @type BMPopoverIndicatorDirection
+
+// @endtype
+
+/**
+ * Constants describing the position where the indicator appears on its popover.
+ */
+ export var BMPopoverIndicatorDirection = Object.freeze({ // <enum>
+	/**
+	 * Causes the popover indicator to appear on the top edge of the popover.
+	 */
+	Top: "Top", // <enum>
+	
+	/**
+	 * Causes the popover indicator to appear on the bottom edge of the popover.
+	 */
+	Bottom: "Bottom", // <enum>
+	
+	/**
+	 * Causes the popover indicator to appear on the left edge of the popover.
+	 */
+	Left: "Left", // <enum>
+	
+	/**
+	 * Causes the popover indicator to appear on the right edge of the popover.
+	 */
+	Right: "Right" // <enum>
+});
+
 // @type BMPopover extends BMWindow
 
 /**
@@ -90,7 +119,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
      * Controls how rounded the popover's borders should be. This property should be set prior to the
      * popover being displayed.
      */
-    _borderRadius: 4, // <Number>
+    _borderRadius: 8, // <Number>
     get borderRadius() {
         return this._borderRadius;
     },
@@ -183,11 +212,33 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     _contentViewBottomConstraint: undefined, // <BMLayoutConstraint>
 
     /**
+     * The content view's left edge constraint.
+     */
+    _contentViewLeftConstraint: undefined, // <BMLayoutConstraint>
+
+    /**
+     * The content view's right edge constraint.
+     */
+    _contentViewRightConstraint: undefined, // <BMLayoutConstraint>
+
+    /**
      * The computed height of the indicator.
      */
     get _indicatorHeight() { // <Number>
         const indicatorWidth = this.indicatorSize * Math.SQRT2;
         return indicatorWidth / 2 | 0;
+    },
+
+    /**
+     * An array that specifies the permitted indicator directions that this popover
+     * may use and the priority in which they will be evaluated.
+     */
+    _permittedDirections: [BMPopoverIndicatorDirection.Bottom, BMPopoverIndicatorDirection.Top, BMPopoverIndicatorDirection.Right, BMPopoverIndicatorDirection.Left], // <[BMPopoverIndicatorDirection]>
+    get permittedDirections() {
+        return this._permittedDirections.slice();
+    },
+    set permittedDirections(directions) {
+        this._permittedDirections = directions.slice();
     },
 
     /**
@@ -239,8 +290,12 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const contentView = this._contentView = BMView.view();
         this.addSubview(this._contentView);
 
-        contentView.leading.equalTo(this.leading).isActive = YES;
-        contentView.trailing.equalTo(this.trailing).isActive = YES;
+        this._contentViewLeftConstraint = contentView.left.equalTo(this.left);
+        this._contentViewLeftConstraint.isActive = YES;
+
+        this._contentViewRightConstraint = contentView.right.equalTo(this.right);
+        this._contentViewRightConstraint.isActive = YES;
+
         this._contentViewTopConstraint = contentView.top.equalTo(this.top);
         this._contentViewTopConstraint.isActive = YES;
 
@@ -266,38 +321,107 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         const nodeFrame = this.anchorRect || (this.anchorNode && BMRectMakeWithNodeFrame(this.anchorNode));
         const location = this.anchorPoint ? this.anchorPoint.copy() : nodeFrame.center;
 
-        frame.origin.x = location.x - frame.size.width / 2 | 0;
-
-        if (frame.origin.x < this._edgeInsets.left) {
-            frame.origin.x = this._edgeInsets.left;
-        }
-        if (frame.right > window.innerWidth - this._edgeInsets.right) {
-            frame.origin.x = window.innerWidth - frame.size.width - this._edgeInsets.right;
-        }
-
-        const appearsBelow = location.y < window.innerHeight - this.size.height - this._indicatorHeight;
-
-        if (appearsBelow) {
-            frame.origin.y = this.anchorPoint ? location.y : nodeFrame.bottom - 2;
-            this._contentViewTopConstraint.constant = this._indicatorHeight;
-            this._contentViewBottomConstraint.constant = 0;
+        // Determine the appropriate direction to display this popover
+        let direction;
+        if (this.anchorPoint) {
+            direction = this._directionAroundPoint(location);
         }
         else {
-            frame.origin.y = this.anchorPoint ? location.y - frame.size.height : nodeFrame.origin.y + 2 - frame.size.height;
-            this._contentViewTopConstraint.constant = 0;
-            this._contentViewBottomConstraint.constant = -this._indicatorHeight;
+            direction = this._directionAroundRect(nodeFrame);
+        }
+
+        // Adjust the constraints based on the direction
+        switch (direction) {
+            case BMPopoverIndicatorDirection.Top:
+                frame.origin.y = this.anchorPoint ? location.y : nodeFrame.bottom - 2;
+
+                frame.origin.x = location.x - frame.size.width / 2 | 0;
+
+                if (frame.origin.x < this._edgeInsets.left) {
+                    frame.origin.x = this._edgeInsets.left;
+                }
+                if (frame.right > window.innerWidth - this._edgeInsets.right) {
+                    frame.origin.x = window.innerWidth - frame.size.width - this._edgeInsets.right;
+                }
+                
+                this._contentViewTopConstraint.constant = this._indicatorHeight;
+                this._contentViewBottomConstraint.constant = 0;
+                this._contentViewLeftConstraint.constant = 0;
+                this._contentViewRightConstraint.constant = 0;
+                break;
+            case BMPopoverIndicatorDirection.Bottom:
+                frame.origin.y = this.anchorPoint ? location.y - frame.size.height : nodeFrame.origin.y + 2 - frame.size.height;
+
+                frame.origin.x = location.x - frame.size.width / 2 | 0;
+
+                if (frame.origin.x < this._edgeInsets.left) {
+                    frame.origin.x = this._edgeInsets.left;
+                }
+                if (frame.right > window.innerWidth - this._edgeInsets.right) {
+                    frame.origin.x = window.innerWidth - frame.size.width - this._edgeInsets.right;
+                }
+                
+                this._contentViewTopConstraint.constant = 0;
+                this._contentViewBottomConstraint.constant = -this._indicatorHeight;
+                this._contentViewLeftConstraint.constant = 0;
+                this._contentViewRightConstraint.constant = 0;
+                break;
+            case BMPopoverIndicatorDirection.Right:
+                frame.origin.x = this.anchorPoint ? location.x - frame.size.width : nodeFrame.origin.x + 2 - frame.size.width;
+
+                frame.origin.y = location.y - frame.size.height / 2 | 0;
+
+                if (frame.origin.y < this._edgeInsets.top) {
+                    frame.origin.y = this._edgeInsets.top;
+                }
+                if (frame.bottom > window.innerHeight - this._edgeInsets.bottom) {
+                    frame.origin.y = window.innerHeight - frame.size.height - this._edgeInsets.bottom;
+                }
+                
+                this._contentViewTopConstraint.constant = 0;
+                this._contentViewBottomConstraint.constant = 0;
+                this._contentViewLeftConstraint.constant = 0;
+                this._contentViewRightConstraint.constant = -this._indicatorHeight;
+                break;
+            case BMPopoverIndicatorDirection.Left:
+                frame.origin.x = this.anchorPoint ? location.x : nodeFrame.right - 2;
+
+                frame.origin.y = location.y - frame.size.height / 2 | 0;
+
+                if (frame.origin.y < this._edgeInsets.top) {
+                    frame.origin.y = this._edgeInsets.top;
+                }
+                if (frame.bottom > window.innerHeight - this._edgeInsets.bottom) {
+                    frame.origin.y = window.innerHeight - frame.size.height - this._edgeInsets.bottom;
+                }
+                
+                this._contentViewTopConstraint.constant = 0;
+                this._contentViewBottomConstraint.constant = 0;
+                this._contentViewLeftConstraint.constant = this._indicatorHeight;
+                this._contentViewRightConstraint.constant = 0;
+                break;
         }
 
         this.frame = frame;
 
         const innerFrame = frame.copy();
 
-        const knobPosition = BMNumberByConstrainingNumberToBounds(location.x - frame.origin.x, 12, frame.size.width - 12);
+        let indicatorPosition;
+        switch (direction) {
+            case BMPopoverIndicatorDirection.Bottom:
+            case BMPopoverIndicatorDirection.Top:
+                indicatorPosition = BMNumberByConstrainingNumberToBounds(location.x - frame.origin.x, 12, frame.size.width - 12);
+                break;
+            case BMPopoverIndicatorDirection.Left:
+            case BMPopoverIndicatorDirection.Right:
+                indicatorPosition = BMNumberByConstrainingNumberToBounds(location.y - frame.origin.y, 12, frame.size.height - 12);
+                break;
+        }
 
         innerFrame.origin = BMPointMake();
 
-        const pathContent = `${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}`;
-        const outlinePathContent = `${this._pathForPopoverWithFrame(innerFrame, {widthIndicatorSize: this._indicatorSize, inset: 1, knobPosition, gravity: appearsBelow ? 'Top' : 'Bottom'})}`;
+        const pathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, position: indicatorPosition, direction, radius: this._borderRadius})}`;
+        const outlinePathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, inset: 1, position: indicatorPosition, direction, radius: this._borderRadius})}`;
 
         if (!this._clipPathUUID && !CSS.supports('clip-path', `path('${pathContent}')`)) {
             // If inline path definitions are not supported by the browsers, create an UUID for a SVG clip path and create it
@@ -362,64 +486,197 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
-        for (const layer of popoverLayers) {
-            layer.style.transformOrigin = ((knobPosition / this.frame.size.width) * 100) + '% ' + (appearsBelow ? '0%' : '100%');
+        let transformOriginX, transformOriginY;
+        switch (direction) {
+            case BMPopoverIndicatorDirection.Bottom:
+                transformOriginX = ((indicatorPosition / this.frame.size.width) * 100) + '%';
+                transformOriginY = '100%';
+                break;
+            case BMPopoverIndicatorDirection.Top:
+                transformOriginX = ((indicatorPosition / this.frame.size.width) * 100) + '%';
+                transformOriginY = '0%';
+                break;
+            case BMPopoverIndicatorDirection.Left:
+                transformOriginX = '0%';
+                transformOriginY = ((indicatorPosition / this.frame.size.height) * 100) + '%';
+                break;
+            case BMPopoverIndicatorDirection.Right:
+                transformOriginX = '100%';
+                transformOriginY = ((indicatorPosition / this.frame.size.height) * 100) + '%';
+                break;
         }
+
+        for (const layer of popoverLayers) {
+            layer.style.transformOrigin = `${transformOriginX} ${transformOriginY}`;
+        }
+    },
+
+    /**
+     * Determines the direction that the popover should appear in order to fit best around the given point.
+     * The popover will verify directions in the order specified by the `permittedDirections` property.
+     * If none of the permitted indicator directions would fit the popover in the viewport, the first
+     * specified direction is returned.
+     * @param point <BMPoint>                   The anchor point to check against.
+     * @return <BMPopoverIndicatorDirection>    The direction that best fits.
+     */
+    _directionAroundPoint(point) {
+        for (const direction of this._permittedDirections) {
+            switch (direction) {
+                case BMPopoverIndicatorDirection.Top:
+                    if (point.y < window.innerHeight - this.size.height - this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Top;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Bottom:
+                    if (point.y > this.size.height + this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Bottom;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Right:
+                    if (point.x > this.size.width + this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Right;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Left:
+                    if (point.x < window.innerWidth - this.size.width - this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Left;
+                    }
+                    break;
+            }
+        }
+
+        return this._permittedDirections[0];
+    },
+
+    /**
+     * Determines the direction that the popover should appear in order to fit best around the given rect.
+     * The popover will verify directions in the order specified by the `permittedDirections` property.
+     * If none of the permitted indicator directions would fit the popover in the viewport, the first
+     * specified direction is returned.
+     * @param rect <BMRect>                     The anchor rect to check against.
+     * @return <BMPopoverIndicatorDirection>    The direction that best fits.
+     */
+    _directionAroundRect(rect) {
+        for (const direction of this._permittedDirections) {
+            switch (direction) {
+                case BMPopoverIndicatorDirection.Top:
+                    if (rect.bottom < window.innerHeight - this.size.height - this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Top;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Bottom:
+                    if (rect.top > this.size.height + this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Bottom;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Right:
+                    if (rect.left > this.size.width + this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Right;
+                    }
+                    break;
+                case BMPopoverIndicatorDirection.Left:
+                    if (rect.right < window.innerWidth - this.size.width - this._indicatorHeight) {
+                        return BMPopoverIndicatorDirection.Left;
+                    }
+                    break;
+            }
+        }
+
+        return this._permittedDirections[0];
     },
 
     /**
      * Builds the SVG path definition for a popover with the given frame. Note that the indicator will be positioned inside the frame, which will push the usable
      * area of the frame downwards.
-     * @param frame <BMRect>                            The popover's frame.
+     * @param frame <BMRect>                                        The popover's frame.
      * {
-     *  @param widthIndicatorSize <Number, nullable>    Defaults to `8`. The size of the popover's indicator.
-     *  @param radius <Number, nullable>                Defaults to `4`. Controls how rounded the corners are.
-     *  @param inset <Number, nullable>                 Defaults to `0`. An optional inset to apply to the path.
-     *  @param knobPosition <Number, nullable>          Defaults to half of the frame's width. The position along the top frame on which to place the knob.
-     *                                                  This coordinate is relative to the popover's frame and represents the center position of the knob.
-     *                                                  This position should not overlap the specified corner radius.
-     *  @param gravity <String, nullable>               Defaults to `"Top"`. If set to `"Bottom"`, the popover knob will be placed at the bottom of the popover.
+     *  @param indicatorSize <Number, nullable>                     Defaults to `8`. The size of the popover's indicator.
+     *  @param radius <Number, nullable>                            Defaults to `4`. Controls how rounded the corners are.
+     *  @param inset <Number, nullable>                             Defaults to `0`. An optional inset to apply to the path.
+     *  @param position <Number, nullable>                          Defaults to half of the frame's width. The position along the edge of the frame on which to place the indicator.
+     *                                                              This coordinate is relative to the popover's frame and represents the center position of the indicator.
+     *                                                              This position should not overlap the specified corner radius.
+     *  @param direction <BMPopoverIndicatorDirection, nullable>    Defaults to `.Top`. Controls where the indicator will be placed relative to the popover.
      * }
      * @return <String>                                 The SVG path.
      */
-    _pathForPopoverWithFrame(frame, {widthIndicatorSize: size = 8, radius = 8, inset = 0, knobPosition = undefined, gravity = 'Top'} = {widthIndicatorSize: 8, radius: 4, inset: 0}) {
-        let top = gravity === 'Bottom' ? 0 : size * Math.SQRT2 / 2 | 0;
-        let bottom = gravity === 'Bottom' ? frame.size.height - size * Math.SQRT2 / 2 | 0 : frame.size.height;
-        const left = inset;
+    _pathForPopoverWithFrame(frame, {indicatorSize = 8, radius = 8, inset = 0, position = undefined, direction = BMPopoverIndicatorDirection.Top} = {indicatorSize: 8, radius: 4, inset: 0}) {
+        // Adjust the appropriate edge's position depending on the indicator direction
+        let top = direction === BMPopoverIndicatorDirection.Top ? indicatorSize * Math.SQRT2 / 2 | 0 : 0;
+        let left = direction == BMPopoverIndicatorDirection.Left ? indicatorSize * Math.SQRT2 / 2 | 0 : 0;
+
+        let bottom = direction === BMPopoverIndicatorDirection.Bottom ? frame.size.height - indicatorSize * Math.SQRT2 / 2 | 0 : frame.size.height;
+        let right = direction == BMPopoverIndicatorDirection.Right ? frame.size.width - indicatorSize * Math.SQRT2 / 2 | 0 : frame.size.width;
 
         if (inset) {
-            size = size - inset;
+            // If an inset is specified, adjust the values appropriately
+            indicatorSize = indicatorSize - inset;
             frame = frame.copy();
             frame.insetWithInset(BMInsetMakeWithEqualInsets(inset));
             radius = radius + inset;
+
             top += inset;
+            left += inset;
+
             bottom -= inset;
+            right -= inset;
         }
 
-        if (knobPosition === undefined) {
-            knobPosition = frame.size.width / 2 | 0;
+        if (position === undefined) {
+            position = frame.size.width / 2 | 0;
         }
         else {
-            knobPosition = (knobPosition - inset) | 0;
+            position = (position - inset) | 0;
         }
 
-        const knobWidth = size * Math.SQRT2;
+        const knobWidth = indicatorSize * Math.SQRT2;
         const knobHeight = knobWidth / 2 | 0;
 
-        // bottom should be equivalent to frame.size.height + inset
-        const pathTop = gravity === 'Bottom' ?
-            `M${left + radius},${top} L${frame.size.width + left - radius},${top} ` :
-            `M${left + radius},${top} L${(knobPosition - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} L${frame.size.width + left - radius},${top} `;
+        const pathTop = direction === BMPopoverIndicatorDirection.Top ?
+            // Start at top left, then draw the indicator and move to the end of the edge
+            `M${left + radius},${top} ` +
+            `L${(position - knobWidth / 2 + left)},${top} l${(knobWidth / 2)},${-knobHeight} l${(knobWidth / 2)},${knobHeight} ` +
+            `L${right - radius},${top} ` :
+            // Start at top left, then move to the end of the edge
+            `M${left + radius},${top} ` +
+            `L${right - radius},${top} `;
 
-        const pathBottom = gravity === 'Bottom' ?
-            `Q${frame.size.width + left},${bottom} ${frame.size.width + left - radius},${bottom} L${(knobPosition + knobWidth / 2 + left)},${bottom} l${(-knobWidth / 2)},${knobHeight} l${(-knobWidth / 2)},${-knobHeight} L${radius},${bottom} ` :
-            `Q${frame.size.width + left},${bottom} ${frame.size.width + left - radius},${bottom} L${radius},${bottom} `;
+        const pathRight = direction == BMPopoverIndicatorDirection.Right ? 
+            // Draw the rounded corner, then the indicator and move to the end of the edge
+            `Q${right},${top} ${right},${top + radius} ` +
+            `L${right},${(position - knobWidth / 2 + top)} l${knobHeight},${(knobWidth / 2)} l${-knobHeight},${(knobWidth / 2)} ` +
+            `L${right},${bottom - radius} ` :
+            // Draw the rounded corner, then move to the end of the dge
+            `Q${right},${top} ${right},${top + radius} ` +
+            `L${right},${bottom - radius} `;
+
+        const pathBottom = direction === BMPopoverIndicatorDirection.Bottom ?
+            // Draw the rounded corner, then the indicator and move to the end of the edge
+            `Q${right},${bottom} ${right - radius},${bottom} ` +
+            `L${(position + knobWidth / 2 + left)},${bottom} l${(-knobWidth / 2)},${knobHeight} l${(-knobWidth / 2)},${-knobHeight} ` +
+            `L${left + radius},${bottom} ` :
+            // Draw the rounded corner, then move to the end of the edge
+            `Q${right},${bottom} ${right - radius},${bottom} ` +
+            `L${left + radius},${bottom} `;
+
+        const pathLeft = direction === BMPopoverIndicatorDirection.Left ?
+            // Draw the rounded corner coming from the bottom left, then the indicator
+            // afterwards move to the end of the edge and finally draw the rounded corner coming from the left to top
+            `Q${left},${bottom} ${left},${bottom - radius} ` +
+            `L${left},${(position + knobWidth / 2 + top)} l${-knobHeight},${(-knobWidth / 2)} l${knobHeight},${(-knobWidth / 2)} ` +
+            `L${left},${top + radius} ` +
+            `Q${left},${top} ${left + radius},${top} Z` :
+            // Draw the rounded corner coming from the bottom left, then move to
+            // the end of the edge and finally draw the rounded corner coming from the left to top
+            `Q${left},${bottom} ${left},${bottom - radius} ` +
+            `L${left},${top + radius} ` +
+            `Q${left},${top} ${left + radius},${top} Z`;
 
 
         let path =  pathTop;
-        path +=     `Q${frame.size.width + left},${top} ${frame.size.width + left},${top + radius} L${frame.size.width + left},${bottom - radius} `;
+        path +=     pathRight; //`Q${right},${top} ${right},${top + radius} L${right},${bottom - radius} `;
         path +=     pathBottom;
-        path +=     `Q${left},${bottom} ${left},${bottom - radius} L${left},${top + radius} Q${left},${top} ${radius},${top} Z`;
+        path +=     pathLeft; //`Q${left},${bottom} ${left},${bottom - radius} L${left},${top + radius} Q${left},${top} ${radius},${top} Z`;
 
         return path;
     },
