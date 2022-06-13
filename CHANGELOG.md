@@ -1,4 +1,4 @@
-# 2.8.5
+# 2.9
 
 ## BMCollectionView
 
@@ -47,6 +47,20 @@ Popovers can now appear to the left or to the right of their anchors, in additio
 Adds a new `permittedDirections` property that can be used to specify in which directions the popover's indicator may appear relative to the popover. Additionally, the popover will also take the specified order of the directions into account when deciding which direction to select when it can fit within multiple directions.
 
 By default, if there is enough space in all directions, popovers will now appear below their anchor rather than above.
+
+## BMMenuItem
+
+A new initializer argument `submenu` makes it possible to specify a submenu that will be displayed when selecting menu items.
+
+## BMMenu
+
+Menus can now be displayed as submenus when set as the `submenu` property of a menu item. On pointer based devices, a submenu opens when an item containing one becomes the highlighted item. On touch based devices, a submenu opens when an item containing one is selected.
+
+Resolves an issue where the active animation for menu items did not play unless the menu item had an action specified.
+
+Removes the delay when closing a menu without selecting any item. Additionally removes the delay when closing touch menus in all cases.
+
+The node from which a touch a menu opens will now be slightly scaled up while the menu is active. Additionally, when the node from which a touch menu is opened is too large to fit on the screen, it will now be scaled down.
 
 # 2.8.3
 
