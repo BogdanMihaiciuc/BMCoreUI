@@ -1120,7 +1120,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 }
 
 
-/* MARK: Layout editor popup */
+/* MARK: Menu and container, Layout editor popup */
+/* #region - Menu container */
 
 .BMLayoutEditorConstraintPopupContainer, .BMMenuContainer {
 	position: absolute;
@@ -1132,6 +1133,12 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	/* Sadly needed for Thingworx environment */
 	z-index: 9999999;
+}
+
+/* A class that is temporarily added to the menu container to allow the user
+   to move over menu items without triggering them while moving torwards the submenu */
+.BMMenuContainer.BMMenuContainerSubmenuActive > * {
+	pointer-events: none !important;
 }
 
 .BMMenuContainerFullScreen {
@@ -1146,7 +1153,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	}
 }
 
-.BMLayoutEditorConstraintPopup, .BMMenu {
+.BMLayoutEditorConstraintPopup, 
+.BMMenu {
 	position: absolute;
 
 	display: flex;
@@ -1157,6 +1165,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	background-color: rgba(255, 255, 255, .8);
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
+
+	color: rgba(0, 0, 0, .8);
 
 	border-radius: 8px;
 }
@@ -1192,10 +1202,39 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	box-shadow: 0px 4px 8px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
 	z-index: 9999999 !important;
 	overflow: hidden !important;
+
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+
+	-webkit-tap-highlight-color: transparent;
 }
 
 .BMMenuSourceNode {
-	display: none !important;
+	visibility: hidden !important;
+}
+
+/* While a touch menu has a submenu, its menu items should not respond to events */
+.BMMenuTouchSubmenu.BMMenu > .BMMenuItem {
+	pointer-events: none;
+
+	/* Additionally add an opacity transition to the items to be used in an animation */
+	transition: opacity .2s ease;
+}
+
+.BMMenuTouchSubmenu.BMMenu {
+	transition: filter .2s ease;
+}
+
+.BMMenuTouchSubmenu.BMMenu.BMMenuInactive > * {
+	opacity: .75 !important;
+}
+
+.BMMenuTouchSubmenu.BMMenu.BMMenuInactive {
+	filter: brightness(95%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1205,7 +1244,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMLayoutEditorConstraintPopup, .BMMenu {
+	.BMLayoutEditorConstraintPopup,
+	.BMMenu {
 		background-color: rgba(50, 50, 50, .75);
 		box-shadow: 0px 4px 8px rgba(0, 0, 0, .66), 0px 0px 0px 1px rgba(0, 0, 0, .66);
 	}
@@ -1223,13 +1263,16 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	}
 }
 
+/* #endregion */
+
+/* #region - Menu item */
+
 .BMLayoutEditorConstraintPopupOption, .BMMenuItem {
 	height: 28px;
 	line-height: 28px;
 	vertical-align: middle;
 
 	padding-left: 16px;
-	padding-right: 64px;
 
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 14px !important;
@@ -1240,6 +1283,19 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	display: flex;
 	align-items: center;
+
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+
+	-webkit-tap-highlight-color: transparent;
+}
+
+.BMLayoutEditorConstraintPopupOption {
+	padding-right: 64px;
 }
 
 .BMMenuTouch > .BMMenuItem {
@@ -1259,6 +1315,30 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	max-height: 24px;
 
 	margin-right: 16px;
+}
+
+/* The menu's text element should expand to fill all available space */
+.BMMenuItem > span {
+	flex-grow: 1;
+}
+
+.BMMenuItemDisclosure {
+	width: 24px;
+	height: 24px;
+
+	margin-left: 48px;
+	
+	font-weight: 600;
+
+	font-size: 18px;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.BMMenuItemDisclosureSubmenu::after {
+	content: '›';
 }
 
 @keyframes BMMenuItemActiveAnimation {
@@ -1288,14 +1368,29 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	color: white;
 }
 
+.BMMenuSourceNodeShadow.BMMenuItem.BMMenuItemHighlighted {
+	background: white;
+	color: rgba(0, 0, 0, .8);
+}
+
 .BMLayoutEditorConstraintPopupOption:active, .BMMenuTouch > .BMMenuItem:hover {
 	background: transparent;
 	color: rgba(0, 0, 0, .8);
 }
 
 .BMMenuItem.BMMenuItemActive {
-	animation: .2s linear BMMenuItemActiveAnimation;
+	animation: .15s linear BMMenuItemActiveAnimation;
 	animation-fill-mode: both;
+}
+
+.BMMenuTouch > .BMMenuItem.BMMenuItemActive,
+.BMMenuTouch > .BMMenuItem.BMMenuItemHighlighted {
+	animation: none;
+	background: transparent;
+	color: rgba(0, 0, 0, .8);
+
+	backdrop-filter: brightness(90%);
+	-webkit-backdrop-filter: brightness(90%);
 }
 
 .BMLayoutEditorConstraintPopupOptionHighlighted, .BMMenuItemHighlighted {
@@ -1314,6 +1409,19 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	.BMMenuTouch > .BMMenuItem {
 		border-bottom-color: rgba(255, 255, 255, .1);
+	}
+
+	.BMMenuTouch > .BMMenuItem.BMMenuItemActive,
+	.BMMenuTouch > .BMMenuItem.BMMenuItemHighlighted {
+		color: rgba(255, 255, 255, 1);
+	
+		backdrop-filter: brightness(110%);
+		-webkit-backdrop-filter: brightness(110%);
+	}
+
+	.BMMenuSourceNodeShadow.BMMenuItem.BMMenuItemHighlighted {
+		background: rgba(33, 33, 33, 1);
+		color: rgba(255, 255, 255, .9);
 	}
 
 	@keyframes BMMenuItemActiveAnimation {
@@ -1338,6 +1446,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		}
 	}
 }
+
+/* #endregion */
 
 .BMLayoutEditorWorkspaceToolbarSizeClass .BMLayoutEditorConstraintPopupOption {
 	color: rgba(255, 255, 255, .9);
