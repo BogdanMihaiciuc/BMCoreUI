@@ -96,6 +96,31 @@ BMMenuItem.prototype = {
     userInfo: undefined, // <AnyObject, nullable>
 
     /**
+     * Additional CSS classes to apply to this item's node.
+     */
+    _CSSClass: '', // <String, nullable>
+    get CSSClass() {
+        return this._CSSClass;
+    },
+    set CSSClass(cls) {
+        // If this menu item is rendered, apply the class to its node
+        let node = this._node;
+        if (node) {
+            // First remove the previous classes, if they exist
+            if (this._CSSClass) {
+                this._CSSClass.split(' ').forEach(cls => node.classList.remove(cls));
+            }
+
+            // Then add the new classes, if they exist
+            if (cls) {
+                cls.split(' ').forEach(cls => node.classList.add(cls));
+            }
+        }
+
+        this._CSSClass = cls || '';
+    },
+
+    /**
      * The node that represents this menu item, available while its menu
      * is open.
      */
@@ -211,14 +236,26 @@ BMMenu.prototype = {
 
     /**
      * A custom list of CSS classes to add to the menu DOM node.
-     * This only has effect when set before the menu is opened.
      */
     _CSSClass: '', // <String>
     get CSSClass() {
         return this._CSSClass;
     },
-
     set CSSClass(CSSClass) {
+        // If this menu item is rendered, apply the class to its node
+        let node = this._node;
+        if (node) {
+            // First remove the previous classes, if they exist
+            if (this._CSSClass) {
+                this._CSSClass.split(' ').forEach(cls => node.classList.remove(cls));
+            }
+
+            // Then add the new classes, if they exist
+            if (CSSClass) {
+                CSSClass.split(' ').forEach(cls => node.classList.add(cls));
+            }
+        }
+
         this._CSSClass = CSSClass || '';
     },
 
@@ -250,7 +287,12 @@ BMMenu.prototype = {
     /**
      * The source node displacement, used while the menu is visible.
      */
-    _sourceNodeDisplacement: undefined, // <Number, nullable>
+    _sourceNodeDisplacement: 0, // <Number, nullable>
+
+    /**
+     * The source node horizontal displacement, used while the menu is visible.
+     */
+    _sourceNodeHorizontalDisplacement: 0, // <Number, nullable>
 
     /**
      * The DOM node that was focused when this alert was opened.
@@ -644,8 +686,6 @@ BMMenu.prototype = {
         }
 
         if (sourceRectScaled.height > viewportHeight - menuHeight - _BMMenuSpacingToNode * 2) {
-            alert(`srsh: ${sourceRectScaled.height}\nvhb: ${viewportHeight}\nvh: ${viewportHeight - menuHeight - _BMMenuSpacingToNode * 2}`);
-
             const heightScale = (viewportHeight - menuHeight - _BMMenuSpacingToNode * 2) / sourceRectScaled.height;
             sourceRectScaled.scaleWithFactor(heightScale);
 
@@ -655,6 +695,7 @@ BMMenu.prototype = {
         const remainingHeight = viewportHeight - sourceRectScaled.bottom;
 
         let displacement = 0;
+        let horizontalDisplacement = 0;
 
         const scale = .33;
         const pullDownScale = .5;
@@ -671,7 +712,13 @@ BMMenu.prototype = {
             displacement = remainingHeight - (menuHeight + _BMMenuSpacingToNode * 2);
         }
 
+        // Displace the element, if needed because there's no space on the right
+        if (menuWidth + sourceRectScaled.origin.x + _BMMenuSpacingToNode > viewportWidth) {
+            horizontalDisplacement = viewportWidth - (menuWidth + sourceRectScaled.origin.x + _BMMenuSpacingToNode);
+        }
+
         this._sourceNodeDisplacement = displacement;
+        this._sourceNodeHorizontalDisplacement = horizontalDisplacement;
 
         BMCopyProperties(this._sourceNodeShadow.style, {left: sourceRect.origin.x + 'px', top: sourceRect.origin.y + 'px', width: sourceRect.size.width + 'px', height: sourceRect.size.height + 'px', transform: 'none'});
 
@@ -680,7 +727,7 @@ BMMenu.prototype = {
             menuNode.style.transformOrigin = '50% 0%';
         }
 
-        const point = BMPointMake(Math.max(sourceRectScaled.origin.x, 8), sourceRectScaled.bottom + _BMMenuSpacingToNode + displacement);
+        const point = BMPointMake(Math.max(sourceRectScaled.origin.x + horizontalDisplacement, 8), sourceRectScaled.bottom + _BMMenuSpacingToNode + displacement);
         BMCopyProperties(menuNode.style, {left: point.x + 'px', top: point.y + 'px'});
 
         this._frame = BMRectMakeWithOrigin(point, {size: BMSizeMake(menuWidth, menuHeight)});
@@ -695,7 +742,8 @@ BMMenu.prototype = {
         BMHook(menuNode, {
             scaleX: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
             scaleY: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
-            translateY: -displacement + 'px'
+            translateY: -displacement + 'px',
+            translateX: -horizontalDisplacement + 'px',
         });
 
         if (!this._supermenu) {
@@ -708,7 +756,7 @@ BMMenu.prototype = {
         }
 
         // Make the menu expand
-        __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0, translateY: 0}, {
+        __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0, translateY: 0, translateX: 0}, {
             duration,
             easing,
             complete: _ => ((menuNode.style.pointerEvents = 'all'), menuContainer.style.pointerEvents = 'all')
@@ -733,7 +781,7 @@ BMMenu.prototype = {
         // Animate the source node shadow
         await __BMVelocityAnimate(
             this._sourceNodeShadow, 
-            {translateY: displacement + 'px', scaleX: sourceNodeScale, scaleY: sourceNodeScale}, 
+            {translateY: displacement + 'px', translateX: horizontalDisplacement + 'px', scaleX: sourceNodeScale, scaleY: sourceNodeScale}, 
             {duration, easing},
             BMMENU_USE_WEB_ANIMATIONS
         );
@@ -1158,7 +1206,7 @@ topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPos
 
         if (sourceNodeShadow) {
             // If a node shadow is shown, animate it back towards its original node
-            const sourceNodeProperties = {translateY: '0px', scaleX: 1, scaleY: 1};
+            const sourceNodeProperties = {translateY: 0, translateX: 0, scaleX: 1, scaleY: 1};
             if (this._isSupermenuClosing) {
                 sourceNodeProperties.opacity = 0;
             }
@@ -1177,6 +1225,7 @@ topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPos
             scaleY: scale, 
             opacity: (sourceNodeShadow && !supermenu) ? 1 : 0, 
             translateY: sourceNodeShadow ? -this._sourceNodeDisplacement + 'px' : '0px',
+            translateX: sourceNodeShadow ? -this._sourceNodeHorizontalDisplacement + 'px' : '0px',
             translateZ: 0
         }, {
             duration: 200,
