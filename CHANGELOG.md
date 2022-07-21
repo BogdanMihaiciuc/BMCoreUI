@@ -52,6 +52,8 @@ By default, if there is enough space in all directions, popovers will now appear
 
 A new initializer argument `submenu` makes it possible to specify a submenu that will be displayed when selecting menu items.
 
+A new `CSSClass` property can be specified on menu items to add it the item's node when its menu is active.
+
 ## BMMenu
 
 Menus can now be displayed as submenus when set as the `submenu` property of a menu item. On pointer based devices, a submenu opens when an item containing one becomes the highlighted item. On touch based devices, a submenu opens when an item containing one is selected.
@@ -61,6 +63,10 @@ Resolves an issue where the active animation for menu items did not play unless 
 Removes the delay when closing a menu without selecting any item. Additionally removes the delay when closing touch menus in all cases.
 
 The node from which a touch a menu opens will now be slightly scaled up while the menu is active. Additionally, when the node from which a touch menu is opened is too large to fit on the screen, it will now be scaled down.
+
+When there isn't sufficient space on the right for a touch menu to open under a node, the node will be moved towards the left to make space for it while the menu is active.
+
+When setting the `CSSClass` property while the menu is active, the new classes will now apply to the current menu element.
 
 # 2.8.3
 
