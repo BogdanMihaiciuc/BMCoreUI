@@ -1124,7 +1124,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 /* #region - Menu container */
 
 .BMLayoutEditorConstraintPopupContainer, .BMMenuContainer {
-	position: absolute;
+	position: fixed;
 
 	left: 0px;
 	top: 0px;
@@ -1301,11 +1301,19 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 .BMMenuTouch > .BMMenuItem {
 	height: 44px;
 	line-height: 44px;
-	border-bottom: 1px solid rgba(0, 0, 0, .1);
+	border-top: 1px solid rgba(0, 0, 0, .1);
 }
 
-.BMMenuTouch > .BMMenuItem:last-child {
-	border-bottom-width: 0px;
+.BMMenuTouch > .BMMenuItem:first-child {
+	border-top-width: 0px;
+}
+
+.BMMenuTouch > .BMMenuItem.BMMenuItemHighlighted + .BMMenuItem {
+	border-top-color: rgba(0, 0, 0, .2);
+}
+
+.BMMenuTouch > .BMMenuItem.BMMenuItemHighlighted + .BMMenuDivider {
+	box-shadow: 0px 1px 0px 0px rgba(0, 0, 0, .1) inset;
 }
 
 .BMMenuIcon {
@@ -1577,6 +1585,12 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	flex-shrink: 0;
 }
 
+.BMMenuTouch > .BMMenuDivider {
+	margin: 0;
+	height: 3px;
+	background: rgba(0, 0, 0, .1);
+}
+
 .BMLayoutEditorDetailsDividerCell {
 	background: rgba(0, 0, 0, .05);
 }
@@ -1600,7 +1614,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	flex-shrink: 0;
 }
 
-BMLayoutEditorDetailsItemBadge {
+.BMLayoutEditorDetailsItemBadge {
 	height: 16px;
 
 	border: 1px solid rgba(0, 0, 0, .1);
