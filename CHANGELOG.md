@@ -68,6 +68,18 @@ When there isn't sufficient space on the right for a touch menu to open under a 
 
 When setting the `CSSClass` property while the menu is active, the new classes will now apply to the current menu element.
 
+Resolves an issue where it was possible to open a touch menu that was already open.
+
+Resolves an issue where using the keyboard to highlight menu items could highlight menu dividers.
+
+## BMMenuDelegate
+
+Resolves an issue where `menuWillOpen` was not invoked for touch menus.
+
+A new `menuShouldSelectItem` method can be implemented by delegate objects to control whether menu items can be selected.
+
+Added the type definitions for this object.
+
 # 2.8.3
 
 ## BMCollectionView
