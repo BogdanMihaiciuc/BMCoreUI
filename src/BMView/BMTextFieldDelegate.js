@@ -1,7 +1,7 @@
 // @type interface BMTextFieldDelegate
 
 /**
- * The specification for a `BMTextField` object, which can optionally be used in conjunction with `BMTextField` objects and will receive various
+ * The specification for a `BMTextFieldDelegate` object, which can optionally be used in conjunction with `BMTextField` objects and will receive various
  * callbacks related to the text field's lifecycle.
  */
 function BMTextFieldDelegate() {} // <constructor>
@@ -15,7 +15,7 @@ BMTextFieldDelegate.prototype = {
      * 
      * If this method is not implemented, suggestions and autocomplete will not be available.
 	 * @param textField <BMTextField>		The calling text field.
-     * @param text <String>                 
+     * @param text <String>                 The text for which to obtain suggestions.
      * @return <[String]>                   An array of string suggestions.
 	 */
     textFieldSuggestionsForText(textField, text) {},
