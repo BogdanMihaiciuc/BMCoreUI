@@ -91,6 +91,14 @@ BMMenuItem.prototype = {
     },
 
     /**
+     * Whether this menu item is a separator.
+     */
+    _isSeparator: NO, // <Boolean>
+    get isSeparator() {
+        return this._isSeparator;
+    },
+
+    /**
      * Additional, arbitrary information associated with this menu item.
      */
     userInfo: undefined, // <AnyObject, nullable>
@@ -148,6 +156,10 @@ BMMenuItem.prototype = {
         this._action = action;
         this._submenu = submenu;
         this.userInfo = userInfo;
+
+        if (name.startsWith('---')) {
+            this._isSeparator = YES;
+        }
 
         return this;
     }
@@ -489,6 +501,14 @@ BMMenu.prototype = {
 
         // Close the menu when clicking outside of it
         menuContainer.addEventListener('click', event => {
+            // If the click occurs inside the container while events are being suppressed
+            // do not close the menu
+            if (this._delaysEvents) {
+                if (this._frame && this._frame.intersectsPoint(BMPointMake(event.clientX, event.clientY))) {
+                    return;
+                }
+            }
+
             this.closeAnimated(YES);
             event.preventDefault();
         });
@@ -560,6 +580,18 @@ BMMenu.prototype = {
                     return;
                 }
 
+                // Ask the delegate if this menu item should be selected
+                let shouldSelect = YES;
+                if (this.delegate && this.delegate.menuShouldSelectItem) {
+                    shouldSelect = this.delegate.menuShouldSelectItem(this, item);
+                }
+
+                if (!shouldSelect) {
+                    // If the item shouldn't be selected, also prevent closing the menu
+                    event.stopPropagation();
+                    return;
+                }
+
                 // For desktop menus, delay closing slightly to allow the selection
                 // animation to play out
                 this._delaysClosing = YES;
@@ -622,6 +654,11 @@ BMMenu.prototype = {
      * @return <Promise<void>>                  A promise that resolves when the operation completes.
      */
     async openFromNode(node, {animated = NO, kind = BMMenuKind.Menu} = {}) {
+        // Signal the delegate that this menu is about to open
+        if (this.delegate && this.delegate.menuWillOpen) {
+            this.delegate.menuWillOpen(this);
+        }
+
         this._sourceNode = node;
 
         // Get the source node's position to position its shadow appropriately
@@ -1097,9 +1134,6 @@ BMMenu.prototype = {
                 currentSlope < minSlope || currentSlope > maxSlope;
             
             if (isOutsideSlopeRange) {
-                console.log(`Resuming events\ncurrent slope: ${currentSlope}\nmax slope: ${maxSlope}\nmin slope: ${minSlope}
-                \n
-topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPosition}`);
                 resumeEvents();
                 return;
             }
@@ -1276,7 +1310,19 @@ topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPos
      */
     arrowUpPressedWithEvent(event) {
         if (this._highlightedIndex != 0) {
-            this.highlightedIndex = BMNumberByConstrainingNumberToBounds(this._highlightedIndex - 1, 0, this._items.length - 1);
+            // Find the previous index that may be highlighted
+            let previousIndex = this._highlightedIndex;
+            while (YES) {
+                previousIndex = BMNumberByConstrainingNumberToBounds(previousIndex - 1, 0, this._items.length - 1);
+
+                // If item at the previous index isn't a separator, highlight it
+                if (!this._items[previousIndex]._isSeparator) break;
+
+                // If the start of the items array has been reached and a viable highlightable item hasn't
+                // been found, don't take any action
+                if (previousIndex == 0) return;
+            }
+            this.highlightedIndex = previousIndex;
         }
     },
 
@@ -1286,7 +1332,19 @@ topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPos
      */
     arrowDownPressedWithEvent(event) {
         if (this._highlightedIndex != this._items.length - 1) {
-            this.highlightedIndex = BMNumberByConstrainingNumberToBounds(this._highlightedIndex + 1, 0, this._items.length - 1);
+            // Find the next index that may be highlighted
+            let nextIndex = this._highlightedIndex;
+            while (YES) {
+                nextIndex = BMNumberByConstrainingNumberToBounds(nextIndex + 1, 0, this._items.length - 1);
+
+                // If item at the next index isn't a separator, highlight it
+                if (!this._items[nextIndex]._isSeparator) break;
+
+                // If the end of the items array has been reached and a viable highlightable item hasn't
+                // been found, don't take any action
+                if (nextIndex == this._items.length - 1) return;
+            }
+            this.highlightedIndex = nextIndex;
         }
     },
 
@@ -1324,6 +1382,14 @@ topPoint: ${topPoint}\nbottomPoint: ${bottomPoint}\ncurrentPosition:${currentPos
     returnPressedWithEvent(event) {
         if (this._highlightedIndex >= 0 && this._highlightedIndex < this._items.length) {
             const item = this._items[this._highlightedIndex];
+
+            // Ask the delegate if this menu item should be selected
+            let shouldSelect = YES;
+            if (this.delegate && this.delegate.menuShouldSelectItem) {
+                shouldSelect = this.delegate.menuShouldSelectItem(this, item);
+            }
+
+            if (!shouldSelect) return;
 
             // For desktop menus, delay closing slightly to allow the selection
             // animation to play out
