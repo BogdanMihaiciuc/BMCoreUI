@@ -1024,8 +1024,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this.__awaitsLayout = YES;
 			return;
 		}
-
-		this._blocksLayoutInvalidation = YES;
 	    
 	    // Do not invalidate the layout during an animated data update
 	    if (this.isUpdatingData) {
@@ -1033,6 +1031,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    this.registerDataCompletionCallback(function () { self.invalidateLayout(); });
 		    return;
 		}
+
+		this._blocksLayoutInvalidation = YES;
 		
 		// If the layout supports animated changes and an animation context is active, make this change animated
 		let animation;
