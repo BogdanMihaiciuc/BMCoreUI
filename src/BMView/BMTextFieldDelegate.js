@@ -47,7 +47,7 @@ BMTextFieldDelegate.prototype = {
     /**
      * Invoked whenever the contents in this text field change for any reason. This can be because of an input event,
      * the user pasting text or a suggestion being selected.
-     * Note that this method will not be invoked when manually setting the input node's `value`.
+     * Note that this method will not be invoked when programatically setting the input node's `value`.
      * 
      * Delegate objects can implement this method in place of standard event listeners to handle changes to this text field.
      * The contents of the text field can be retrieved via the standard `value` property on the text field's node.
@@ -58,9 +58,9 @@ BMTextFieldDelegate.prototype = {
     /**
      * Invoked whenever the user presses the return key while the text field has keyboard focus.
      * 
-     * Delegate objects can implement this method to customize the behaviour when the user presses the return key and also control whether the default action will take place.
-     * The default action for pressing the return key is to cause the text field to resign keyboard focus. If suggestions are used, the return key will also fill in the currently
-     * highlighted suggestion.
+     * Delegate objects can implement this method to customize the behaviour when the user presses the return key and also control 
+     * whether the default action will take place. The default action for pressing the return key is to cause the text field to 
+     * resign keyboard focus. If suggestions are used, the return key will also fill in the currently highlighted suggestion.
      * @param textField <BMTextField>       The calling text field.
      * @return <Boolean, nullable>          Defaults to `YES`. If set to `YES`, the standard behaviour will be invoked.
      */
