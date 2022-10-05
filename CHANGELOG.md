@@ -6,6 +6,8 @@ Resolves an issue where calling `updateEntireDataAnimated` with the animated par
 
 When invoking `invalidateContentSize` during a data update, the content size will now be invalidated when the update finishes.
 
+Resolved an issue where calling `invalidateLayout` during a data update would cause collection view to permanently ignore future requests to invalidate the layout.
+
 ## BMCollectionViewLayout
 
 The `shouldInvalidateLayoutForBoundsChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
@@ -13,6 +15,10 @@ The `shouldInvalidateLayoutForBoundsChange` method now takes in an additional ar
 ## BMCollectionViewFlowLayout
 
 Resolves an issue where the content size was not properly invalidated in some cases when using automatic cell size.
+
+Resolves an issue where a data update could throw an error while using automatic cell size at certain sizes when using headers or footers.
+
+Resolves an issue where a data update could throw an error while using automatic cell size if an element that was previously offscreen became visible.
 
 ## BMCollectionViewDelegate
 
@@ -22,7 +28,7 @@ The `collectionViewBoundsDidChange` method now takes in an additional argument `
 
 Resolves an issue where `BMWindow` would call `windowDidResignKeyWindow` while still being the key window.
 
-A new `windowDidClose` method is invoked on windows after they closes. Subclasses can override this method to perform any cleanup necessary after being dismissed.
+A new `windowDidClose` method is invoked on windows after they close. Subclasses can override this method to perform any cleanup necessary after being dismissed.
 
 Invoking the `release` method on a window that was already released will now have no effect.
 
@@ -34,7 +40,7 @@ Alert popups and any subclasses will now automatically `release` themselves afte
 
 ## BMPopoverIndicatorDirection
 
-A new `BMPopoverIndicatorDirection` enum can be used to specify in the directions in which a popover's indicator may appear.
+A new `BMPopoverIndicatorDirection` enum can be used to specify the directions in which a popover's indicator may appear.
 
 ## BMPopover
 
