@@ -257,30 +257,38 @@ BMWindow.unregisterShowcaseElement = function (element) {
 BMWindow.enterShowcase = async function () {
 	if (BMWindow._isShowcasing) return;
 
+	// Set a background color for the body to have a good contrast between the windows
+	// and the "empty space"
 	document.body.style.backgroundColor = 'rgb(60, 60, 60)';
 
 	BMWindow._isShowcasing = YES;
 
+	// Set up a handler to exit the showcase when clicking outside of any window
 	document.body.addEventListener('click', BMWindow.exitShowcase);
 
+	// Only include non-minimized windows in the showcase
 	let openWindows = BMWindow._windows.filter(value => !value._minimizedWindow);
 
-	let viewportFrame = BMRectMake(0, 0, window.innerWidth, window.innerHeight);
-
+	// Add any window-like elements that have been registered to participate in the showcase
 	for (let element of BMWindow._showcaseElements) {
 		openWindows.unshift(element);
 	}
 
 	openWindows.forEach(window => {
+		// For each window, create a mask that consumes mouse events instead of the windows
+		// and disable pointer events for the windows
 		window.node.classList.add('BMWindowShowcaseWindow');
 
 		let selector = document.createElement('div');
 		selector.classList.add('BMWindowShowcaseWindowSelector');
 		selector.addEventListener('click', event => {
 			if (window.becomeKeyWindow) {
+				// If the clicked element is a window, make it the key window
 				window.becomeKeyWindow();
 			}
 			else {
+				// If a non-window element is clicked, bring it to the front by hiding
+				// all windows
 				BMWindow.hideAll();
 			}
 			BMWindow.exitShowcase();
@@ -289,16 +297,30 @@ BMWindow.enterShowcase = async function () {
 		window.node.appendChild(selector);
 	});
 
+
+	let viewportFrame = BMRectMake(0, 0, window.innerWidth, window.innerHeight);
+	// Create a copy of each window's frame which will be used to determine where to place each window
+	// in the showcase
 	let sourceRects = openWindows.map(window => window._fullScreen ? viewportFrame.copy() : window.frame.copy());
+
+	// Retain a copy of the original frames to determine what transforms to apply to each window
 	let originalRects = sourceRects.map(rect => rect.copy());
+
+	// Set to NO when no windows overlap
 	let overlap;
 
+	// Initialize the bounds with the viewport frame; this will expand to represent the entire area
+	// used by all windows as they get pushed apart
 	let bounds = viewportFrame.copy();
 
+	// Because the algorithm works through multiple iterations where each intersecting windows
+	// are pushed apart slightly, set a maximum number of iterations to avoid situations
+	// where a fully non-intersecting layout cannot be obtained in an acceptable amount of time
 	for (let i = 0; i < BM_WINDOW_SHOWCASE_MAX_ITERATIONS; i++) {
 
 		for (let j = 0; j < sourceRects.length; j++) {
 			for (let k = 0; k < sourceRects.length; k++) {
+				// Iterate through each pair of windows and push apart those windows that intersect
 				if (j != k && sourceRects[j].intersectsRect(sourceRects[k])) {
 					overlap = YES;
 	
@@ -307,11 +329,15 @@ BMWindow.enterShowcase = async function () {
 
 					let difference = rect2.center.pointBySubtractingPoint(rect1.center);
 
+					// If the windows have the same center point, choose a random direction
+					// in which to push them apart
 					if (!difference.x && !difference.y) {
 						difference.x = Math.random() * 2 - 1;
 						difference.y = Math.random() * 2 - 1;
 					}
 
+					// Adjust the direction in which the windows are pushed apart to maintain a similar
+					// aspect ratio between the bounds and the viewport
 					if (bounds.height / bounds.width > viewportFrame.height / viewportFrame.width) {
 						difference.x = difference.x * 2;
 					}
@@ -319,13 +345,16 @@ BMWindow.enterShowcase = async function () {
 						difference.y = difference.y * 2;
 					}
 
+					// Normalize the distance
 					let length = Math.sqrt(difference.x * difference.x + difference.y * difference.y);
 					difference.x = difference.x * 20 / length;
 					difference.y = difference.y * 20 / length;
 
+					// Push the two windows apart in opposite directions
 					rect1.offsetWithX(-difference.x, {y: -difference.y});
 					rect2.offsetWithX(difference.x, {y: difference.y});
 
+					// Extend the bounds to contain the windows in their new positions
 					bounds = bounds.rectByUnionWithRect(rect1).rectByUnionWithRect(rect2);
 
 				}
@@ -335,11 +364,14 @@ BMWindow.enterShowcase = async function () {
 		if (!overlap) break;
 	}
 
+	// Determine how much the windows need to be shrinked to fit on screen
 	let scale = Math.min(1, viewportFrame.width / bounds.width, viewportFrame.height / bounds.height);
 
 	for (let rect of sourceRects) {
+		// Adjust the rect's origin so that it is relative to the bounds instead of the viewport
 		rect.offset(-bounds.left, -bounds.top);
 
+		// Apply the scale
 		rect.origin.x = rect.origin.x * scale;
 		rect.origin.y = rect.origin.y * scale;
 
@@ -351,11 +383,8 @@ BMWindow.enterShowcase = async function () {
 	BMAnimateWithBlock(() => {
 		BMAnimationContextEnableWebAnimations();
 
-		/*let header = document.getElementById('twStudioHeader');
-		let headerController = BMAnimationContextGetCurrent().controllerForObject(header, {node: header});
-		headerController.registerBuiltInProperty('translateY', {withValue: -header.offsetHeight + 'px'});*/
-
 		for (let i = 0; i < sourceRects.length; i++) {
+			// For each window, determine which transforms to apply and animate to them
 			let transformRect = originalRects[i].rectWithTransformToRect(sourceRects[i]);
 	
 			let controller = BMAnimationContextGetCurrent().controllerForObject(openWindows[i].node, {node: openWindows[i].node});
@@ -391,19 +420,18 @@ BMWindow.exitShowcase = function (event) {
 
 	BMWindow._isShowcasing = NO;
 	
+	// Clear the event handlers set up for the showcase
 	document.body.removeEventListener('click', BMWindow.exitShowcase);
 	document.body.removeEventListener('wheel', BMWindow._wheelHandler, YES);
 
 	let openWindows = BMWindow._windows.filter(value => !value._minimizedWindow);
-	/*let twStudio = document.querySelector('#twStudioBody');
-	let pageWindow = {node: twStudio};
-	openWindows.unshift(pageWindow);*/
 
 	for (let element of BMWindow._showcaseElements) {
 		openWindows.unshift(element);
 	}
 
 	openWindows.forEach(window => {
+		// Clear the classes and masks created for each window
 		window.node.classList.remove('BMWindowShowcaseWindow');
 
 		let selector = window.node.querySelector('.BMWindowShowcaseWindowSelector');
@@ -413,11 +441,8 @@ BMWindow.exitShowcase = function (event) {
 	BMAnimateWithBlock(() => {
 		BMAnimationContextEnableWebAnimations();
 
-		/*let header = document.getElementById('twStudioHeader');
-		let headerController = BMAnimationContextGetCurrent().controllerForObject(header, {node: header});
-		headerController.registerBuiltInProperty('translateY', {withValue: '0px'});*/
-
 		for (let i = 0; i < openWindows.length; i++) {
+			// For each window, animate back to no transforms
 			let controller = BMAnimationContextGetCurrent().controllerForObject(openWindows[i].node, {node: openWindows[i].node});
 			controller.registerBuiltInPropertiesWithDictionary({
 				translateX: '0px',
@@ -1427,6 +1452,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					self._blocker.style.backdropFilter = 'blur(' + ((1 - complete) * 15).toFixed(2) + 'px)';
 				},*/
 				complete: function () {
+					self.windowDidClose();
 					if (self.delegate && self.delegate.windowDidClose) {
 						self.delegate.windowDidClose(self);
 					}
@@ -1467,12 +1493,22 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			
 			this._window.style.opacity = 0;
 			this._window.style.display = 'none';
+
+			self.windowDidClose();
 			
 			if (self.delegate && self.delegate.windowDidClose) {
 				self.delegate.windowDidClose(self);
 			}
 			if (args && args.completionHandler) args.completionHandler();
 		}
+	},
+
+	/**
+	 * Invoked after this window closes. Subclasses overriding this method must invoked
+	 * the superclass method at some point in their implementation.
+	 */
+	windowDidClose() {
+
 	},
 
 	/**
@@ -1793,13 +1829,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		if (BMWindow._keyWindow == this && !this._modal) {
 			this.node.classList.remove('BMKeyWindow');
 			this.node.classList.add('BMWindowInactive');
-			if (this.delegate && this.delegate.windowDidResignKeyWindow) {
-				this.delegate.windowDidResignKeyWindow(this);
-			}
 			BMWindow._keyWindow = undefined;
 
 			for (let toolWindow of this._toolWindows) {
 				toolWindow.hide();
+			}
+			if (this.delegate && this.delegate.windowDidResignKeyWindow) {
+				this.delegate.windowDidResignKeyWindow(this);
 			}
 		}
 	},
@@ -1867,6 +1903,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * This instance should not be reused after invoking this method.
 	 */
 	release() {
+		if (this.__released) {
+            // This needs to be handled because of the way Thingworx DOM nodes are removed and recreated in the composer
+            return;
+        }
+
 		if (BMWindow._keyWindow == this) BMWindow._keyWindow = undefined;
 
 		if (this._boundViewportDidResize) {

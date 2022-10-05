@@ -25,13 +25,17 @@ const removeFiles = [
     'BMCollectionView/BMCollectionViewDelegate.js',
     'BMCollectionView/BMCollectionViewDataSet.js',
     'BMWindow/BMWindowDelegate.js',
-    'BMView/BMLayoutVariableProvider.js',
+    'BMViewLayoutEditor/BMLayoutVariableProvider.js',
+    'BMView/BMMenuDelegate.js',
+    'BMViewLayoutEditor/BMLayoutEditorDelegate.js',
+    'BMViewLayoutEditor/BMLayoutEditorSettingsDelegate.js',
 
     // These files are in early development
     'BMScrollView.js',
     'Core/BMDragController.js',
     'BMScroller.js',
     'Core/BMInterpolator.js',
+    'BMViewLayoutEditor/CSS/BMCSSStyleRule.js',
 
     // These files were included for documentation and are not needed at runtimea
     'JSDoc.html',
@@ -109,6 +113,7 @@ const DTSFiles = [
     'BMViewLayoutEditor/BMLayoutEditorSettingsComplexCells.js', 
     'BMViewLayoutEditor/BMLayoutVariableProvider.js', 
     'BMView/BMMenu.js',
+    'BMView/BMMenuDelegate.js',
     'BMView/BMTextField.js',
     'BMView/BMTextFieldDelegate.js',
     'BMCollectionView/BMCollectionViewLayoutAttributes.js', 

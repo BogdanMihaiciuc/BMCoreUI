@@ -23,8 +23,11 @@ BMCollectionViewDelegate.prototype = {
 	 * Invoked by the collection view whenever the bounds change.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param newBounds <BMRect>					The new bounds.
+	 * {
+	 * 	@param fromBounds <BMRect>					The previous bounds.
+	 * }
 	 */
-	collectionViewBoundsDidChange: function (collectionView, bounds) {},	
+	collectionViewBoundsDidChange: function (collectionView, bounds, {fromBounds}) {},	
 
 	/**
 	 * Invoked by the collection view whenever any cell will be rendered.

@@ -103,7 +103,7 @@ BMScrollView.prototype = BMExtend({}, BMView.prototype, {
     },
 
     /**
-     * Invoked whenever the iScroll instance managing this scroll view's scrolling scrolls.
+     * Invoked whenever the iScroll instance managing this scroll view's scrolling.
      */
     _iScrollDidScroll() {
         this._scrollOffset = BMPointMake(this._iScroll.x, this._iScroll.y);

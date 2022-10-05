@@ -3335,10 +3335,18 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		// for the requested index path
 		if (this._expectedCellSize) {
 			if (this.cachedLayout.resolvedIndexPath.section < indexPath.section ||
-				(this.cachedLayout.resolvedIndexPath.section == indexPath.section && this.cachedLayout.resolvedIndexPath.row < indexPath.row)) {
-					// If the layout has not been resolved up to this index path, continue computing it until it has
-					this._layoutIterator.next({indexPath: indexPath});
+				(this.cachedLayout.resolvedIndexPath.section == indexPath.section && this.cachedLayout.resolvedIndexPath.row < indexPath.row)
+			) {
+				const currentResolvedHeight = this.cachedLayout.resolvedHeight;
+
+				// If the layout has not been resolved up to this index path, continue computing it until it has
+				this._layoutIterator.next({indexPath: indexPath});
+
+				// If the resolved height changes, invalidate the content size
+				if (currentResolvedHeight != this.cachedLayout.resolvedHeight) {
+					this.invalidateContentSize();
 				}
+			}
 		}
 	    
 	    // Return the cached attributes when using dynamic sizes
@@ -4324,22 +4332,33 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		var attributes;
 		var self = this;
 		
-		this.collectionView.usingOldDataSet(function () {
-			// When using automatic cell sizes, it is important to ensure that the sizing information has been computed
-			// for the requested index path
-			if (self._expectedCellSize) {
-				if (self.previousLayout.resolvedIndexPath.section < indexPath.section ||
-					(self.previousLayout.resolvedIndexPath.section == indexPath.section && self.previousLayout.resolvedIndexPath.row < indexPath.row)) {
+		// When using automatic cell sizes, it is important to ensure that the sizing information has been computed
+		// for the requested index path
+		if (self._expectedCellSize) {
+			if (self.previousLayout.resolvedIndexPath.section < indexPath.section ||
+				(self.previousLayout.resolvedIndexPath.section == indexPath.section && self.previousLayout.resolvedIndexPath.row < indexPath.row)) {
+					self.collectionView.usingOldDataSet(function () {
 						// If the layout has not been resolved up to this index path, continue computing it until it has
 						self.previousLayout.iterator.next({indexPath: indexPath});
-					}
-			}
+					});
+				}
+		}
+		
+		this.collectionView.usingOldDataSet(function () {
 
 			if (self._cellSize && !self._expectedCellSize) {
 				attributes = self.computedAttributesForCellAtIndexPath(indexPath, {usingCache: self.previousLayout});
 			}
 			else {
 				attributes = self.cachedAttributesForCellAtIndexPath(indexPath, {usingCache: self.previousLayout});
+
+				if (!attributes) {
+					// When using automatic cell sizes, it is possible that the attributes for the moving cell were not computed
+					// in this case, return a copy of the current attributes, with the opacity set to 0
+					attributes = options.withTargetAttributes.copy();
+
+					attributes.style = Object.assign(attributes.style, {opacity: 0});
+				}
 			}
 		});
 		
@@ -4350,6 +4369,21 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 	initialAttributesForMovingSupplementaryViewWithIdentifier: function (identifier, options) {
 		var attributes;
 		var self = this;
+
+		// When using automatic cell sizes, ensure that the sizing information has been computed for the requested index path
+		if (self._expectedCellSize) {
+			if (self.cachedLayout.resolvedIndexPath.section < options.atIndexPath.section ||
+				(self.cachedLayout.resolvedIndexPath.section == options.atIndexPath.section && identifier == BMCollectionViewFlowLayoutSupplementaryView.Footer)) {
+					if (options.atIndexPath.section == self.collectionView.numberOfSections() - 1) {
+						// If there is no following section, compute until the last index path
+						self._layoutIterator.next({indexPath: self.collectionView.indexPathForObjectAtRow(self.collectionView.numberOfObjectsInSectionAtIndex(options.atIndexPath.section) - 1, {inSectionAtIndex: options.atIndexPath.section})});
+					}
+					else {
+						// If the layout has not been resolved up to this index path, continue computing up to the beginning of the next section
+						self._layoutIterator.next({indexPath: self.collectionView.indexPathForObjectAtRow(0, {inSectionAtIndex: options.atIndexPath.section + 1})});
+					}
+			}
+		}
 		
 		this.collectionView.usingOldDataSet(function () {
 			if (identifier === BMCollectionViewTableLayoutSupplementaryView.Empty) {
@@ -4360,6 +4394,14 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			}
 			else {
 				attributes = self.cachedAttributesForSupplementaryViewWithIdentifier(identifier, {atIndexPath: options.atIndexPath, usingCache: self.previousLayout});
+
+				if (!attributes) {
+					// When using automatic cell sizes, it is possible that the attributes for the moving supplementary view were not computed
+					// in this case, return a copy of the current attributes, with the opacity set to 0
+					attributes = options.withTargetAttributes.copy();
+
+					attributes.style = Object.assign(attributes.style, {opacity: 0});
+				}
 			}
 		});
 		

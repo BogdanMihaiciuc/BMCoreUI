@@ -30,8 +30,11 @@ _BMLayoutEditorViewSettingsPanel.prototype = BMExtend(Object.create(_BMLayoutEdi
     _layoutTab: undefined, // <BMLayoutEditorSettingsTab>
 
     /**
-     * Designated initializer. Initializes this settings panel with the given settings view.
-     * @param view <_BMLayoutSettingsView>          The settings view.
+     * Designated initializer. Initializes this settings panel with the specified settings view.
+     * @param settingsView <_BMLayoutSettingsView>  The settings view.
+     * {
+     *  @param forView <BMView>                     The view whose settings will be displayed.
+     * }
      * @return <_BMLayoutEditorSettingsPanel>       This setttings panel.
      */
     initWithSettingsView(settingsView, {forView: view}) {

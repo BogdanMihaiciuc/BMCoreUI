@@ -182,7 +182,12 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     /**
      * The DOM node that was focused when this alert was opened.
      */
-    _previouslyActiveNode: undefined, // DOMNode
+    _previouslyActiveNode: undefined, // <DOMNode>
+
+    /**
+     * A handler that is invoked when the window resizes, used to reposition this window.
+     */
+    _centerHandler: undefined, // <void ^()>
 
     /**
      * Designated initializer. Initializes this alert popup with the given labels.
@@ -291,6 +296,15 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
     },
 
     // @override - BMWindow
+    bringToFrontAnimated() {
+        this._resizeHandler = () => this.needsLayout = YES;
+
+        window.addEventListener('resize', this._resizeHandler);
+
+        return BMWindow.prototype.bringToFrontAnimated.apply(this, arguments);
+    },
+
+    // @override - BMWindow
     dismissAnimated() {
         // Since the window can be dismissed by clicking outside in certain cases, this would be equivalent to pressing "OK".
         if (this._result == BMConfirmationPopupResult.Undecided) {
@@ -302,7 +316,13 @@ BMAlertPopup.prototype = BMExtend(Object.create(BMWindow.prototype), {
             this._previouslyActiveNode.focus();
         }
 
+        window.removeEventListener('resize', this._resizeHandler);
+
         return BMWindow.prototype.dismissAnimated.apply(this, arguments);
+    },
+
+    windowDidClose() {
+        this.release();
     }
 
 });

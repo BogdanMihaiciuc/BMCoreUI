@@ -154,7 +154,7 @@ const _BMLayoutConstraintClasses = {BMLayoutConstraint, BMEqualAttributeLayoutCo
  * A constraint is a linear equation that takes the form of 
  * ```js
 view1.attribute1 = multiplier * view2.attribute2 + constant
-```
+``` 
  * where the equals sign can be replaced with an inequality sign as needed.
  * Note that despite looking like an assignment statement, the constraint expression is a mathematical equation and the layout
  * system may choose to modify either side (or even both) of the equation to fulfill the constraint's requirements.

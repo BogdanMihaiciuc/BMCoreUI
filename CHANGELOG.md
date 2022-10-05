@@ -1,3 +1,91 @@
+# 2.9
+
+## BMCollectionView
+
+Resolves an issue where calling `updateEntireDataAnimated` with the animated parameter set to `NO` would cause the completion handler to never be invoked.
+
+When invoking `invalidateContentSize` during a data update, the content size will now be invalidated when the update finishes.
+
+Resolved an issue where calling `invalidateLayout` during a data update would cause collection view to permanently ignore future requests to invalidate the layout.
+
+## BMCollectionViewLayout
+
+The `shouldInvalidateLayoutForBoundsChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where the content size was not properly invalidated in some cases when using automatic cell size.
+
+Resolves an issue where a data update could throw an error while using automatic cell size at certain sizes when using headers or footers.
+
+Resolves an issue where a data update could throw an error while using automatic cell size if an element that was previously offscreen became visible.
+
+## BMCollectionViewDelegate
+
+The `collectionViewBoundsDidChange` method now takes in an additional argument `fromBounds` which are the bounds prior to changing.
+
+## BMWindow
+
+Resolves an issue where `BMWindow` would call `windowDidResignKeyWindow` while still being the key window.
+
+A new `windowDidClose` method is invoked on windows after they close. Subclasses can override this method to perform any cleanup necessary after being dismissed.
+
+Invoking the `release` method on a window that was already released will now have no effect.
+
+## BMAlertPopup
+
+This window will now reposition itself whenever the viewport is resized.
+
+Alert popups and any subclasses will now automatically `release` themselves after closing.
+
+## BMPopoverIndicatorDirection
+
+A new `BMPopoverIndicatorDirection` enum can be used to specify the directions in which a popover's indicator may appear.
+
+## BMPopover
+
+Resolves an issue that caused the popover to appear below an anchor rect or anchor node even if there was no space for it, instead of appearing above it.
+
+Resolves an issue where the value of the `borderRadius` property was not taken into account.
+
+Popovers can now appear to the left or to the right of their anchors, in addition to above or below.
+
+Adds a new `permittedDirections` property that can be used to specify in which directions the popover's indicator may appear relative to the popover. Additionally, the popover will also take the specified order of the directions into account when deciding which direction to select when it can fit within multiple directions.
+
+By default, if there is enough space in all directions, popovers will now appear below their anchor rather than above.
+
+## BMMenuItem
+
+A new initializer argument `submenu` makes it possible to specify a submenu that will be displayed when selecting menu items.
+
+A new `CSSClass` property can be specified on menu items to add it the item's node when its menu is active.
+
+## BMMenu
+
+Menus can now be displayed as submenus when set as the `submenu` property of a menu item. On pointer based devices, a submenu opens when an item containing one becomes the highlighted item. On touch based devices, a submenu opens when an item containing one is selected.
+
+Resolves an issue where the active animation for menu items did not play unless the menu item had an action specified.
+
+Removes the delay when closing a menu without selecting any item. Additionally removes the delay when closing touch menus in all cases.
+
+The node from which a touch a menu opens will now be slightly scaled up while the menu is active. Additionally, when the node from which a touch menu is opened is too large to fit on the screen, it will now be scaled down.
+
+When there isn't sufficient space on the right for a touch menu to open under a node, the node will be moved towards the left to make space for it while the menu is active.
+
+When setting the `CSSClass` property while the menu is active, the new classes will now apply to the current menu element.
+
+Resolves an issue where it was possible to open a touch menu that was already open.
+
+Resolves an issue where using the keyboard to highlight menu items could highlight menu dividers.
+
+## BMMenuDelegate
+
+Resolves an issue where `menuWillOpen` was not invoked for touch menus.
+
+A new `menuShouldSelectItem` method can be implemented by delegate objects to control whether menu items can be selected.
+
+Added the type definitions for this object.
+
 # 2.8.3
 
 ## BMCollectionView
