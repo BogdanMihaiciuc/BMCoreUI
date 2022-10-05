@@ -404,8 +404,7 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         this.frame = frame;
 
-        const innerFrame = frame.copy();
-
+        // Determine the indicator's position along its edge
         let indicatorPosition;
         switch (direction) {
             case BMPopoverIndicatorDirection.Bottom:
@@ -418,6 +417,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
                 break;
         }
 
+        // Create an inner frame to be used by the various paths
+        const innerFrame = frame.copy();
         innerFrame.origin = BMPointMake();
 
         const pathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, position: indicatorPosition, direction, radius: this._borderRadius})}`;
