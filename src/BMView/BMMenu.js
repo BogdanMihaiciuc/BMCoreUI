@@ -237,7 +237,7 @@ BMMenu.prototype = {
         if (this._node) {
             // When the icon size is changed while the menu is active
             // apply it to all menu items
-            for (const icon of this._node.querySelectorAll()) {
+            for (const icon of this._node.querySelectorAll('.BMMenuIcon')) {
                 BMCopyProperties(icon.style, {
                     width: size + 'px',
                     height: size + 'px'
