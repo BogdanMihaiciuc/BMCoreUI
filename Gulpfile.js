@@ -36,6 +36,7 @@ const removeFiles = [
     'BMScroller.js',
     'Core/BMInterpolator.js',
     'BMViewLayoutEditor/CSS/BMCSSStyleRule.js',
+    'BMView/BMViewShadow.js',
 
     // These files were included for documentation and are not needed at runtimea
     'JSDoc.html',
