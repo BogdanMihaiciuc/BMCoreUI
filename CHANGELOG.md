@@ -1,3 +1,11 @@
+# 2.9.1
+
+## BMCollectionView
+
+Resolves an issue that caused items that were accepted via drag & drop to not play the appropriate animation when dropped.
+
+Resolves an issue where `preventDefault` was invoked on events originating from elements with the `BMCollectionViewCellEventHandler` class while using iScroll.
+
 # 2.9
 
 ## BMCollectionView

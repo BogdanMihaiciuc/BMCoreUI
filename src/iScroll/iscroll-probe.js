@@ -447,7 +447,12 @@ IScroll.prototype = {
 			return;
 		}
 
-		if ( this.options.preventDefault && !utils.isBadAndroid && !utils.preventDefaultException(e.target, this.options.preventDefaultException) ) {
+		if ( 
+			this.options.preventDefault && 
+			!utils.isBadAndroid && 
+			!utils.preventDefaultException(e.target, this.options.preventDefaultException) &&
+			!e.target.classList.contains('BMCollectionViewCellEventHandler') && !e.target.parentNode.classList.contains('BMCollectionViewCellEventHandler')
+		) {
 			e.preventDefault();
 		}
 
@@ -597,7 +602,10 @@ IScroll.prototype = {
 			return;
 		}
 
-		if ( this.options.preventDefault && !utils.preventDefaultException(e.target, this.options.preventDefaultException) ) {
+		if (
+			this.options.preventDefault && !utils.preventDefaultException(e.target, this.options.preventDefaultException) &&
+			!e.target.classList.contains('BMCollectionViewCellEventHandler') && !e.target.parentNode.classList.contains('BMCollectionViewCellEventHandler')
+		) {
 			e.preventDefault();
 		}
 
