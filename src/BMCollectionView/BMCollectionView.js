@@ -5532,7 +5532,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (self._droppedShadows) {
 				self._droppedShadows.forEach(shadow => {
 					if (shadow.transform) {
-						BMHook(shadow.node, {rotateZ: shadow.rotation});
+						BMHook(shadow.node, {rotateZ: shadow.rotation + 'deg', translateX: '0px', translateY: '0px'});
 						let controller = BMAnimationContextGetCurrent().controllerForObject(shadow, {node: shadow.node});
 						controller.registerBuiltInProperty('translateX', {withValue: shadow.transform.origin.x + 'px'});
 						controller.registerBuiltInProperty('translateY', {withValue: shadow.transform.origin.y + 'px'});
@@ -5542,7 +5542,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 						controller.registerBuiltInProperty('opacity', {withValue: 0});
 					}
 					else {
-						BMHook(shadow.node, {rotateZ: shadow.rotation});
+						BMHook(shadow.node, {rotateZ: shadow.rotation + 'deg'});
 						let controller = BMAnimationContextGetCurrent().controllerForObject(shadow, {node: shadow.node});
 						controller.registerBuiltInProperty('scaleX', {withValue: .33});
 						controller.registerBuiltInProperty('scaleY', {withValue: .33});
