@@ -1679,12 +1679,39 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			return;
 		}
 
+		// When the scrollbar offset is used, invalidate any measurement that exceeds the available space.
+		if (this._expectedCellSize && this._collectionView.scrollBarSize) {
+			switch (this.orientation) {
+				case BMCollectionViewFlowLayoutOrientation.Horizontal:
+					// Determine the available height.
+					const insetHeight = this._sectionInsets.top + this._sectionInsets.bottom;
+					const paddingHeight = this._topPadding + this._bottomPadding;
+					const height = this._collectionView.frame.size.height - insetHeight - paddingHeight - this._collectionView.scrollBarSize;
+
+					// In horizontal mode, invalidate the measurements for cells that are too tall.
+					this._collectionView.invalidateMeasuredSizeOfCellsWithBlock((size) => {
+						return size.height > height;
+					});
+					break;
+				default:
+					// Determine the available width.
+					const insetWidth = this._sectionInsets.left + this._sectionInsets.right;
+					const width = this._collectionView.frame.size.width - insetWidth - this.collectionView.scrollBarSize;
+
+					// In default (vertical) mode, invalidate the measurements for cells that are too wide.
+					this._collectionView.invalidateMeasuredSizeOfCellsWithBlock((size) => {
+						return size.width > width;
+					});
+					break;
+			}
+		}
+
 		let iterator = this._prepareLayoutWithScrollbarOffsetGenerator(useOffset);
 
 		// When not using automatic cell sizes, the generator function will run to finish from the first
-		// invocation of next
+		// invocation of `next`.
 		// When using automatic cell sizes, the first iteration will only build a rough outline of the expected layout
-		// and must be retained so different portions of the layout can subsequently be computed
+		// and must be retained so different portions of the layout can subsequently be computed.
 		let result = iterator.next();
 		if (!result.done) {
 			this._layoutIterator = iterator;
