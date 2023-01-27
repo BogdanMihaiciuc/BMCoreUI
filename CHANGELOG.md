@@ -1,3 +1,9 @@
+# 2.9.2
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where the scrollbar width was not taken into account when measuring cells when using automatic cell size.
+
 # 2.9.1
 
 ## BMCollectionView
