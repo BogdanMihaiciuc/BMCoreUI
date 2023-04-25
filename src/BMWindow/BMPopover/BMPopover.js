@@ -195,6 +195,11 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     _clipPathOutlinePath: undefined, // <DOMNode, nullable>
 
     /**
+     * When `_clipPathSVG` is defined, this represents the box shadow path element.
+     */
+    _clipPathBoxShadowPath: undefined, // <DOMNode, nullable>
+
+    /**
      * A string that forms part of the HTML IDs that will be assigned to the clip paths
      * to be used on browsers.
      * This property will be `undefined` for all other browsers.
@@ -422,7 +427,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         innerFrame.origin = BMPointMake();
 
         const pathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, position: indicatorPosition, direction, radius: this._borderRadius})}`;
-        const outlinePathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, inset: 1, position: indicatorPosition, direction, radius: this._borderRadius})}`;
+        const outlinePathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, inset: 1, position: indicatorPosition, direction, radius: this._borderRadius - 1.5})}`;
+        const boxShadowPathContent = `${this._pathForPopoverWithFrame(innerFrame, {indicatorSize: this._indicatorSize, position: indicatorPosition, direction, radius: this._borderRadius + 1.5})}`;
 
         if (!this._clipPathUUID && !CSS.supports('clip-path', `path('${pathContent}')`)) {
             // If inline path definitions are not supported by the browsers, create an UUID for a SVG clip path and create it
@@ -450,6 +456,15 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
             this._clipPathSVG.appendChild(outlineClipPath);
 
+            // Create and attach the shadow clip path
+            const boxShadowClipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            boxShadowClipPath.setAttribute('id', 'popover-box-shadow-clip-path-' + this._clipPathUUID);
+            boxShadowClipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
+            this._clipPathBoxShadowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            boxShadowClipPath.appendChild(this._clipPathBoxShadowPath);
+
+            this._clipPathSVG.appendChild(boxShadowClipPath);
+
             document.body.appendChild(this._clipPathSVG);
             
         }
@@ -458,11 +473,13 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         if (this._clipPathUUID) {
             this._clipPathBackgroundPath.setAttribute('d', pathContent);
             this._clipPathOutlinePath.setAttribute('d', outlinePathContent);
+            this._clipPathBoxShadowPath.setAttribute('d', boxShadowPathContent);
         }
 
         // For Blink/Chrome-based browsers clip-path: path() is not supported, but clip-path: url() can be used instead for that browser
         const path = this._clipPathUUID ? `url(#popover-clip-path-${this._clipPathUUID})` : `path('${pathContent}')`;
-        const outlinePath = this._clipPathUUID ? `url(#popover--outline-clip-path-${this._clipPathUUID})` : `path('${outlinePathContent}')`;
+        const outlinePath = this._clipPathUUID ? `url(#popover-outline-clip-path-${this._clipPathUUID})` : `path('${outlinePathContent}')`;
+        const boxShadowPath = this._clipPathUUID ? `url(#popover-box-shadow-clip-path-${this._clipPathUUID})` : `path('${boxShadowPathContent}')`;
 
         // Assign the frame to the window, and to the drop shadow container
         const positionStyle = {
@@ -482,8 +499,8 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         popoverDarkModeFill.style.webkitClipPath = outlinePath;
 
         BMCopyProperties(this._dropShadowContainer.style, positionStyle);
-        this._dropShadowContent.style.clipPath = path;
-        this._dropShadowContent.style.webkitClipPath = path;
+        this._dropShadowContent.style.clipPath = boxShadowPath;
+        this._dropShadowContent.style.webkitClipPath = boxShadowPath;
 
         const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
