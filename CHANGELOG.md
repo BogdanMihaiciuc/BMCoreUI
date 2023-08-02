@@ -1,3 +1,21 @@
+# 2.9.4
+
+## BMView
+
+Adds a new property `colorScheme`, with a default value of `.Auto` that can be used to control whether a view should appear with a dark or light theme or automatically based on the system setting.
+
+A new `colorSchemeDidChange(_)` method can be overriden by view subclasses when the color scheme is changed.
+
+## BMViewColorScheme
+
+A new `BMViewColorScheme` enum can be used to specify the color scheme that a view should use.
+
+## BMPopover
+
+Improved the appearance of the rounded corners of the popover.
+
+Resolves an issue with the default dark mode appearance that caused the popover's background to be brighter in certain situations.
+
 # 2.9.2
 
 ## BMCollectionViewFlowLayout

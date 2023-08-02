@@ -5,7 +5,7 @@ import { BMWindow } from "../BMWindow";
 import { BMRectMakeWithOrigin, BMRectMakeWithNodeFrame, BMRectMake } from "../../Core/BMRect";
 import { BMPointMake } from "../../Core/BMPoint";
 import { BMHook, __BMVelocityAnimate } from "../../Core/BMAnimationContext";
-import { BMView } from "../../BMView/BMView_v2.5";
+import { BMView, BMViewColorScheme } from "../../BMView/BMView_v2.5";
 import { BMInsetMakeWithEqualInsets } from "../../Core/BMInset";
 
 // @type BMPopoverIndicatorDirection
@@ -263,24 +263,24 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         this._size = size.copy();
 
         // Set up the popover container
-        this.node.className = 'BMPopover';
-        this.contentNode.className = 'BMPopoverContainer BMPopoverContainerView';
+        this.node.className = 'BMDarkModeAuto BMPopover';
+        this.contentNode.className = 'BMDarkModeAuto BMPopoverContainer BMPopoverContainerView';
 
         this._overlay.node.className = 'BMPopoverOverlay';
 
         // A second layer is used to draw the drop shadow, due to the unusual shape of the popover window
         const popoverDropShadowContainer = document.createElement('div');
-        popoverDropShadowContainer.className = 'BMPopoverContainerLayer BMPopoverDropShadowContainer';
+        popoverDropShadowContainer.className = 'BMDarkModeAuto BMPopoverContainerLayer BMPopoverDropShadowContainer';
         const popoverDropShadowContent = document.createElement('div');
-        popoverDropShadowContent.className = 'BMPopoverDropShadowContent';
+        popoverDropShadowContent.className = 'BMDarkModeAuto BMPopoverDropShadowContent';
         popoverDropShadowContainer.appendChild(popoverDropShadowContent);
 
         // A third layer is used to draw the background
         const popoverBackground = document.createElement('div');
-        popoverBackground.className = 'BMPopoverBackground';
+        popoverBackground.className = 'BMDarkModeAuto BMPopoverBackground';
 
         // Two additional sublayers are used for dark mode and contain the outline and background color.
-        popoverBackground.innerHTML = '<div class="BMPopoverBackgroundDarkModeContainer"><div class="BMPopoverBackgroundDarkModeOutline"></div><div class="BMPopoverBackgroundDarkModeFill"></div></div>';
+        popoverBackground.innerHTML = '<div class="BMDarkModeAuto BMPopoverBackgroundDarkModeContainer"><div class="BMDarkModeAuto BMPopoverBackgroundDarkModeOutline"></div><div class="BMDarkModeAuto BMPopoverBackgroundDarkModeFill"></div></div>';
 
         // Add the popover to the document
         this.node.appendChild(popoverBackground);
@@ -314,6 +314,30 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
     initWithFrame(frame) {
         return this.initWithSize(frame.size);
     },
+
+	// @override - BMView
+	colorSchemeDidChange(scheme) {
+		BMWindow.prototype.colorSchemeDidChange.apply(this, arguments);
+
+		switch (this.colorScheme) {
+			case BMViewColorScheme.Light:
+				// Handled by BMWindow
+				break;
+			case BMViewColorScheme.Auto:
+				// For auto mode, add the BMDarkModeAuto class to the elements whose appearance should change
+				this._dropShadowContainer.classList.add('BMDarkModeAuto');
+				this._dropShadowContent.classList.add('BMDarkModeAuto');
+				this._background.classList.add('BMDarkModeAuto');
+				this._popoverDarkModeFill.classList.add('BMDarkModeAuto');
+                this._background.querySelector('.BMPopoverBackgroundDarkModeOutline').classList.add('BMDarkModeAuto');
+                this._background.querySelector('.BMPopoverBackgroundDarkModeContainer').classList.add('BMDarkModeAuto');
+				break;
+			case BMViewColorScheme.Dark:
+				// Dark is not yet supported
+			default:
+				throw new Error(`The color scheme ${scheme} is not supported on this view.`);
+		}
+	},
 
     /**
      * Invoked by CoreUI to update this popover's position and recalculate the various paths used by it.

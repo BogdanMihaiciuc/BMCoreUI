@@ -261,6 +261,32 @@ BMViewLayoutQueue.layoutQueue = function () {
 
 // @endtype
 
+// @type BMViewColorScheme
+
+/**
+ * Constants that describe the color scheme that a view should use when drawing itself.
+ */
+export var BMViewColorScheme = Object.freeze({ // <enum>
+
+	/**
+	 * Indicates that the view's color scheme should be based on the system color scheme.
+	 */
+	Auto: 'auto', // <enum>
+
+	/**
+	 * Indicates that the view should always use a dark color scheme regardless of the system color scheme setting.
+	 */
+	Dark: 'dark', // <enum>
+
+	/**
+	 * Indicates that the view should always use a light color scheme regardless of the system color scheme setting.
+	 */
+	Light: 'light', // <enum>
+
+});
+
+// @endtype
+
 // @type BMView
 
 const BMViewDebug = NO;
@@ -1782,6 +1808,39 @@ BMView.prototype = BMExtend(BMView.prototype, {
 		return this._hasVariationForProperty('isVisible', {inSizeClass: sizeClass});
     },
     
+    // #endregion
+
+    // #region Color Scheme
+
+    /**
+     * The color scheme that this view should use.
+     */
+    _colorScheme: BMViewColorScheme.Auto, // <BMViewColorScheme>
+
+    get colorScheme() {
+        return this._colorScheme;
+    },
+
+    set colorScheme(scheme) {
+        const oldColorScheme = this._colorScheme;
+        this._colorScheme = scheme;
+
+        this.colorSchemeDidChange(oldColorScheme);
+    },
+
+    /**
+     * @protected
+     * Invoked by CoreUI whenever the color scheme that the view should use changes.
+     * 
+     * Subclasses may use this method to perform any changes needed to support the requested color scheme.
+     * Subclasses that override this method must invoke the superclass method at some point in their implementation.
+     * 
+     * @param scheme <BMViewColorScheme>        The previous color scheme.
+     */
+    colorSchemeDidChange(scheme) {
+
+    },
+
     // #endregion
 
     // #region Intrinsic Size
