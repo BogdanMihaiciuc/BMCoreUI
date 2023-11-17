@@ -629,7 +629,7 @@ export function BMView() {} // <constructor>
 
         node: undefined, // <DOMNode>
 
-        _keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
+        _keyboardShortcuts: undefined, // <Dictionary<[BMKeyboardShortcut]>>
 
         registerKeyboardShortcut(shortcut) {
             return BMView.prototype.registerKeyboardShortcut.apply(this, arguments);
@@ -2210,7 +2210,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	/**
 	 * The keyboard shortcuts that have been registered to this view.
 	 */
-	_keyboardShortcuts: undefined, // <Dictionary<string, [BMKeyboardShortcut]>>
+	_keyboardShortcuts: undefined, // <Dictionary<BMKeyboardShortcut[]>>
 
 	/**
 	 * Registers a keyboard shortcut that can be activated when this view has keyboard focus.
@@ -2282,6 +2282,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	_keyboardShortcutsEnabled: NO, // <Boolean>
 
 	/**
+     * @protected
 	 * Enables keyboard shortcut handling. This makes the view's `node` focusable and attaches
 	 * the relevant event handlers to it.
 	 */
@@ -3075,6 +3076,7 @@ BMView.prototype = BMExtend(BMView.prototype, {
 
     /**
      * A generator that is used internally by CoreUI to layout subviews.
+     * @returns <Iterator<undefined>>
      */
     *_layoutSubviewsGenerator() {
 

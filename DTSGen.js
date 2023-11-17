@@ -8,7 +8,7 @@ let returnRegex = /\s*@return <(.*?)>\s*(.*)/;
 
 //let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async)\s*(\S*?)\s*\(.*?\)\s*{/;  ///\s*(.*?)\s*:\s*function.*?\(.*?\)/;
 // This regex should also work with prototype assignments
-let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async function)(?:async)?\s*(\S*?)\s*\(.*?\)\s*{|\s*(?:.*)\.prototype\.(.*?)\s*=\s*function\s*\(.*\)\s* {/;
+let functionPropertyRegex = /\s*(.*?)\s*:\s*(async)?\s*function.*?\(.*?\)|^\s*(?!get|set|function|async function)(?:async)?\s*\*?\s*(\S*?)\s*\(.*?\)\s*{|\s*(?:.*)\.prototype\.(.*?)\s*=\s*function\s*\(.*\)\s* {/;
 let functionVariableRegex = /\s*var\s*(.*?)\s*=\s*function.*?\(.*?\)/;
 let globalFunctionRegex = /\s*function\s*(.*?)\s*\(.*?\)/;
 let classRegex = /\s*class\s*(\S*?)\s*(extends\s+\S+)?\s*{/;
@@ -173,6 +173,7 @@ function allFilesLoaded(contents, {returnOutput = false, modules = false} = {ret
                 argumentsObject: [{name: string, type: string, nullable: BOOL}],
                 return: {type: string, nullable: BOOL},
                 isPrivate: BOOL,
+                isProtected: BOOL,
                 isGenerator: BOOL // NOT used,
                 doc: string,
                 isStatic: BOOL
@@ -945,6 +946,9 @@ function allFilesLoaded(contents, {returnOutput = false, modules = false} = {ret
 
                     html += "</div>";
                 }
+                else if (line.includes('@protected')) {
+                    exportedItem.isProtected = true;
+                }
                 else {
                     html += line + '<br/>';
                     exportedItem.doc += ' * ' + line + '\n';
@@ -1196,8 +1200,8 @@ declare namespace kiwi {
 type BMCollectionViewUpdate = never;
 type TimeoutToken = number;
 
-${modules ? 'export ' : ''}const YES = true;
-${modules ? 'export ' : ''}const NO = false;
+${modules ? 'export ' : 'declare '}const YES = true;
+${modules ? 'export ' : 'declare '}const NO = false;
                 
             `;
 
@@ -1290,7 +1294,7 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
             }).join(', ');*/
 
             if (entity.argumentsObject.length) {
-                dts += ', {' + entity.argumentsObject.filter((arg) => arg.name != '...').map((arg) => `${arg.name}: ${arg.name}`).join(', ') + '}';
+                dts += ', {' + entity.argumentsObject.filter((arg) => arg.name != '...').map((arg) => `${arg.name}`).join(', ') + '}';
 
                 dts += entity.argumentsObject.reduce((acc, val) => acc && val.nullable, true) ? '?' : '';
 
@@ -1340,7 +1344,7 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
 
                     dts +=  '\n\t' + typeScriptDocumentationWithDocumentation(component.doc).split('\n').join('\n\t') + '\n\t';
 
-                    dts += component.isPrivate ? 'private ' : '';
+                    dts += component.isProtected ? 'protected ' : (component.isPrivate ? 'private ' : '');
                     dts += component.write ? '' : 'readonly ';
                     dts += component.name + (component.nullable ? '?' : '') + ': ';
 
@@ -1350,7 +1354,7 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
                 else if (component.type == 'method') {
                     
                     dts +=  '\n\t' + typeScriptDocumentationWithDocumentation(component.doc).split('\n').join('\n\t') + '\n\t';
-                    dts += (component.isPrivate ? 'private ' : '') + (component.isStatic ? 'static ' : '') + component.name + ((type == 'interface' && component.optional) ? '?' : '') + '(';
+                    dts += (component.isProtected ? 'protected ' : (component.isPrivate ? 'private ' : '')) + (component.isStatic ? 'static ' : '') + component.name + ((type == 'interface' && component.optional) ? '?' : '') + '(';
 
                     // Some methods have the first parameter "optional" but the rest required of which TypeScript complains;
                     // In CoreUI this means that the "optional" parameter may be given a value of undefined which may have
@@ -1374,7 +1378,7 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
                     }).join(', ');
 
                     if (component.argumentsObject.length) {
-                        dts += ', {' + component.argumentsObject.filter((arg) => arg.name != '...').map((arg) => `${arg.name}: ${arg.name}`).join(', ') + '}';
+                        dts += ', {' + component.argumentsObject.filter((arg) => arg.name != '...').map((arg) => arg.name == 'arguments' ? 'arguments: args' :`${arg.name}`).join(', ') + '}';
 
                         dts += component.argumentsObject.reduce((acc, val) => acc && val.nullable, true) ? '?' : '';
 

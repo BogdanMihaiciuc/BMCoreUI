@@ -1087,6 +1087,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	},
 
 	/**
+     * @protected
 	 * Enables keyboard shortcut handling. This makes the window's `node` focusable and attaches
 	 * the relevant event handlers to it. If this window is the key window and the keyboard focus
 	 * is outside of this window, this window will acquire keyboard focus.
