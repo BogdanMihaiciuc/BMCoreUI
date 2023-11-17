@@ -27,6 +27,7 @@ const removeFiles = [
     'BMWindow/BMWindowDelegate.js',
     'BMViewLayoutEditor/BMLayoutVariableProvider.js',
     'BMView/BMMenuDelegate.js',
+    'BMView/BMLayoutConstraintVariation.js',
     'BMViewLayoutEditor/BMLayoutEditorDelegate.js',
     'BMViewLayoutEditor/BMLayoutEditorSettingsDelegate.js',
 
@@ -101,6 +102,7 @@ const DTSFiles = [
     'BMView/BMLayoutSizeClass.js',
     'BMView/BMViewport.js',
     'BMView/BMLayoutConstraint_v2.5.js', 
+    'BMView/BMLayoutConstraintVariation.js',
     'BMView/BMView_v2.5.js', 
     'BMView/BMScrollView.js', 
     'BMView/BMLayoutGuide.js', 

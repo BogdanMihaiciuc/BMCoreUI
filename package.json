@@ -2,7 +2,7 @@
     "name": "bm-core-ui",
     "packageName": "BMCoreUI",
     "moduleName": "BMCoreUI",
-    "version": "2.9.2",
+    "version": "2.9.3",
     "description": "A collection of reusable UI classes.",
     "thingworxServer": "http://localhost:8915",
     "thingworxUser": "Administrator",
@@ -24,6 +24,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "gulp --p",
         "buildProduction": "gulp --p",
+        "buildLibrary": "gulp --l",
         "buildDebug": "gulp",
         "upload": "gulp upload",
         "uploadProduction": "gulp upload --p"

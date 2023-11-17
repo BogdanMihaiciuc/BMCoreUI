@@ -1799,12 +1799,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			if (cell.retainCount > 0) {
 				if (cell.itemType === BMCollectionViewLayoutAttributesType.Cell) {
 					// Request and apply the new attributes for this cell
-					var attributes = this._layout.attributesForCellAtIndexPath(cell.indexPath);
+					let attributes = this._layout.attributesForCellAtIndexPath(cell.indexPath);
 					cell.attributes = attributes;
 				}
 				else if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView) {
 					// Request and apply the new attributes for this supplementary view
-					var attributes = this._layout.attributesForSupplementaryViewWithIdentifier(cell.reuseIdentifier, {atIndexPath: cell.indexPath});
+					let attributes = this._layout.attributesForSupplementaryViewWithIdentifier(cell.reuseIdentifier, {atIndexPath: cell.indexPath});
 					cell.attributes = attributes;
 				}
 			}
@@ -2140,11 +2140,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * If the cell was already measured, this will immediately return the cached measured size.
 	 * @param indexPath <BMIndexPath<T>>				The index path of the cell whose size should be measured.
 	 * {
-	 * 	@param layoutQueue <BMLayoutQueue>				The layout queue to use for this measurement.
+	 * 	@param layoutQueue <BMViewLayoutQueue>			The layout queue to use for this measurement.
 	 * 	@param dequeue <Boolean>						Whether the layout queue should be drained automatically or not. If set to `NO`,
 	 *													the layout queue must be drained after the first time this generator yields.
 	 * }
-	 * @return <Iterator<BMSize or undefiend>>			The iterator.
+	 * @return <Iterator<BMSize or undefined>>			The iterator.
 	 */
 	*_measuredSizeOfCellAtIndexPathGenerator(indexPath, {layoutQueue: queue, dequeue}) {
 		// Return the cached size if it is available.

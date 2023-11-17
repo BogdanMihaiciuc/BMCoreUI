@@ -233,7 +233,7 @@ export function BMAddSmoothMousewheelInteractionToNode(node, args) {
  * The property descriptors will be copied in the order in which the parameters are specified. For example, if the third parameter has a property
  * with the same name as the second parameter, the target object will have the third parameter's definition of that property.
  * @param target <AnyObject, nullable>		The object to which properties will be copied. May be set to undefined, in which case a new object will be created.
- * @param ... <[AnyObject], nullable>		Additional objects may be specified. The property descriptors will be copied over to the target object.
+ * @param ... <[AnyObject]>					Additional objects may be specified. The property descriptors will be copied over to the target object.
  * @return <AnyObject>						The target object.
  */
 export function BMExtend(target) {
@@ -275,7 +275,7 @@ export function BMExtend(target) {
  * This will not redefine or reconfigure existing properties on the target object. For example, if any readonly property on the target object also exists on any of the
  * other objects, the target object's value for that property will not change.
  * @param target <AnyObject, nullable>		The object to which properties will be copied. May be set to undefined, in which case a new object will be created.
- * @param ... <[AnyObject], nullable>		Additional objects may be specified. The property values will be copied over to the target object.
+ * @param ... <[AnyObject]>					Additional objects may be specified. The property values will be copied over to the target object.
  * @return <AnyObject>						The target object.
  */
 export function BMCopyProperties(target) {
