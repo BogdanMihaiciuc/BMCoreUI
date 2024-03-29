@@ -2,7 +2,7 @@
 
 import {YES, NO, BMNumberByInterpolatingNumbersWithFraction} from './BMCoreUI'
 import {BMSize} from './BMSize'
-import {BMPoint} from './BMPoint'
+import {BMPoint, BMPointMake} from './BMPoint'
 
 // @type BMRect implements BMAnimating
 
