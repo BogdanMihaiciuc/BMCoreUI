@@ -22,6 +22,8 @@ export * from './BMView/BMMenu'
 export * from './BMWindow/BMWindow'
 export * from './BMWindow/BMToolWindow'
 export * from './BMWindow/BMKeyboardShortcut'
+export * from './BMWindow/BMPopover/BMPopover'
+export * from './BMWindow/BMConfirmationPopup'
 
 export * from './BMCodeEditor/BMCodeEditor'
 
