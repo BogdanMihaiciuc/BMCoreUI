@@ -1,3 +1,20 @@
+# 2.9.5
+
+## General
+
+The following classes are now properly exported:
+ - `BMPopover`
+ - `BMAlertPopup`
+ - `BMConfirmationPopup`
+
+## BMRect
+
+Resolves an error where errors could be thrown when using certain methods because of an improper import, depending on how core ui was imported and built.
+
+## BMViewConstraintAttribute
+
+Resolves an issue where the overloads for creating constraints using only constants were missing from the typescript typings.
+
 # 2.9.2
 
 ## BMCollectionViewFlowLayout
