@@ -65,7 +65,7 @@ BMViewConstraintAttribute.prototype = {
      * }
      * @return <BMLayoutConstraint>                         A layout constraint.
      */
-//  equalTo(constant, {priority}) {
+//  equalTo: function (constant, {priority}) {
 
     /**
      * Constructs and returns a layout constraint that links this view constraint attribute to the given attribute.
@@ -107,7 +107,7 @@ BMViewConstraintAttribute.prototype = {
      * }
      * @return <BMLayoutConstraint>                         A layout constraint.
      */
-//  lessThanOrEqualTo(constant, {priority}) {
+//  lessThanOrEqualTo: function (constant, {priority}) {
 
     /**
      * Constructs and returns a layout constraint that links this view constraint attribute to the given attribute.
@@ -149,7 +149,7 @@ BMViewConstraintAttribute.prototype = {
      * }
      * @return <BMLayoutConstraint>                         A layout constraint.
      */
-//  greaterThanOrEqualTo(constant, {priority}) {
+//  greaterThanOrEqualTo: function (constant, {priority}) {
 
     /**
      * Constructs and returns a layout constraint that links this view constraint attribute to the given attribute.
