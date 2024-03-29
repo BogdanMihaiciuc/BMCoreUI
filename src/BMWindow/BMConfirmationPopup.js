@@ -353,7 +353,7 @@ BMAlertPopup.alertPopupWithTitle = function (title, {text, actionText = 'OK'}) {
  * You can display your confirmation popup using the usual `bringToFrontAnimated(_)` method, but for convenience you can also
  * use the `confirm()` method that returns a promise which resolves when the user takes a decision.
  */
-function BMConfirmationPopup() {} // <constructor>
+export function BMConfirmationPopup() {} // <constructor>
 
 BMConfirmationPopup.prototype = BMExtend(Object.create(BMAlertPopup.prototype), {
 

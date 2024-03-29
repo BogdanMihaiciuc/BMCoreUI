@@ -46,7 +46,7 @@ import { BMInsetMakeWithEqualInsets } from "../../Core/BMInset";
  * Additionally, unlike with windows, subviews should not be directly added to the popover.
  * Instead, they should be added to the popover's `contentView` property.
  */
-function BMPopover() {} // <constructor>
+export function BMPopover() {} // <constructor>
 
 BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
