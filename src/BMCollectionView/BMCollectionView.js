@@ -350,8 +350,17 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * The layout object managing this collection view's layout.
 	 */
     _layout: undefined, // <BMCollectionViewLayout>
-    get layout() { return this._layout; },
+    get layout() {
+		if (this._transitionLayout && this._layout == this._transitionLayout) {
+			return this._layout.targetLayout; 
+		}
+		else {
+			return this._layout; 
+		}
+	},
     set layout(layout) { 
+		// If data is being updated, wait for the update to finish before updating the
+		// layout
 		if (this.isUpdatingData) {
 			var self = this;
 			this.registerDataCompletionCallback(function () {
@@ -360,6 +369,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			return;
 		}
 
+		// If an animation context is active, perform this change with an animation
 		if (BMAnimationContextGetCurrent()) {
 			if (!this.initialized) {
 				this._layout = layout || new BMCollectionViewFlowLayout(); 
@@ -378,6 +388,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this.invalidateLayout();
 		}
 	},
+
+	/**
+	 * Set to a transition layout while an animated layout update is in progress. Undefined
+	 * in all other cases.
+	 */
+	_transitionLayout: undefined, // <BMCollectionViewLayout, nullable>
 	
     // MARK: Managed attributes
     
@@ -388,7 +404,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	get frame() { return this._frame; },
 	set frame(frame) {
 		// If this frame is assigned as part of a layout animation, don't perform any changes
-		if (this._layoutAnimator) return Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
+		if (this._layoutAnimator) {
+			Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
+			return;
+		}
 
 		const currentFrame = this._frame && this._frame.copy();
 
@@ -826,7 +845,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
     /**
-	 * Should not be invoked manually. It is invoked by collection view to create the initial layout and cells.
+	 * Should not be invoked manually. Invoked by collection view the first time a data set is assigned
+	 * to it to create the initial layout and cells.
 	 */
     _init: function () {
 		// If currently invisible, delay the init
@@ -4749,6 +4769,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    
 	    // Temporarily make the transition layout the current layout
 	    this._layout = transitionLayout;
+		this._transitionLayout = transitionLayout;
 		
 		// Retain all transitioning cells during this change
 		let retainedCells = [];
@@ -4820,6 +4841,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			});
 
 			self._layout = layout;
+			self._transitionLayout = undefined;
 			
 			if (self.iScroll) self.iScroll.refresh();
 		    
