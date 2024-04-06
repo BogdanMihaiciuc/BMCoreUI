@@ -3476,6 +3476,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    if (i == event.changedTouches.length) return;
 			}
 
+			if (this.delegate && this.delegate.collectionViewWillFinishInteractiveMovementForCell) {
+				this.delegate.collectionViewWillFinishInteractiveMovementForCell(this, cell, {atIndexPath: cell.indexPath});
+			}
+
 			// Remove the previously added handlers from window
 			window.removeEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES, passive: NO});
 			window.removeEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES, passive: NO});
@@ -3498,10 +3502,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 			let sourceRect = BMRectMakeWithNodeFrame(draggingShadow);
 			let targetRect = BMRectMakeWithNodeFrame(cell.node);
-
-			if (this.delegate && this.delegate.collectionViewWillFinishInteractiveMovementForCell) {
-				this.delegate.collectionViewWillFinishInteractiveMovementForCell(this, cell, {atIndexPath: cell.indexPath});
-			}
 
 			// Resolve the current dragging operation
 			resolveIsDragging();
