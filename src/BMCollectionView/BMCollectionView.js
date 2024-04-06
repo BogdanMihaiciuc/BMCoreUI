@@ -747,8 +747,47 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._supplementaryViewClasses[args.forReuseIdentifier] = supplementaryViewClass;
 	},
 
-	// @override - BMView
-	initWithDOMNode(node) {
+
+	/**
+	 * Initializes this collection view with the specified DOM node and default properties.
+	 * The collection view will use a `BMCollectionViewFlowLayout` layout object.
+	 * A valid object should be assigned to the `dataSet` property to fully initialize and use this collection view.
+	 * @param node <DOMNode>					The container that the collection view will manage. This should be an empty div element,
+	 * 											otherwise the behaviour of the collection view will be undefined.
+	 * {
+	 *	@param customScroll <Boolean, nullable> Defaults to `NO`. When set to `YES`, collection view will use custom scrolling in 
+	 *											place of regular scrolling. Otherwise, it will use native scrolling. This should only be
+	 *											used with layouts where cell positions depend on the scroll position of collection view.
+	 *											This property cannot be changed after being set in the intializer.
+	 * }
+	 * @return <BMCollectionView>				A collection view.
+	 */
+	initWithDOMNode(node, args) {
+		var customScrollRequired = args && args.customScroll;
+	
+		_BMCollectionViews.set(this, true);
+		
+		this._container = BMJQueryShim.shimWithDOMNode(node);
+		this.layout = new BMCollectionViewFlowLayout();
+		this.cellCache = {};
+		this.retainedCells = [];
+		this.allCells = [];
+		this.supplementaryViewCache = {};
+		
+		this.attributeCache = {};
+		
+		this._selectedIndexPaths = [];
+		
+		this.customScrollRequired = customScrollRequired;
+	
+		this._cellClasses = {};
+		this._supplementaryViewClasses = {};
+	
+		this._measures = {};
+		this._measuredIndexPaths = [];
+	
+		this._cellLayoutQueue = BMViewLayoutQueue.layoutQueue();
+
 		return BMView.prototype.initWithDOMNode.apply(this, arguments);
 	},
 
@@ -6162,7 +6201,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
  * @return <BMCollectionView>				A collection view.
  */
 BMCollectionView.collectionViewForNode = function (node, args) {
-	let collectionView = BMCollectionViewMakeWithContainer(BMJQueryShim.shimWithDOMNode(node), args);
+	let collectionView = new this().initWithDOMNode(node, args);
 
 	return collectionView;
 }
@@ -6193,35 +6232,7 @@ BMCollectionView.collectionView = function () {
  * @return <BMCollectionView>				A collection view.
  */
 export function BMCollectionViewMakeWithContainer(container, options) {
-	var customScrollRequired = options && options.customScroll;
-	var collectionView = new BMCollectionView();
-
-	_BMCollectionViews.set(collectionView, true);
-	
-	collectionView._container = container;
-	collectionView.layout = new BMCollectionViewFlowLayout();
-	collectionView.cellCache = {};
-	collectionView.retainedCells = [];
-	collectionView.allCells = [];
-	collectionView.supplementaryViewCache = {};
-	
-	collectionView.attributeCache = {};
-	
-	collectionView._selectedIndexPaths = [];
-	
-	collectionView.customScrollRequired = customScrollRequired;
-
-	collectionView._cellClasses = {};
-	collectionView._supplementaryViewClasses = {};
-
-	collectionView._measures = {};
-	collectionView._measuredIndexPaths = [];
-
-	collectionView._cellLayoutQueue = BMViewLayoutQueue.layoutQueue();
-
-	collectionView.initWithDOMNode(container[0]);
-	
-	return collectionView;
+	return new BMCollectionView().initWithDOMNode(container[0], options);
 }
 
 // @endtype
