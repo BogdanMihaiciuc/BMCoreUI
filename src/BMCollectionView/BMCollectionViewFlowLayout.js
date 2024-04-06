@@ -1758,6 +1758,18 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			// When using custom cell sizes, the layout will pre-compute the entire layout attributes
 			this.cachedLayout = { sections: [] };
 
+			// If this is invoked as part of a batch or animated layout update, ensure that the new layout
+			// is measured up to at least the current collection view bounds
+			if (this._expectedCellSize && this._copy) {
+				target = target || {};
+				if (target.targetRect) {
+					target.targetRect = target.targetRect.rectByUnionWithRect(this.collectionView.bounds)
+				}
+				else {
+					target.targetRect = this.collectionView.bounds;
+				}
+			}
+
 			/*
 			declare interface BMCollectionViewFlowLayoutCache {
 				availableWidth: number;
