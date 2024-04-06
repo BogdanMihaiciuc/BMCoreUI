@@ -474,7 +474,9 @@ function allFilesLoaded(contents, {returnOutput = false, modules = false} = {ret
                 exportedItem.read = true;
                 exportedItem.write = true;
 
-                exportedClass.type = 'class';
+                // Typed properties indicate that the exported type is a class and the exported
+                // type should change accordingly, except for cases where it is an enum
+                exportedClass.type = exportedClass.type == 'enum' ? 'enum' : 'class';
                 exportedClass.components = exportedClass.components || [];
                 exportedClass.components.push(exportedItem);
                 
@@ -1311,7 +1313,12 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
             dts += declarePrefix + 'class ' + entity.name + ' {\n';
 
             dts += entity.components.map((component) => {
-                return '\t' + component.doc.split('\n').join('\n\t') + '\n\t' + 'static ' + component.name + ': ' + entity.name + ';\n';
+                let typescriptType = typeScriptTypeOfEntity(component, false);
+
+                // Untyped or generic typed enum fields should be of the class type
+
+                typescriptType = ['any', 'unknown', 'enum', ''].includes(typescriptType) ? entity.name : typescriptType;
+                return '\t' + component.doc.split('\n').join('\n\t') + '\n\t' + 'static ' + component.name + ': ' + typescriptType + ';\n';
             }).join('\n');
 
             dts += '\n\tprivate constructor(); \n';
