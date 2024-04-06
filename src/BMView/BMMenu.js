@@ -135,6 +135,37 @@ BMMenuItem.prototype = {
     _node: undefined, // <DOMNode, nullable>
 
     /**
+     * Defaults to `YES`. Controls whether this menu item is enabled. If this menu
+     * item is not enabled, it can not be highlighted or selected.
+     */
+    _enabled: YES, // <Boolean>
+    get enabled() {
+        return this._enabled;
+    },
+    set enabled(enabled) {
+        if (this._enabled == enabled) {
+            return;
+        }
+
+        // Separators can never be enabled
+        if (this._isSeparator) {
+            return;
+        }
+
+        this._enabled = enabled;
+
+        if (this._node) {
+            /** @type {HTMLElement} */ const node = this._node;
+            if (enabled) {
+                node.classList.remove('BMMenuItemDisabled');
+            }
+            else {
+                node.classList.add('BMMenuItemDisabled');
+            }
+        }
+    }
+
+    /**
      * Constructs and returns a menu item with the given name.
      * Optionally, the menu item may have an icon associated with it as well as an
      * action that is invoked when the item is selected.
@@ -145,6 +176,7 @@ BMMenuItem.prototype = {
      * 
      *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
      *                                                  This function will receive the selected menu item as a parameter.
+     *  @param enabled <Boolean, nullable>              Defaults to `YES`. Controls whether this item is enabled and can be selected.
      *  @param submenu <BMMenu, nullable>               Optional. If specified, this represents a menu that opens from this menu item.
      *  @param userInfo <AnyObject, nullable>           Optional. If specified, this represents additional arbitrary data attached to this menu item.
      * }
@@ -159,6 +191,7 @@ BMMenuItem.prototype = {
 
         if (name.startsWith('---')) {
             this._isSeparator = YES;
+            this._enabled = NO;
         }
 
         return this;
@@ -225,7 +258,7 @@ BMMenu.prototype = {
     },
 
     /**
-     * Defaults to 24. The size to use for this menu's icons.
+     * Defaults to `24`. The size to use for this menu's icons.
      */
     _iconSize: 24, // <Number>
     get iconSize() {
@@ -568,9 +601,18 @@ BMMenu.prototype = {
                 submenuIcon.classList.add('BMMenuItemDisclosureSubmenu');
             }
             itemNode.appendChild(submenuIcon);
+
+            if (!item._enabled) {
+                itemNode.classList.add('BMMenuItemDisabled');
+            }
     
             // TWhen clicking an item, trigger its action, if it has one
             itemNode.addEventListener('click', event => {
+                // Disabled items can't be clicked
+                if (!item._enabled) {
+                    return;
+                }
+
                 if (item.submenu && this._sourceNodeShadow) {
                     // For touch menus, if the item has a submenu, open it
                     this._openSubmenuForMenuItem(item, {animated: YES, delayEvents: NO, acquireFocus: YES});
@@ -611,6 +653,11 @@ BMMenu.prototype = {
             // When moving the mouse over an item, set the highlight index to it,
             // allowing further keyboard navigation to continute from this item
             itemNode.addEventListener('mouseover', event => {
+                // Disabled items can't be highlighted and can't open submenus
+                if (!item._enabled) {
+                    return;
+                }
+
                 if (this._highlightedIndex == index) return;
 
                 // If events should be delayed, don't process this mouseover event
@@ -642,7 +689,8 @@ BMMenu.prototype = {
     _kind: BMMenuKind.Menu,
 
     /**
-     * Animatable. Shows this menu from the given DOM node.
+     * Animatable. Shows this menu from the specified DOM node. The menu will be displayed as a touch menu,
+     * highlighting the source node and de-emphasizing the rest of the document.
      * @param node <DOMNode>                    The node from which to show this menu.
      * {
      *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
@@ -1315,8 +1363,8 @@ BMMenu.prototype = {
             while (YES) {
                 previousIndex = BMNumberByConstrainingNumberToBounds(previousIndex - 1, 0, this._items.length - 1);
 
-                // If item at the previous index isn't a separator, highlight it
-                if (!this._items[previousIndex]._isSeparator) break;
+                // If item at the previous index isn't a separator or disabled, highlight it
+                if (!this._items[previousIndex]._isSeparator || !this._items[previousIndex]._enabled) break;
 
                 // If the start of the items array has been reached and a viable highlightable item hasn't
                 // been found, don't take any action
@@ -1337,8 +1385,8 @@ BMMenu.prototype = {
             while (YES) {
                 nextIndex = BMNumberByConstrainingNumberToBounds(nextIndex + 1, 0, this._items.length - 1);
 
-                // If item at the next index isn't a separator, highlight it
-                if (!this._items[nextIndex]._isSeparator) break;
+                // If item at the next index isn't a separator or disabled, highlight it
+                if (!this._items[nextIndex]._isSeparator || !this._items[previousIndex]._enabled) break;
 
                 // If the end of the items array has been reached and a viable highlightable item hasn't
                 // been found, don't take any action
