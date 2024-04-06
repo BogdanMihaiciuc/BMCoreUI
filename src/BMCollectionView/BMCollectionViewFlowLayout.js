@@ -4885,6 +4885,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		var copy = new BMCollectionViewFlowLayout();
 		
 		copy.cellSize = this.cellSize && this.cellSize.copy();
+		copy.expectedCellSize = this.expectedCellSize && this.expectedCellSize.copy();
 		copy.rowSpacing = this.rowSpacing;
 		
 		copy.showsHeaders = this.showsHeaders;
