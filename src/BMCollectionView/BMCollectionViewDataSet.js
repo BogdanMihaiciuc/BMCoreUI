@@ -26,24 +26,29 @@ BMCollectionViewDataSet.prototype = {
 	/*required*/ numberOfObjectsInSectionAtIndex: function (index) {},
 	
 	/**
-	 * Returns the complete index path for the object with the given section and row indexes.
+	 * Returns the index path for the object with the specified section and row indexes.
 	 * @param row <Int>						The object's index within the section.
 	 * {
 	 * 	@param inSectionAtIndex <Int>		The section's index.
 	 * }
-	 * @return <BMIndexPath<T>>				The complete index path.
+	 * @return <BMIndexPath<T>, nullable>	The index path if these indexes are part of the data set,
+	 * 										`undefined` otherwise. `undefined` may only be returned during
+	 * 										animated data updates while `isUsingOldData` returns `YES`.
 	 */
 	 /*required*/ indexPathForObjectAtRow: function (row, {inSectionAtIndex: section}) {},
 	 
 	/**
-	 * Returns the index path for the given object.
-	 * @param object <Object>	The object.
-	 * @return <BMIndexPath<T>>	The index path.
+	 * Returns the index path for the specified object.
+	 * @param object <Object>				The object.
+	 * @return <BMIndexPath<T>, nullable>	The index path, if the object is part of the data set,
+	 * 										`undefined` otherwise. `undefined` may only be returned during
+	 * 										animated data updates while `isUsingOldData` returns `YES`.
 	 */
 	 /*required*/ indexPathForObject: function (object) {},
 	 
 	/**
 	 * @deprecated Deprecated. Consider using custom cell classes instead. Only invoked when using the default cell class.
+	 * ---
 	 * Returns the jQuery element that represents the contents of a cell with the given reuse identifier.
 	 * The collection view will invoke this method whenever a new cell has to be created.
 	 * @param identifier <String>		The cell's identifier.
@@ -63,6 +68,7 @@ BMCollectionViewDataSet.prototype = {
 	 
 	/**
 	 * @deprecated Deprecated. Consider using custom cell classes instead. Only invoked when using the default cell class.
+	 * ---
 	 * Returns the jQuery element that represents the contents of a supplementary view of the given type.
 	 * The supplementary view's type is defined entirely by the layout object.
 	 * @param identifier <String>			The supplementary view's type identifier.
@@ -84,8 +90,9 @@ BMCollectionViewDataSet.prototype = {
 	 /*required*/ cellForSupplementaryViewWithIdentifier: function (identifier, {atIndexPath: indexPath}) {},
 	 
 	/**
-	 * @deprecated 		Deprecated. This method is optional, but is still invoked by the collection view when implemented. It is recommended to use cell
-	 * 					enumeration and manually update cells as needed during data updates.
+	 * @deprecated 		Deprecated. This method is optional, but is still invoked by the collection view when implemented. Consider using cell
+	 * 					enumeration and manually updating cells as needed during data updates.
+	 * ---
 	 * This method will be invoked by the collection view when it is needed to update the contents of an already rendered cell.
 	 * The data set object should always use the supplied indexPath parameter as the binding to the model object rather than the cell's
 	 * own indexPath property as this method may be invoked during an update when the cell's old indexPath no longer matches the new data set.
@@ -97,8 +104,9 @@ BMCollectionViewDataSet.prototype = {
 	updateCell: function (cell, {atIndexPath: indexPath}) {},
 	 
 	/**
-	 * @deprecated 		Deprecated. This method is optional, but is still invoked by the collection view when implemented. It is recommended to use cell
-	 * 					enumeration and manually update cells as needed during data updates.
+	 * @deprecated 		Deprecated. This method is optional, but is still invoked by the collection view when implemented. Consider using cell
+	 * 					enumeration and manually updating cells as needed during data updates.
+	 * ---
 	 * This method will be invoked by the collection view when it is needed to update the contents of an already rendered supplementary view.
 	 * The data set object should always use the supplied indexPath parameter as the binding to the model object rather than the cell's
 	 * own indexPath property as this method may be invoked during an update when the cell's old indexPath no longer matches the new data set.
@@ -134,6 +142,9 @@ BMCollectionViewDataSet.prototype = {
 	 * Data set objects implementing this method are expected to update their internal data structures to match
 	 * the item's new position, then trigger a data update to run on the collection view.
 	 * Optionally, data sets may reject the change and not perform any action.
+	 * ---
+	 * For collection views that support moving items, this method must be implemented by the data sets these collection views
+	 * use. In this case, data sets that don't support moving items may simply return `NO` from this method.
 	 * @param indexPath <BMIndexPath<T>>			The item's current index path.
 	 * {
 	 * 	@param toIndexPath <BMIndexPath<T>>		The index path to which the item should move.
