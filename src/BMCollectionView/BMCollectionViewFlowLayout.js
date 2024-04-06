@@ -22,20 +22,20 @@ export var BMCollectionViewTableLayoutSupplementaryView = Object.freeze({ // <en
 	/**
 	 * Indicates that this supplementary view is a footer.
 	 */
-	Footer: "Footer", // <enum>
+	Footer: "Footer", // <string>
 	
 	/**
 	 * Indicates that this supplementary view is a header.
 	 */
-	Header: "Header", // <enum>
+	Header: "Header", // <string>
 	
 	/**
 	 * Indicates that this supplementary is an empty content view.
 	 */
-	Empty: "Empty" // <enum>
+	Empty: "Empty" // <string>
 });
 
-// @type
+// @endtype
 
 // @type BMCollectionViewTableLayout extends BMCollectionViewLayout
 
@@ -1394,7 +1394,7 @@ export var BMCollectionViewFlowLayoutOrientation = Object.freeze({ // <enum>
  * As the flow layout only provides supplementary views for section headers and footers and empty data sets just like the table layout,
  * the identifiers used by the table layout are reused in this case.
  */
-export var BMCollectionViewFlowLayoutSupplementaryView = BMCollectionViewTableLayoutSupplementaryView;
+export var BMCollectionViewFlowLayoutSupplementaryView = BMCollectionViewTableLayoutSupplementaryView; // <typeof BMCollectionViewTableLayoutSupplementaryView>
 
 /**
  * The flow layout arranges cells in a horiztonally (TO DO) or vertically scrolling container.
