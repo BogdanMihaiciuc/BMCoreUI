@@ -310,6 +310,7 @@ BMCollectionViewDelegate.prototype = {
 	 * {
 	 * 	@param atIndexPath <BMIndexPath>			The cell's index path.
 	 * }
+	 * @return <Boolean>							`YES` if interaction movement can begin for the specified cell, `NO` otherwise.
 	 */
 	collectionViewCanMoveCell: function (collectionView, cell, {atIndexPath: indexPath}) {},
 
