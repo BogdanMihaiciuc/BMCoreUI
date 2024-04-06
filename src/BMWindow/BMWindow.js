@@ -4,7 +4,7 @@ import {YES, NO, BMExtend, BMCopyProperties} from '../Core/BMCoreUI'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
 import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
-import {BMView} from '../BMView/BMView_v2.5'
+import {BMView, BMViewColorScheme} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMSizeMake } from '../Core/BMSize'
 import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
@@ -730,7 +730,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		
 		let node = document.createElement('div');
 		this._window = node;
-		node.className = 'BMWindow';
+		node.className = 'BMDarkModeAuto BMWindow';
 
 		BMCopyProperties(node.style, {
 			opacity: 0,
@@ -764,18 +764,18 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		}
 		
 		this._content = document.createElement('div');
-		this._content.className = 'BMWindowContent';
+		this._content.className = 'BMDarkModeAuto BMWindowContent';
 		node.appendChild(this._content);
 		
 		var withToolbar = (!args || args.toolbar === undefined) ? YES : args.toolbar;
 		
 		if (withToolbar) {
 			this._toolbar = document.createElement('div');
-			this._toolbar.className = 'BMWindowToolbar';
+			this._toolbar.className = 'BMDarkModeAuto BMWindowToolbar';
 			node.appendChild(this._toolbar);
 		}
 		else {
-			this._content.className = 'BMWindowContent BMWindowFullContent';
+			this._content.className = 'BMDarkModeAuto BMWindowContent BMWindowFullContent';
 		}
 		
 		document.body.appendChild(this._blocker);
@@ -940,7 +940,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 			// Also create a drag handle to resize the window
 			let dragHandle = this._dragHandle = document.createElement('div');
-			dragHandle.className = 'material-icons BMWindowDragHandle';
+			dragHandle.className = 'material-icons BMWindowDragHandle BMDarkModeAuto';
 			dragHandle.innerText = 'dehaze';
 			dragHandle.style.cursor = 'nwse-resize';
 			node.appendChild(dragHandle);
@@ -1075,14 +1075,40 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		return this;
 	},
 
+	// @override - BMView
+	colorSchemeDidChange(scheme) {
+		BMView.prototype.colorSchemeDidChange.apply(this, arguments);
+
+		switch (this.colorScheme) {
+			case BMViewColorScheme.Light:
+				// For light mode, remove the BMDarkModeAuto class from all elements
+				this.node.querySelectorAll('.BMDarkModeAuto').forEach(n => n.classList.remove('BMDarkModeAuto'));
+				this.node.classList.remove('BMDarkModeAuto');
+				break;
+			case BMViewColorScheme.Auto:
+				// For auto mode, add the BMDarkModeAuto class to the elements whose appearance should change
+				this.node.classList.add('BMDarkModeAuto');
+				if (this._dragHandle) {
+					this._dragHandle.classList.add('BMDarkModeAuto');
+				}
+				break;
+			case BMViewColorScheme.Dark:
+				// Dark is not yet supported
+			default:
+				throw new Error(`The color scheme ${scheme} is not supported on this view.`);
+		}
+	},
+
 	/**
 	 * Invoked on non-modal windows when the viewport resizes.
 	 * @param event <Event>			The event that triggered this action.
 	 */
 	_viewportDidResize(event) {
+		// Limit the window to not move past the new viewport size
 		this.maxRightConstraint.constant = window.innerWidth;
 		this.maxBottomConstraint.constant = window.innerHeight;
 
+		// Full screen windows need to re-layout to match the new viewport size
 		if (this._fullScreen) this.layout();
 	},
 

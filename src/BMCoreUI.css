@@ -256,24 +256,24 @@
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMWindow {
+	.BMDarkModeAuto.BMWindow {
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
 		background-color: rgba(255, 255, 255, .6);
 	}
 
-	.BMWindowInactive {
+	.BMDarkModeAuto.BMWindowInactive {
 		background: rgba(70, 70, 70, 1);
 	}
 
-	.BMNonModalWindow {
+	.BMDarkModeAuto.BMNonModalWindow {
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 6px 32px;
 	}
 
-	.BMWindow.BMKeyWindow, .BMToolWindow {
+	.BMDarkModeAuto.BMWindow.BMKeyWindow, .BMDarkModeAuto.BMToolWindow {
 		box-shadow: rgba(0, 0, 0, .66) 0px 0px 0px 1px, rgba(0, 0, 0, .66) 0px 12px 64px;
 	}
 
-	.BMWindow::after {
+	.BMDarkModeAuto.BMWindow::after {
 		content: '';
 		position: absolute;
 		pointer-events: none;
@@ -288,7 +288,7 @@
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .25) inset;
 	}
 
-	.BMWindowDragHandle {
+	.BMDarkModeAuto.BMWindowDragHandle {
 		color: rgba(255, 255, 255, .33);
 	}
 }
@@ -313,7 +313,7 @@
 /* In theory, this would break browsers that support dark mode but not backdrop filter;
    In practice, only Safari supports both. */
 @media (prefers-color-scheme: dark) {
-	.BMWindowContent {
+	.BMDarkModeAuto.BMWindowContent {
 		background-color: rgba(0, 0, 0, .75) !important;
 	}
 }
@@ -323,7 +323,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMWindowBackground {
+	.BMDarkModeAuto.BMWindowBackground {
 		background-color: #1e1e1e !important; /* tw-important */
 	}
 }
@@ -2528,6 +2528,9 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 .BMPopover {
 	position: absolute;
+
+	/* This is required otherwise the mix-blend-mode on the drop shadow layer doesn't work */
+	z-index: unset !important;
 }
 
 .BMPopoverOverlay {
@@ -2605,7 +2608,7 @@ The drop shadow layer contains the drop shadow effect only.
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMPopoverDropShadowContainer {
+	.BMDarkModeAuto.BMPopoverDropShadowContainer {
 		filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 1)) drop-shadow(0px 12px 64px rgba(0, 0, 0, .66));
 	}
 }
@@ -2642,11 +2645,11 @@ The background layer contains the background.
 }
 
 @media (prefers-color-scheme: dark) {
-	.BMPopoverBackground {
+	.BMDarkModeAuto.BMPopoverBackground {
 		background: transparent;
 	}
 
-	.BMPopoverBackgroundDarkModeContainer {
+	.BMDarkModeAuto.BMPopoverBackgroundDarkModeContainer {
 		display: block;
 
 		position: absolute;
@@ -2659,7 +2662,7 @@ The background layer contains the background.
 		opacity: .8;
 	}
 
-	.BMPopoverBackgroundDarkModeOutline {
+	.BMDarkModeAuto.BMPopoverBackgroundDarkModeOutline {
 		background-color: rgb(100, 100, 100);
 
 		position: absolute;
@@ -2670,7 +2673,7 @@ The background layer contains the background.
 		top: 0px;
 	}
 
-	.BMPopoverBackgroundDarkModeFill {
+	.BMDarkModeAuto.BMPopoverBackgroundDarkModeFill {
 		background-color: rgb(40, 40, 40);
 
 		position: absolute;
