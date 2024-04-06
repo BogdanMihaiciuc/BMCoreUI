@@ -1,3 +1,37 @@
+# 2.9.6
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where the `copy` method did not copy over the `expectedCellSize` property. This also resolves an issue that caused animated layout updates to fail when automatic cell sizes were used.
+
+Resolves an issue where using `beginUpdates` and `applyUpdates` on a flow layout using automatic cell sizes could cause collection view to snap back to the initial scrolling position.
+
+## BMCollectionViewTableLayoutSupplementaryView
+
+Resolved a typing issue where this enum's fields were not declared as strings, which is the type collection views use for supplementary view identifiers.
+
+## BMCollectionViewFlowLayoutSupplementaryView
+
+Resolved a typing issue where this enum contained no fields.
+
+## BMCollectionView
+
+Resolves an issue where collection view did not properly invoke `collectionViewWillStartUpdates` and `collectionViewDidStartUpdates` on its layout object during non-animated data updates.
+
+The `layout` property will no longer return a transition layout instance while an animated layout update is in progress. It will now always return the most recently set layout instance.
+
+Moved all the initialization from the deprecated `BMCollectionViewMakeWithContainer` into the `initWithDOMNode` initializer. This intializer can now also take the `customScroll` argument. Additionally, when extending this class, the inherited `collectionView` and `collectionViewForNode` factory methods will now create an object of the appropriate subclass type.
+
+Resolves an issue where the delegate method `collectionViewWillFinishInteractiveMovementForCell` was invoked after collection view had already begun processing the interactive movement result, rather than before as the method indicated.
+
+## BMCollectionViewDataSet
+
+Updated the typings for `indexPathForObjectAtRow(_, {inSectionAtIndex})` and `indexPathForObject` to indicate that `undefined` may be returned. Updated the description to clarify that `undefined` can only be returned during animated data updates while `isUsingOldData` returns `YES`.
+
+## BMCollectionViewDelegate
+
+Resolves a typing issue where the `collectionViewCanMoveCell` method did not specify a return value.
+
 # 2.9.5
 
 ## General
