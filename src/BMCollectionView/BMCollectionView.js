@@ -5065,8 +5065,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._updateSelectionIndexPaths();
 		
 		if (!animated) {
+			this.layout.collectionViewWillStartUpdates(undefined);
+
 			// Instant data set changes are identical to layout invalidations.
 			this.invalidateLayout();
+
+			// Inform the layout that the full data update has finished preparing and all animations were started
+			self.layout.collectionViewDidStartUpdates();
 			
 			// Have the data set refresh the contents of each cell
 			for (var i = 0; i < this.allCells.length; i++) {
