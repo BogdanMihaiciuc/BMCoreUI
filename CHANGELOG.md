@@ -1,3 +1,82 @@
+# 2.10.0
+
+## BMHTMLEntity
+
+Added a new `Tab` HTML symbol.
+
+These enum members are now properly typed as strings.
+
+## BMView
+
+Adds a new property `colorScheme`, with a default value of `.Auto` that can be used to control whether a view should appear with a dark or light theme or automatically based on the system setting.
+
+A new `colorSchemeDidChange(_)` method can be overriden by view subclasses when the color scheme is changed.
+
+## BMViewColorScheme
+
+A new `BMViewColorScheme` enum can be used to specify the color scheme that a view should use.
+
+## BMKeySequence
+
+A new `BMKeySequence` class is now available which is used to describe a key sequence that should be pressed as part of a keyboard shortcut. Unlike keyboard shortcuts these objects don't describe the resulting action.
+
+## BMKeyboardShortcut
+
+Resolves a bug that caused the `keyCode` property to not return the expected key code value.
+
+A new `keySequence` property will return the key sequence that must be pressed for the keyboard shortcut to be triggered.
+
+Resolves a typing issue where the `initWithKeyboardEvent` initializer didn't declare a return value.
+
+Added a new initializer method `initWithKeySequence(_, {target, action, preventsDefault})` and associated static factory method `keyboardShortcutWithKeySequence(_, {target, action, preventsDefault})` to create a keyboard shortcut with a key sequence. This is now the designated initializer.
+
+## BMPopover
+
+Improved the appearance of the rounded corners of the popover.
+
+Resolves an issue with the default dark mode appearance that caused the popover's background to be brighter in certain situations.
+
+## BMMenuItem
+
+A new `enabled` property with a default value of `YES` can now be specified on menu items. Setting this property to `NO` will cause the menu item to be unselectable.
+
+A new `keySequence` property can now be specified on menu items. When set to a key sequence, this key sequence can be used to select the menu item using a keyboard shortcut while the menu is active.
+
+A new `hintHTML` property can now be specified on menu items. This is an HTML string that will be displayed next to the menu item when set.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where the `copy` method did not copy over the `expectedCellSize` property. This also resolves an issue that caused animated layout updates to fail when automatic cell sizes were used.
+
+Resolves an issue where using `beginUpdates` and `applyUpdates` on a flow layout using automatic cell sizes could cause collection view to snap back to the initial scrolling position.
+
+## BMCollectionViewTableLayoutSupplementaryView
+
+Resolved a typing issue where this enum's fields were not declared as strings, which is the type collection views use for supplementary view identifiers.
+
+## BMCollectionViewFlowLayoutSupplementaryView
+
+Resolved a typing issue where this enum contained no fields.
+
+## BMCollectionView
+
+Resolves an issue where collection view did not properly invoke `collectionViewWillStartUpdates` and `collectionViewDidStartUpdates` on its layout object during non-animated data updates.
+
+The `layout` property will no longer return a transition layout instance while an animated layout update is in progress. It will now always return the most recently set layout instance.
+
+Moved all the initialization from the deprecated `BMCollectionViewMakeWithContainer` into the `initWithDOMNode` initializer. This intializer can now also take the `customScroll` argument. Additionally, when extending this class, the inherited `collectionView` and `collectionViewForNode` factory methods will now create an object of the appropriate subclass type.
+
+Resolves an issue where the delegate method `collectionViewWillFinishInteractiveMovementForCell` was invoked after collection view had already begun processing the interactive movement result, rather than before as the method indicated.
+
+## BMCollectionViewDataSet
+
+Updated the typings for `indexPathForObjectAtRow(_, {inSectionAtIndex})` and `indexPathForObject` to indicate that `undefined` may be returned. Updated the description to clarify that `undefined` can only be returned during animated data updates while `isUsingOldData` returns `YES`.
+
+## BMCollectionViewDelegate
+
+Resolves a typing issue where the `collectionViewCanMoveCell` method did not specify a return value.
+
+
 # 2.9.5
 
 ## General

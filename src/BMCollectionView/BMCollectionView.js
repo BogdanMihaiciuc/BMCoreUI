@@ -350,8 +350,17 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * The layout object managing this collection view's layout.
 	 */
     _layout: undefined, // <BMCollectionViewLayout>
-    get layout() { return this._layout; },
+    get layout() {
+		if (this._transitionLayout && this._layout == this._transitionLayout) {
+			return this._layout.targetLayout; 
+		}
+		else {
+			return this._layout; 
+		}
+	},
     set layout(layout) { 
+		// If data is being updated, wait for the update to finish before updating the
+		// layout
 		if (this.isUpdatingData) {
 			var self = this;
 			this.registerDataCompletionCallback(function () {
@@ -360,6 +369,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			return;
 		}
 
+		// If an animation context is active, perform this change with an animation
 		if (BMAnimationContextGetCurrent()) {
 			if (!this.initialized) {
 				this._layout = layout || new BMCollectionViewFlowLayout(); 
@@ -378,6 +388,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this.invalidateLayout();
 		}
 	},
+
+	/**
+	 * Set to a transition layout while an animated layout update is in progress. Undefined
+	 * in all other cases.
+	 */
+	_transitionLayout: undefined, // <BMCollectionViewLayout, nullable>
 	
     // MARK: Managed attributes
     
@@ -388,7 +404,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	get frame() { return this._frame; },
 	set frame(frame) {
 		// If this frame is assigned as part of a layout animation, don't perform any changes
-		if (this._layoutAnimator) return Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
+		if (this._layoutAnimator) {
+			Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
+			return;
+		}
 
 		const currentFrame = this._frame && this._frame.copy();
 
@@ -747,8 +766,47 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._supplementaryViewClasses[args.forReuseIdentifier] = supplementaryViewClass;
 	},
 
-	// @override - BMView
-	initWithDOMNode(node) {
+
+	/**
+	 * Initializes this collection view with the specified DOM node and default properties.
+	 * The collection view will use a `BMCollectionViewFlowLayout` layout object.
+	 * A valid object should be assigned to the `dataSet` property to fully initialize and use this collection view.
+	 * @param node <DOMNode>					The container that the collection view will manage. This should be an empty div element,
+	 * 											otherwise the behaviour of the collection view will be undefined.
+	 * {
+	 *	@param customScroll <Boolean, nullable> Defaults to `NO`. When set to `YES`, collection view will use custom scrolling in 
+	 *											place of regular scrolling. Otherwise, it will use native scrolling. This should only be
+	 *											used with layouts where cell positions depend on the scroll position of collection view.
+	 *											This property cannot be changed after being set in the intializer.
+	 * }
+	 * @return <BMCollectionView>				A collection view.
+	 */
+	initWithDOMNode(node, args) {
+		var customScrollRequired = args && args.customScroll;
+	
+		_BMCollectionViews.set(this, true);
+		
+		this._container = BMJQueryShim.shimWithDOMNode(node);
+		this.layout = new BMCollectionViewFlowLayout();
+		this.cellCache = {};
+		this.retainedCells = [];
+		this.allCells = [];
+		this.supplementaryViewCache = {};
+		
+		this.attributeCache = {};
+		
+		this._selectedIndexPaths = [];
+		
+		this.customScrollRequired = customScrollRequired;
+	
+		this._cellClasses = {};
+		this._supplementaryViewClasses = {};
+	
+		this._measures = {};
+		this._measuredIndexPaths = [];
+	
+		this._cellLayoutQueue = BMViewLayoutQueue.layoutQueue();
+
 		return BMView.prototype.initWithDOMNode.apply(this, arguments);
 	},
 
@@ -787,7 +845,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
     /**
-	 * Should not be invoked manually. It is invoked by collection view to create the initial layout and cells.
+	 * Should not be invoked manually. Invoked by collection view the first time a data set is assigned
+	 * to it to create the initial layout and cells.
 	 */
     _init: function () {
 		// If currently invisible, delay the init
@@ -3417,6 +3476,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			    if (i == event.changedTouches.length) return;
 			}
 
+			if (this.delegate && this.delegate.collectionViewWillFinishInteractiveMovementForCell) {
+				this.delegate.collectionViewWillFinishInteractiveMovementForCell(this, cell, {atIndexPath: cell.indexPath});
+			}
+
 			// Remove the previously added handlers from window
 			window.removeEventListener(touchIdentifier !== undefined ? 'touchmove' : 'mousemove', mousemoveHandler, {capture: YES, passive: NO});
 			window.removeEventListener(touchIdentifier !== undefined ? 'touchend' : 'mouseup', mouseupHandler, {capture: YES, passive: NO});
@@ -3439,10 +3502,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 			let sourceRect = BMRectMakeWithNodeFrame(draggingShadow);
 			let targetRect = BMRectMakeWithNodeFrame(cell.node);
-
-			if (this.delegate && this.delegate.collectionViewWillFinishInteractiveMovementForCell) {
-				this.delegate.collectionViewWillFinishInteractiveMovementForCell(this, cell, {atIndexPath: cell.indexPath});
-			}
 
 			// Resolve the current dragging operation
 			resolveIsDragging();
@@ -4710,6 +4769,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    
 	    // Temporarily make the transition layout the current layout
 	    this._layout = transitionLayout;
+		this._transitionLayout = transitionLayout;
 		
 		// Retain all transitioning cells during this change
 		let retainedCells = [];
@@ -4781,6 +4841,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			});
 
 			self._layout = layout;
+			self._transitionLayout = undefined;
 			
 			if (self.iScroll) self.iScroll.refresh();
 		    
@@ -5026,8 +5087,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._updateSelectionIndexPaths();
 		
 		if (!animated) {
+			this.layout.collectionViewWillStartUpdates(undefined);
+
 			// Instant data set changes are identical to layout invalidations.
 			this.invalidateLayout();
+
+			// Inform the layout that the full data update has finished preparing and all animations were started
+			self.layout.collectionViewDidStartUpdates();
 			
 			// Have the data set refresh the contents of each cell
 			for (var i = 0; i < this.allCells.length; i++) {
@@ -6162,7 +6228,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
  * @return <BMCollectionView>				A collection view.
  */
 BMCollectionView.collectionViewForNode = function (node, args) {
-	let collectionView = BMCollectionViewMakeWithContainer(BMJQueryShim.shimWithDOMNode(node), args);
+	let collectionView = new this().initWithDOMNode(node, args);
 
 	return collectionView;
 }
@@ -6193,35 +6259,7 @@ BMCollectionView.collectionView = function () {
  * @return <BMCollectionView>				A collection view.
  */
 export function BMCollectionViewMakeWithContainer(container, options) {
-	var customScrollRequired = options && options.customScroll;
-	var collectionView = new BMCollectionView();
-
-	_BMCollectionViews.set(collectionView, true);
-	
-	collectionView._container = container;
-	collectionView.layout = new BMCollectionViewFlowLayout();
-	collectionView.cellCache = {};
-	collectionView.retainedCells = [];
-	collectionView.allCells = [];
-	collectionView.supplementaryViewCache = {};
-	
-	collectionView.attributeCache = {};
-	
-	collectionView._selectedIndexPaths = [];
-	
-	collectionView.customScrollRequired = customScrollRequired;
-
-	collectionView._cellClasses = {};
-	collectionView._supplementaryViewClasses = {};
-
-	collectionView._measures = {};
-	collectionView._measuredIndexPaths = [];
-
-	collectionView._cellLayoutQueue = BMViewLayoutQueue.layoutQueue();
-
-	collectionView.initWithDOMNode(container[0]);
-	
-	return collectionView;
+	return new BMCollectionView().initWithDOMNode(container[0], options);
 }
 
 // @endtype

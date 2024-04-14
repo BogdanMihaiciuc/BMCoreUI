@@ -129,10 +129,70 @@ BMMenuItem.prototype = {
     },
 
     /**
+     * An optional key sequence that may be used to select this menu item via a keyboard shortcut.
+     * Updates to this property do not take effect while a menu displaying this menu item is open.
+     */
+    _keySequence: undefined, // <BMKeySequence, nullable>
+    get keySequence() {
+        return this._keySequence;
+    },
+    set keySequence(sequence) {
+        this._keySequence = sequence;
+    },
+
+    /**
+     * An optional hint HTML text that will be displayed next to the menu item.
+     */
+    _hintHTML: undefined, // <String, nullable>
+    get hintHTML() {
+        return this._hintHTML;
+    },
+    set hintHTML(hint) {
+        this._hintHTML = hint;
+        if (this._node) {
+            const hintContainer = this._node.querySelector('.BMMenuItemHint');
+            if (hintContainer) {
+                hintContainer.innerHTML = hint;
+            }
+        }
+    },
+
+    /**
      * The node that represents this menu item, available while its menu
      * is open.
      */
     _node: undefined, // <DOMNode, nullable>
+
+    /**
+     * Defaults to `YES`. Controls whether this menu item is enabled. If this menu
+     * item is not enabled, it can not be highlighted or selected.
+     */
+    _enabled: YES, // <Boolean>
+    get enabled() {
+        return this._enabled;
+    },
+    set enabled(enabled) {
+        if (this._enabled == enabled) {
+            return;
+        }
+
+        // Separators can never be enabled
+        if (this._isSeparator) {
+            return;
+        }
+
+        this._enabled = enabled;
+
+        if (this._node) {
+            /** @type {HTMLElement} */ const node = this._node;
+            if (enabled) {
+                node.classList.remove('BMMenuItemDisabled');
+            }
+            else {
+                node.classList.add('BMMenuItemDisabled');
+            }
+        }
+    },
 
     /**
      * Constructs and returns a menu item with the given name.
@@ -145,12 +205,13 @@ BMMenuItem.prototype = {
      * 
      *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
      *                                                  This function will receive the selected menu item as a parameter.
+     *  @param enabled <Boolean, nullable>              Defaults to `YES`. Controls whether this item is enabled and can be selected.
      *  @param submenu <BMMenu, nullable>               Optional. If specified, this represents a menu that opens from this menu item.
      *  @param userInfo <AnyObject, nullable>           Optional. If specified, this represents additional arbitrary data attached to this menu item.
      * }
      * @return <BMMenuItem>                             This menu item.
      */
-    initWithName(name, {icon, action, submenu, userInfo} = {}) {
+    initWithName(name, {icon, action, submenu, enabled = true, userInfo} = {}) {
         this._name = name;
         this._icon = icon;
         this._action = action;
@@ -159,7 +220,10 @@ BMMenuItem.prototype = {
 
         if (name.startsWith('---')) {
             this._isSeparator = YES;
+            this._enabled = NO;
         }
+
+        this._enabled = enabled;
 
         return this;
     }
@@ -177,6 +241,7 @@ BMMenuItem.prototype = {
  * 
  *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
  *                                                  This function will receive the selected menu item as a parameter.
+ *  @param enabled <Boolean, nullable>              Defaults to `YES`. Controls whether this item is enabled and can be selected.
  *  @param submenu <BMMenu, nullable>               Optional. If specified, this represents a menu that opens from this menu item.
  *  @param userInfo <AnyObject, nullable>           Optional. If specified, this represents additional arbitrary data attached to this menu item.
  * }
@@ -225,7 +290,7 @@ BMMenu.prototype = {
     },
 
     /**
-     * Defaults to 24. The size to use for this menu's icons.
+     * Defaults to `24`. The size to use for this menu's icons.
      */
     _iconSize: 24, // <Number>
     get iconSize() {
@@ -461,6 +526,15 @@ BMMenu.prototype = {
         escape.preventsDefault = YES;
         BMView.registerKeyboardShortcut(escape, {forNode: menuNode});
 
+        // Register a keyboard shortcut for each menu item that specifies one
+        for (const item of this._items) {
+            if (item.keySequence) {
+                const shortcut = BMKeyboardShortcut.keyboardShortcutWithKeySequence(item.keySequence, {target: this, action: '_selectMenuItemWithEvent'});
+                shortcut._menuItem = item;
+                BMView.registerKeyboardShortcut(shortcut, {forNode: menuNode});
+            }
+        }
+
         // The overlay which intercepts clicks outside of the menu
         const menuContainer = container || document.createElement('div');
         if (!container) {
@@ -560,6 +634,12 @@ BMMenu.prototype = {
             itemText.innerText = item.name;
             itemNode.appendChild(itemText);
 
+            // Create the hint container
+            const hint = document.createElement('div');
+            hint.classList.add('BMMenuItemHint');
+            hint.innerHTML = item._hintHTML || '';
+            itemNode.appendChild(hint);
+
             // Create the disclosure container
             const submenuIcon = document.createElement('div');
             submenuIcon.classList.add('BMMenuItemDisclosure');
@@ -568,9 +648,18 @@ BMMenu.prototype = {
                 submenuIcon.classList.add('BMMenuItemDisclosureSubmenu');
             }
             itemNode.appendChild(submenuIcon);
+
+            if (!item._enabled) {
+                itemNode.classList.add('BMMenuItemDisabled');
+            }
     
             // TWhen clicking an item, trigger its action, if it has one
             itemNode.addEventListener('click', event => {
+                // Disabled items can't be clicked
+                if (!item._enabled) {
+                    return;
+                }
+
                 if (item.submenu && this._sourceNodeShadow) {
                     // For touch menus, if the item has a submenu, open it
                     this._openSubmenuForMenuItem(item, {animated: YES, delayEvents: NO, acquireFocus: YES});
@@ -611,6 +700,12 @@ BMMenu.prototype = {
             // When moving the mouse over an item, set the highlight index to it,
             // allowing further keyboard navigation to continute from this item
             itemNode.addEventListener('mouseover', event => {
+                // Disabled items can't be highlighted and can't open submenus
+                if (!item._enabled) {
+                    this.highlightedIndex = -1;
+                    return;
+                }
+
                 if (this._highlightedIndex == index) return;
 
                 // If events should be delayed, don't process this mouseover event
@@ -642,7 +737,8 @@ BMMenu.prototype = {
     _kind: BMMenuKind.Menu,
 
     /**
-     * Animatable. Shows this menu from the given DOM node.
+     * Animatable. Shows this menu from the specified DOM node. The menu will be displayed as a touch menu,
+     * highlighting the source node and de-emphasizing the rest of the document.
      * @param node <DOMNode>                    The node from which to show this menu.
      * {
      *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
@@ -1315,8 +1411,8 @@ BMMenu.prototype = {
             while (YES) {
                 previousIndex = BMNumberByConstrainingNumberToBounds(previousIndex - 1, 0, this._items.length - 1);
 
-                // If item at the previous index isn't a separator, highlight it
-                if (!this._items[previousIndex]._isSeparator) break;
+                // If item at the previous index isn't a separator or disabled, highlight it
+                if (!this._items[previousIndex]._isSeparator && this._items[previousIndex]._enabled) break;
 
                 // If the start of the items array has been reached and a viable highlightable item hasn't
                 // been found, don't take any action
@@ -1337,8 +1433,8 @@ BMMenu.prototype = {
             while (YES) {
                 nextIndex = BMNumberByConstrainingNumberToBounds(nextIndex + 1, 0, this._items.length - 1);
 
-                // If item at the next index isn't a separator, highlight it
-                if (!this._items[nextIndex]._isSeparator) break;
+                // If item at the next index isn't a separator or disabled, highlight it
+                if (!this._items[nextIndex]._isSeparator && this._items[nextIndex]._enabled) break;
 
                 // If the end of the items array has been reached and a viable highlightable item hasn't
                 // been found, don't take any action
@@ -1373,6 +1469,37 @@ BMMenu.prototype = {
         if (this._supermenu) {
             this.closeAnimated(YES);
         }
+    },
+
+    /**
+     * Invoked when the key sequence for a menu item is pressed.
+     * @param event <KeyboardEvent>                         The event that triggered this action.
+     * {
+     *  @param forKeyboardShortcut <BMKeyboardShortcut>     The keyboard shortcut that was triggered.
+     * }
+     */
+    _selectMenuItemWithEvent(event, {forKeyboardShortcut: shortcut}) {
+        const item = shortcut._menuItem;
+
+        // The item must not be a separator or disabled
+        if (item._isSeparator || !item._enabled) {
+            return;
+        }
+
+        if (!this._node) {
+            return;
+        }
+
+        this._node.inert = true;
+        this._node.style.pointerEvents = 'none';
+
+        // Otherwise highlight the item then send a return key to select it
+        const index = this._items.indexOf(item);
+        this.highlightedIndex = index;
+
+        setTimeout(() => {
+            this.returnPressedWithEvent(event);
+        }, 50);
     },
 
     /**

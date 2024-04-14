@@ -394,35 +394,47 @@ export var BMHTMLEntity = Object.freeze({ // <enum>
 	/**
 	 * The HTML entity representing the control key.
 	 */
-	Control: '&#8963;', // <enum>
+	Control: '&#8963;', // <String>
+
 	/**
 	 * The HTML entity representing the bowen knot Command symbol.
 	 */
-	Command: '&#8984;', // <enum>
+	Command: '&#8984;', // <String>
+
 	/**
 	 * The HTML entity representing the Option symbol.
 	 */
-	Option: '&#8997;', // <enum>
+	Option: '&#8997;', // <String>
+
 	/**
 	 * The HTML entity representing the Shift symbol.
 	 */
-	Shift: '&#8679;', // <enum>
+	Shift: '&#8679;', // <String>
+
 	/**
 	 * The HTML entity representing the Caps-Lock symbol.
 	 */
-	CapsLock: '&#8682;', // <enum>
+	CapsLock: '&#8682;', // <String>
+
 	/**
 	 * The HTML entity representing the Backspace delete symbol.
 	 */
-	Delete: '&#9003;', // <enum>
+	Delete: '&#9003;', // <String>
+
 	/**
 	 * The HTML entity representing the Return symbol.
 	 */
-	Return: '&#9166;', // <enum>
+	Return: '&#9166;', // <String>
+
 	/**
 	 * The HTML entity representing the Escape symbol.
 	 */
-	Escape: '&#9099;', // <enum>
+	Escape: '&#9099;', // <String>
+
+	/**
+	 * The HTML entity representing the Tab symbol.
+	 */
+	Tab: '&#8677;', // <String>
 });
 
 // @endtype
