@@ -1,5 +1,5 @@
 //@ts-check
-const fs = require('fs');
+import fs from 'fs';
 
 let JSDocRegex = /\/\*\*\s*\n([\S\s]*?)\*\/\n([\s\S]*?)\n/gm;
 
@@ -1407,47 +1407,9 @@ ${modules ? 'export' : 'declare'} interface BMAnimating extends BMCopying {
     return dts;
 }
 
-exports.createTypeScriptDefinitionsWithContent = function createTypeScriptDefinitionsWithContent(content, {modules = false} = {modules: false}) {
+export function createTypeScriptDefinitionsWithContent(content, {modules = false} = {modules: false}) {
     console.log("Starting dts generation...");
     const result = allFilesLoaded(content, {returnOutput: true, modules});
     console.log('Dts generation finished.');
     return result;
 }
-
-/*
-let files = ['_0BMCoreUI.js', '_1BMCell.js', '_2BMCollectionViewLayout.js', '_3BMCollectionView.js', '_4BMCollectionViewDataSet.js', '_6BMCollectionViewDelegate.js', 'BMWindowDelegate.js', '_7BMCodeHostCore.js'
-, 'BMView_v2.5.js', 'BMLayoutConstraint_v2.5.js', 'BMLayoutEditor.js', 'BMAttributedLabelView.js', 'BMLayoutVariableProvider.js', 'BMMenu.js'];
-
-let filesLoaded = 0;
-let content = '';
-
-for (let file of files) {
-    content += fs.readFileSync(file, 'utf8');
-}
-
-allFilesLoaded(content);
-
-(function loadFile(index) {
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', files[index] + '?' + Math.random(), true);
-    xhr.setRequestHeader('Accept', 'text/plain');
-    xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.overrideMimeType('text/plain');
-    
-    xhr.onload = function () {
-        filesLoaded++;
-        
-        content += xhr.responseText;
-        
-        if (filesLoaded < files.length) {
-            loadFile(filesLoaded);
-        }
-        else {
-            allFilesLoaded(content);
-        }
-    }
-
-    xhr.send();
-    
-});
-*/

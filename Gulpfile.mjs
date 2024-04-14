@@ -1,20 +1,31 @@
-const {createTypeScriptDefinitionsWithContent} = require('./DTSGen');
+import { deleteSync as del } from 'del';
+import zip from 'gulp-zip';
+import path from 'path';
+import fs from 'fs';
+import xml2js from 'xml2js';
+import deleteEmpty from 'delete-empty';
+import {series, src, dest} from 'gulp';
+import concat from 'gulp-concat';
+import terser from 'gulp-terser';
+import babel from 'gulp-babel';
+import {createTypeScriptDefinitionsWithContent} from './DTSGen.mjs';
+import packageJson from './package.json' assert { type: "json" };
 
-const path = require('path');
-const fs = require('fs');
-const xml2js = require('xml2js');
-const del = require('del');
-const deleteEmpty = require('delete-empty');
 
-const { series, src, dest } = require('gulp');
-const zip = require('gulp-zip');
-const concat = require('gulp-concat');
-const terser = require('gulp-terser');
-const babel = require('gulp-babel')
+// const {createTypeScriptDefinitionsWithContent} = require('./DTSGen');
+// const packageJson = require('./package.json');
 
-const request = require('request');
+// const path = require('path');
+// const fs = require('fs');
+// const xml2js = require('xml2js');
+// const deleteEmpty = require('delete-empty');
 
-const packageJson = require('./package.json');
+// const { series, src, dest } = require('gulp');
+// const concat = require('gulp-concat');
+// const terser = require('gulp-terser');
+// const babel = require('gulp-babel');
+
+// const packageJson = require('./package.json');
 
 /**
  * Files to remove from the build.
@@ -363,71 +374,62 @@ async function prepareBuild(cb) {
     cb();
 }
 
-async function upload(cb) {
+async function uploadExtension(cb) {
     const host = packageJson.thingworxServer;
     const user = packageJson.thingworxUser;
     const password = packageJson.thingworxPassword;
 
+    const basicAuth = 'Basic ' + Buffer.from(user + ':' + password).toString('base64');
+
+    function uploadPackage(resolve, reject) {
+        const formData = new FormData();
+
+        formData.append("file", new Blob([FS.readFileSync(path)]), path.toString().split("/").pop());
+
+        fetch(`${host}/Thingworx/ExtensionPackageUploader?purpose=import`, {
+            headers: {
+                'X-XSRF-TOKEN': 'TWX-XSRF-TOKEN-VALUE',
+                Authorization: basicAuth
+            },
+            body: formData
+        }).then((response) => {
+            if (response.statusCode != 200) {
+                reject(`Failed to upload widget to thingworx. We got status code ${response.statusCode} (${response.statusMessage})`);
+            }
+            else {
+                console.log(`Uploaded widget version ${packageJson.version} to Thingworx!`);
+                resolve();
+            }
+        }).catch((err) => {
+            console.error("Failed to upload widget to thingworx");
+            reject(err);
+        });
+    }
+
     return new Promise((resolve, reject) => {
-        request.post({
-            url: `${host}/Thingworx/Subsystems/PlatformSubsystem/Services/DeleteExtensionPackage`,
+        fetch(`${host}/Thingworx/Subsystems/PlatformSubsystem/Services/DeleteExtensionPackage`, {
             headers: {
                 'X-XSRF-TOKEN': 'TWX-XSRF-TOKEN-VALUE',
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
-                'X-THINGWORX-SESSION': 'true'
+                'X-THINGWORX-SESSION': 'true',
+                Authorization: basicAuth
             },
-            body: {packageName: packageJson.packageName},
-            json: true
-        },
-        function (err, httpResponse, body) {
-            // load the file from the zip folder
-            let formData = {
-                file: fs.createReadStream(
-                    path.join('zip', zipName)
-                )
-            };
-            // POST request to the ExtensionPackageUploader servlet
-            request
-                .post(
-                    {
-                        url: `${host}/Thingworx/ExtensionPackageUploader?purpose=import`,
-                        headers: {
-                            'X-XSRF-TOKEN': 'TWX-XSRF-TOKEN-VALUE'
-                        },
-                        formData: formData
-                    },
-                    function (err, httpResponse, body) {
-                        if (err) {
-                            console.error("Failed to upload widget to thingworx");
-                            reject(err);
-                            return;
-                        }
-                        if (httpResponse.statusCode != 200) {
-                            reject(`Failed to upload widget to thingworx. We got status code ${httpResponse.statusCode} (${httpResponse.statusMessage})`);
-                        } else {
-                            console.log(`Uploaded widget version ${packageJson.version} to Thingworx!`);
-                            resolve();
-                        }
-                    }
-                )
-                .auth(user, password);
+            body: JSON.stringify({packageName: packageJson.packageName})
+        }).then(response => {
+            uploadPackage(resolve, reject);
 
-            if (err) {
-                console.error("Failed to delete widget from thingworx");
-                return;
+            if (response.statusCode != 200) {
+                console.log(`Failed to delete widget from thingworx. We got status code ${response.statusCode} (${response.statusMessage})`);
             }
-            if (httpResponse.statusCode != 200) {
-                console.log(`Failed to delete widget from thingworx. We got status code ${httpResponse.statusCode} (${httpResponse.statusMessage})
-                body:
-                ${httpResponse.body}`);
-            } else {
+            else {
                 console.log(`Deleted previous version of ${packageJson.packageName} from Thingworx!`);
             }
-        })
-        .auth(user, password);
-    })
+        }).catch((err) => {
+            console.error(`Failed to delete widget from thingworx. Error - ${err}`);
+        });
+    });
 }
 
-exports.default = series(cleanBuildDir, copy, prepareBuild);
-exports.upload = series(cleanBuildDir, copy, prepareBuild, upload);
+export default series(cleanBuildDir, copy, prepareBuild);
+export const upload = series(cleanBuildDir, copy, prepareBuild, uploadExtension);
