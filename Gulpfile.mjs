@@ -234,7 +234,7 @@ async function prepareBuild(cb) {
 
         // Copy required dependencies
         for (const dependency in packageJson.dependencies) {
-            const dependencyPackageJson = require(`./node_modules/${dependency}/package.json`);
+            const dependencyPackageJson = (await import(`./node_modules/${dependency}/package.json`, {assert: {type: 'json'}})).default;
             await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
         }
 
