@@ -1479,6 +1479,7 @@ BMMenu.prototype = {
      * }
      */
     _selectMenuItemWithEvent(event, {forKeyboardShortcut: shortcut}) {
+        event.preventDefault();
         const item = shortcut._menuItem;
 
         // The item must not be a separator or disabled
