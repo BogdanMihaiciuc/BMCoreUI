@@ -5079,6 +5079,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		if (BM_COLLECTION_VIEW_USE_STATIC_CONTEXT) BMAnimationContextBeginStatic();
 		
 		if (animated === undefined) animated = YES;
+		
+		var self = this;
 
 		let resolveUpdateData;
 		this._dataUpdatePromise = new Promise(function (resolve, reject) {resolveUpdateData = resolve});
@@ -5426,8 +5428,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 		
 		this.dataSet.useOldData(NO);
-		
-		var self = this;
 		
 		var contentSizeWidthApplied = NO;
 		var contentSizeHeightApplied = NO;
