@@ -1,3 +1,13 @@
+# 2.10.1
+
+## BMMenu
+
+Resolves an issue where the default action was not prevented when triggering key sequences on open menus.
+
+## BMCollectionView
+
+Resolves an issue where non-animated data updates would fail.
+
 # 2.10.0
 
 ## BMHTMLEntity
