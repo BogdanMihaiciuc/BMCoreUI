@@ -1,3 +1,9 @@
+# 2.10.2
+
+## BMCollectionView
+
+Resolves an issue with `scrollToRect` and all related method that caused it to always scroll horiontally to `0`.
+
 # 2.10.1
 
 ## BMMenu
