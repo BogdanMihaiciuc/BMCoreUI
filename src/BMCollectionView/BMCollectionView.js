@@ -5879,13 +5879,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 		
 		// Then the horizontal X offset
-		if (options.withVerticalGravity == BMCollectionViewScrollingGravityHorizontal.Left) {
+		if (options.horizontalGravity == BMCollectionViewScrollingGravityHorizontal.Left) {
 			offset.x = rect.origin.x;
 		}
-		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityHorizontal.Center) {
+		else if (options.horizontalGravity == BMCollectionViewScrollingGravityHorizontal.Center) {
 			offset.x = rect.origin.x + rect.size.width / 2 - this.frame.size.width / 2;
 		}
-		else if (options.withVerticalGravity == BMCollectionViewScrollingGravityHorizontal.Right) {
+		else if (options.horizontalGravity == BMCollectionViewScrollingGravityHorizontal.Right) {
 			offset.x = rect.origin.x + rect.size.width - this.frame.size.width;
 		}
 		
