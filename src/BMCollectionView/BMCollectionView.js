@@ -5888,6 +5888,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		else if (options.horizontalGravity == BMCollectionViewScrollingGravityHorizontal.Right) {
 			offset.x = rect.origin.x + rect.size.width - this.frame.size.width;
 		}
+
+		// Make sure the offset doesn't exceed the available area
+		offset.y = Math.min(Math.max(0, offset.y), this._size.height - this.frame.size.height);
+		offset.x = Math.min(Math.max(0, offset.x), this._size.width - this.frame.size.width);
 		
 		// Scroll to the offset point
 		if (options.animated) {
