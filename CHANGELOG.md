@@ -1,8 +1,14 @@
+# 2.10.3
+
+## BMCollectionView
+
+Resolves an issue with `scrollToRect` and all related methods that could cause the resulting scroll position to be outside of collection view's bounds.
+
 # 2.10.2
 
 ## BMCollectionView
 
-Resolves an issue with `scrollToRect` and all related method that caused it to always scroll horiontally to `0`.
+Resolves an issue with `scrollToRect` and all related methods that caused it to always scroll horiontally to `0`.
 
 # 2.10.1
 
