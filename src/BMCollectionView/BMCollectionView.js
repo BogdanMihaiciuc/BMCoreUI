@@ -4344,7 +4344,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
         }
 
 		do {
-			const startingIndexPath = nextIndexPath;
+			const startingIndexPath = nextIndexPath ?? BMIndexPathNone;
 
 			if (!nextIndexPath) {
 				// If no index path is currently highlighted, highlight the first index path in the data set.
