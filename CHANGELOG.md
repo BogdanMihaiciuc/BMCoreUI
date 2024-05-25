@@ -1,3 +1,15 @@
+# 2.10.4
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where `indexPathAboveIndexPath` and `indexPathBelowIndexPath` did not cross section boundaries.
+
+Resolves an issue where `indexPathAboveIndexPath` and `indexPathBelowIndexPath` could throw an error when using automatic cell sizes when navigating to index paths that have not yet been measured.
+
+## BMCollectionView
+
+Resolves an error that was thrown when invoking `keyboardArrowPressed` while no index path was highlighted. This also resolves an issue where keyboard navigation did not properly highlight the first available index path if used while no index path was highlighted.
+
 # 2.10.3
 
 ## BMCollectionView
