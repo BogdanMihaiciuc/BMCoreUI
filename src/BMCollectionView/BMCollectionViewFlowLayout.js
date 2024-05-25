@@ -4664,7 +4664,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		let previousRow;
 
 		// Find the next row, if any
-		if (rowIndex >= 0) {
+		if (rowIndex > 0) {
 			const previousRowIndex = rowIndex - 1;
 			previousRow = sectionRows[previousRowIndex];
 		}
@@ -4673,7 +4673,8 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			let sectionIndex = section - 1;
 			while (sectionIndex >= 0) {
 				if (this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex)) {
-					previousRow = this.cachedLayout.sections[sectionIndex].sectionRows[this.cachedLayout.sections[sectionIndex].sectionRows.length - 1];
+					// NOTE: When using automatic cell size, there can be fewer cached sections than there are in the data set
+					previousRow = this.cachedLayout.sections[sectionIndex]?.rows[(this.cachedLayout.sections[sectionIndex]?.rows.length || 0) - 1];
 					break;
 				}
 				sectionIndex--;
@@ -4803,7 +4804,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			let sectionIndex = section + 1;
 			while (sectionIndex < sectionCount) {
 				if (this.collectionView.numberOfObjectsInSectionAtIndex(sectionIndex)) {
-					nextRow = this.cachedLayout.sections[sectionIndex].sectionRows[0];
+					nextRow = this.cachedLayout.sections[sectionIndex]?.rows[0];
 					break;
 				}
 				sectionIndex++;
