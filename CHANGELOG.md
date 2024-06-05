@@ -1,3 +1,13 @@
+# 2.10.5
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where an error could be thrown during a data or layout update when using automatic cell sizes on a system where scrollbars take up space.
+
+## BMCollectionView
+
+Resolves an issue where an error could be thrown during a data update when using custom scrollbars.
+
 # 2.10.4
 
 ## BMCollectionViewFlowLayout
