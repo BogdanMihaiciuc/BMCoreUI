@@ -1708,6 +1708,15 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 
 		let iterator = this._prepareLayoutWithScrollbarOffsetGenerator(useOffset);
 
+		// Determine if the result is a complete layout and disable iterators
+		// A complete layout has cached attributes for all sections and rows
+		const sectionCount = this.collectionView.numberOfSections();
+		const rowCount = sectionCount ? this.collectionView.numberOfObjectsInSectionAtIndex(sectionCount - 1) : 0;
+		let isCompleteLayout = !this._expectedCellSize || !sectionCount || (
+				this.cachedLayout?.sections?.length == sectionCount &&
+				this.cachedLayout?.sections[sectionCount - 1].rows?.length == rowCount
+		);
+
 		// When not using automatic cell sizes, the generator function will run to finish from the first
 		// invocation of `next`.
 		// When using automatic cell sizes, the first iteration will only build a rough outline of the expected layout
@@ -1716,6 +1725,28 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		if (!result.done) {
 			this._layoutIterator = iterator;
 			this.cachedLayout.iterator = iterator;
+		}
+		else if (!this.cachedLayout.iterator) {
+			// If the iterator is finished this means that either:
+			// - the layout is actually complete which can be verified by checking the cached attribute counts
+			// - the layout process had to be restarted with scrollbar offsets, in which case the cached layout
+			// 		will have been processed to have an iterator attached to it by the time the first iterator
+			//		step returns, in this case this branch should not execute
+
+			if (isCompleteLayout) {
+				// Of the result is done, update the resolved index path and size accordingly
+				this.cachedLayout.resolvedIndexPath = BMIndexPathMakeWithRow(rowCount - 1, {inSectionAtIndex: sectionCount - 1});
+	
+				const contentSize = this.contentSize();
+				this.cachedLayout.resolvedWidth = contentSize.width;
+				this.cachedLayout.resolvedHeight = contentSize.height;
+			}
+	
+			// TODO: The rest of the code must be updated to handle complete layout caches where there is no need to
+			if (!this._layoutIterator) {
+				this._layoutIterator = { next() {} };
+			}
+			this.cachedLayout.iterator = { next() {} };
 		}
 	},
 
