@@ -4922,7 +4922,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				targetOffset.x += self._offscreenBufferSize;
 				targetOffset.y += self._offscreenBufferSize;
 
-				let controller = BMAnimationContextGetCurrent().controllerForObject(self, {node: self._contentWrapper[0]});
+				let controller = BMAnimationContextGetCurrent().controllerForObject(self._contentWrapper[0], {node: self._contentWrapper[0]});
 				if (self.iScroll) {
 					//controller.registerCustomProperty('scrollOffset', {withHandler: fraction => {
 						//var offsetX = currentOffset.x + fraction * (targetOffset.x - currentOffset.x);
@@ -5625,7 +5625,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				targetOffset.x += self._offscreenBufferSize;
 				targetOffset.y += self._offscreenBufferSize;
 
-				let controller = BMAnimationContextGetCurrent().controllerForObject(self, {node: self._container[0]});
+				let controller = BMAnimationContextGetCurrent().controllerForObject(self._container[0], {node: self._container[0]});
 				if (self.iScroll) {
 					controller.registerCustomProperty('scrollOffset', {withHandler: fraction => {
 						var offsetX = currentOffset.x + fraction * (targetOffset.x - currentOffset.x);
