@@ -1,3 +1,65 @@
+# 2.11.0
+
+## BMAnimationContext
+
+All animation contexts are now "blocking" regardless of what value is set for this argument when present.
+
+The `queue` property can no longer be specified on animation contexts.
+
+Resolves an issue where the complete callback was not invoked for an animation context when a specific item's animation was cancelled.
+
+Resolves a leak that occurred when creating animations with a delay.
+
+## BMCollectionViewReuseState
+
+A new `BMCollectionViewReuseState` enum contains constants which describe the reuse state of a cell.
+
+## BMCollectionViewCell
+
+The `_isMeasuring` property is now protected instead of private.
+
+Resolves an issue where the `invalidate` method was incorrectly invoked when the cell could be reused.
+
+## BMCollectionView
+
+Added a new `dataSource` property that can be set to a data source object, instead of the previous `dataSet` property. The `dataSet` property has now been deprecated and updating either of these properties will cause an adapter object to be created for the other object.
+
+When a `dataSource` object is set, the deprecated `updateCell`, `updateSupplementaryView`, `contentsForCellWithReuseIdentifier` and `contentsForSupplementaryViewWithIdentifier` methods are no longer invoked. Attempting to invoke these methods on the data set adapter object will cause an error to be thrown.
+
+The `updateEntireDataAnimated` method may now be invoked while a previous animated data update is already in progress.
+
+The intro animation, if running is now considered a data update; the `isUpdatingData` property will be set to `YES` and when it ends, data completion callbacks will be invoked.
+
+A new `dataUpdated` property can be used to obtain a promise that resolves when the animations associated with the current data update finish.
+
+Resolves an issue where scrollbars were not properly added or removed if the content size changed following an animated data update.
+
+Resolves an issue on windows touch devices that caused non-left clicks on collection view cells to be interpreted as left clicks.
+
+## BMCollectionViewDataSource
+
+A new `BMCollectionViewDataSource` interface may be implemented by objects, replacing the previous `BMCollectionViewDataSet` interface which is now deprecated. The data source interface defines the same methods as the previous data set interface, except for all previously deprecated methods which are now removed. In addition, the data source interface uses the delegate pattern so that all methods now receive the calling collection view as their first argument, allowing a single data source to be used with multiple collection views.
+
+## BMCollectionViewFlowLayout
+
+The static `flowLayout` factory method will now correctly return a subclass instance when inherited.
+
+## BMCollectionViewMasonryLayout
+
+The static `masonryLayout` factory method will now correctly return a subclass instance when inherited.
+
+## BMCollectionViewStackLayout
+
+The static `stackLayout` factory method will now correctly return a subclass instance when inherited.
+
+## BMCollectionViewTileLayout
+
+The static `tileLayout` factory method will now correctly return a subclass instance when inherited.
+
+## BMMonacoCodeEditor
+
+Resolves an issue with the monaco config where import statements written in typescript were converted into require calls.
+
 # 2.10.5
 
 ## BMCollectionViewFlowLayout
