@@ -11,22 +11,6 @@ import babel from 'gulp-babel';
 import {createTypeScriptDefinitionsWithContent} from './DTSGen.mjs';
 import packageJson from './package.json' assert { type: "json" };
 
-
-// const {createTypeScriptDefinitionsWithContent} = require('./DTSGen');
-// const packageJson = require('./package.json');
-
-// const path = require('path');
-// const fs = require('fs');
-// const xml2js = require('xml2js');
-// const deleteEmpty = require('delete-empty');
-
-// const { series, src, dest } = require('gulp');
-// const concat = require('gulp-concat');
-// const terser = require('gulp-terser');
-// const babel = require('gulp-babel');
-
-// const packageJson = require('./package.json');
-
 /**
  * Files to remove from the build.
  */
@@ -35,6 +19,7 @@ const removeFiles = [
     // These files represent interface definitions and are not meant to be included in the final package
     'BMCollectionView/BMCollectionViewDelegate.js',
     'BMCollectionView/BMCollectionViewDataSet.js',
+    'BMCollectionView/BMCollectionViewDataSource.js',
     'BMWindow/BMWindowDelegate.js',
     'BMViewLayoutEditor/BMLayoutVariableProvider.js',
     'BMView/BMMenuDelegate.js',
@@ -139,6 +124,7 @@ const DTSFiles = [
     'BMCollectionView/BMCollectionViewStackLayout.js', 
     'BMCollectionView/BMCollectionView.js', 
     'BMCollectionView/BMCollectionViewDataSet.js', 
+    'BMCollectionView/BMCollectionViewDataSource.js', 
     'BMCollectionView/BMCollectionViewDelegate.js', 
     'BMWindow/BMWindow.js', 
     'BMWindow/BMToolWindow.js', 

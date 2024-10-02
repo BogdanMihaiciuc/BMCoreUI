@@ -114,6 +114,39 @@ BMJQueryShim.shimWithDOMNode = function (node) {
 // When set to YES, this will cause collection view cells to extend view
 const BM_USE_BMVIEW_SUBCLASS = YES;
 
+// @type BMCollectionViewCellReuseState
+
+/**
+ * Constants describing the various reuse states that a collection view cell may be in.
+ */
+export const BMCollectionViewCellReuseState = Object.freeze({ // <enum>
+
+	/**
+	 * Indicates that this cell is currently bound to a data source object and retained
+     * or managed by the collection view.
+	 */
+	InUse: "InUse", // <enum>
+	
+	/**
+	 * Indicates that this cell is not currently in use, but may be reused in the future.
+	 */
+	InQueue: "InQueue", // <enum>
+	
+	/**
+	 * Indicates that this cell is in the process of being deleted and is bound to a data
+     * source object that no longer has a valid index path.
+	 */
+	Deleting: "Deleting", // <enum>
+
+    /**
+     * Indicates that this cell is not currently in use and cannot be reused in the future.
+     * References to cells in this state should be cleared as they are no longer valid.
+     */
+    Discarded: "Discarded" // <enum>
+});
+
+// @endtype
+
 // @type BMCollectionViewCell extends BMView
 
 /**
@@ -156,16 +189,13 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         return this.retainCount > 0;
     },
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     get _frame() {
         return this._attributes && this._attributes.frame;
     },
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     get frame() {
         return this._attributes && this._attributes.frame;
     },
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     set frame(frame) {
         // NOTE: A cell's frame is controlled by its layout attributes, therefore this operation is a no-op
     },
@@ -192,12 +222,6 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
 	 */
     _element: undefined, // <BMJQueryShim>
     get element() { return this._element || (this._element = BMJQueryShim.shimWithDOMNode(this.node)); },
-    
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
-    /**
-     * The DOM node managed by this cell.
-     */
-    //node: undefined, // <DOMNode>
 
     /**
      * The type of item this cell represents.
@@ -206,7 +230,8 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     itemType: BMCollectionViewLayoutAttributesType.Cell, // <BMCollectionViewLayoutAttributesType>
 
     /**
-     * The cell's reuse identifier which corresponds to the template's reuse identifier.
+     * The cell's reuse identifier which controls when this cell is reused when data source objects
+     * request cell instances from the associated collection view.
      */
     _reuseIdentifier: undefined, // <String>
 
@@ -396,10 +421,8 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     recycle: function () {
         this._unmanage();
 
-        this.invalidate();
-
-        //this.collectionView.cellWasUnmanaged(this);
         if (this.retainCount > 0) {
+            this.invalidate();
             this.collectionView.cellWasInvalidated(this);
             this.destroy();
             
@@ -422,9 +445,8 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     releaseRecycledCell: function () {
         this.release();
 
-        this.invalidate();
-
         if (this.retainCount > 0) {
+            this.invalidate();
             this.collectionView.cellWasInvalidated(this);
             this.destroy();
             
@@ -436,6 +458,15 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
             this.recycle = this.retain;
             this.releaseRecycledCell = this.retain;
         }
+    },
+
+    /**
+     * The cell's current reuse state.
+     */
+    _reuseState: BMCollectionViewCellReuseState.InQueue, // <BMCollectionViewCellReuseState>
+
+    get reuseState() {
+        return this._reuseState;
     },
 
     /**
@@ -475,7 +506,6 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         this.node.classList.remove('BMCollectionViewCellHidden');
     },
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     _prepareForAutomaticIntrinsicSize() {
         for (let subview of this._subviews) {
             subview._prepareForAutomaticIntrinsicSize();
@@ -489,27 +519,25 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
             }
             else {
                 if (this._requiredWidth) {
-                    // Otherwise derive the measured size using the instrinsic CSS size
+                    // Otherwise derive the measured size using the intrinsic CSS size
                     BMCopyProperties(this._node.style, {width: this._requiredWidth + 'px', height: 'auto'});
                 }
                 else {
-                    // Otherwise derive the measured size using the instrinsic CSS size
+                    // Otherwise derive the measured size using the intrinsic CSS size
                     BMCopyProperties(this._node.style, {width: 'auto', height: 'auto'});
                 }
             }
         }
     },
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     _supportsAutomaticIntrinsicSize: NO,
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     /**
+     * @protected
      * Temporarily set to `YES` while this cell is being measured.
      */
     _isMeasuring: NO,
 
-    // #FLAG BM_USE_BMVIEW_SUBCLASS
     internalConstraints() {
         var constraints = [];
 
@@ -550,19 +578,19 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
     /**
      * Invoked prior to this cell being collected for reuse by the collection view.
      * Subclasses can override this method to perform any changes necessary for reusing this cell.
-     * Subclasses should invoke the superclass method at some point in their implementation.
+     * Subclasses must invoke the superclass method at some point in their implementation.
      */
     prepareForReuse() {
-
+        this._reuseState = BMCollectionViewCellReuseState.InQueue;
     },
 
     /**
      * Invoked prior to this cell being shown on the screen either after being initialized or after having been previously collected.
-     * Subclasses can override this method to perform any changes necesarry for displaying this cell.
-     * Subclasses should invoke the superclass method at some point in their implementaiton.
+     * Subclasses can override this method to perform any changes necessary for displaying this cell.
+     * Subclasses must invoke the superclass method at some point in their implementation.
      */
     prepareForDisplay() {
-
+        this._reuseState = BMCollectionViewCellReuseState.InUse;
     },
 
     /**
@@ -625,7 +653,6 @@ BMCollectionViewCell.prototype = BMExtend(BM_USE_BMVIEW_SUBCLASS ? Object.create
         
         this.collectionView = collectionView;
 
-        // #FLAG BM_USE_BMVIEW_SUBCLASS
         if (BM_USE_BMVIEW_SUBCLASS) {
             BMView.prototype.initWithDOMNode.call(this, args.node);
         }
