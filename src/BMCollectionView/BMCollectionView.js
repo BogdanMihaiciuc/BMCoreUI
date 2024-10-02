@@ -9,7 +9,7 @@ import {BMIndexPathNone} from '../Core/BMIndexPath'
 import {BMAnimateWithBlock, BMAnimationContextBeginStatic, BMAnimationContextGetCurrent, BMAnimationContextAddCompletionHandler, BMAnimationApply, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
 import {BMView, BMViewLayoutQueue} from '../BMView/BMView_v2.5'
 import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesType, BMCollectionViewLayoutAttributesStyleDefaults, _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes} from './BMCollectionViewLayoutAttributes'
-import {BMJQueryShim, BMCollectionViewCell} from './BMCollectionViewCell'
+import {BMJQueryShim, BMCollectionViewCell, BMCollectionViewCellReuseState} from './BMCollectionViewCell'
 import {BMCollectionViewFlowLayout} from './BMCollectionViewFlowLayout'
 import {_BMCollectionViewTransitionLayout} from './BMCollectionViewLayout'
 import {IScroll} from '../iScroll/iscroll-probe'
@@ -271,20 +271,44 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * An optional delegate object that can receive various callbacks from the collection view.
 	 */
 	delegate: undefined, // <BMCollectionViewDelegate, nullable>
+
+	/**
+	 * Set to `YES` if a legacy data set is being used. When a legacy 
+	 */
+	_usesLegacyDataSet: NO,
     
     /**
-	 * A required data set object that specifies how many objects are in this collection view and configures their contents.
+	 * @deprecated Use the `dataSource` property instead.
+	 * 
+	 * ---
+	 * A data set object that specifies how many objects are in this collection view and configures their contents.
 	 */
     _dataSet: undefined, // <BMCollectionViewDataSet>
     get dataSet() { return this._dataSet; },
     set dataSet(dataSet) {
-	    //this.dataSetWillChangeToDataSet(dataSet);
-	    
 	    var oldDataSet = this._dataSet;
+
+		this._usesLegacyDataSet = YES;
 	    this._dataSet = dataSet;
+		this._dataSource = BMCollectionViewDataSourceAdapter.adapterWithDataSet(dataSet);
 	    
 	    this.dataSetDidChangeFromDataSet(oldDataSet);
     },
+
+	/**
+	 * A required data source object that specifies how many objects are in this collection view and configures their contents.
+	 */
+	_dataSource: undefined, // <BMCollectionViewDataSource>
+	get dataSource() { return this._dataSource; },
+	set dataSource(source) {
+		const oldDataSet = this._dataSet;
+
+		this._usesLegacyDataSet = NO;
+		this._dataSource = source;
+		this._dataSet = BMCollectionViewDataSetAdapter.adapterWithDataSource(source);
+
+		this.dataSetDidChangeFromDataSet(oldDataSet);
+	},
     
     /**
 	 * The collection view's container element.
@@ -874,8 +898,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		// Android is weird about handling touch events, so iScroll is required for it
 		if (/android/i.test(window.navigator.userAgent)) useCustomScroll = YES;
-
-		//var useCustomScroll = (false && this.customScrollRequired === undefined) || this.customScrollRequired;
 	    
 	    this._prepareFrame();
 	    
@@ -1008,6 +1030,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    }
 	    
 	    if (shouldRunIntroAnimation) {
+			this.isUpdatingData = YES;
+
+			let resolveLayoutUpdate;
+			this._dataUpdatePromise = new Promise($1 => resolveLayoutUpdate = $1);
+
 			var visibleBounds = this._bounds.rectWithInset(BMInset.insetWithEqualInsets(this._offscreenBufferSize));
 
 		    var animatedCells = this.retainedCells.slice();
@@ -1046,6 +1073,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				    var cell = animatedCells[i];
 				    cell.attributes = cell.attributes.targetAttributes;
 			    }
+
+				const completionHandler = () => {
+					self.isUpdatingData = NO;
+					self._executeDataCompletionCallbacks();
+
+					resolveLayoutUpdate();
+				};
+
+				if (animatedCells.length) {
+					BMAnimationContextAddCompletionHandler(completionHandler);
+				}
+				else {
+					completionHandler();
+				}
 		    }, BMExtend({
 			    duration: _BMCollectionViewAnimationDurationDefault,
 			    easing: _BMCollectionViewAnimationEasingDefault,
@@ -1844,6 +1885,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var allCellsLength = this.allCells.length;
 		for (var i = 0; i < allCellsLength; i++) {
 			var cell = this.allCells[i];
+
+			// Don't manipulate cells that are in the process of being deleted, as they don't
+			// have valid index paths
+			if (cell._reuseState == BMCollectionViewCellReuseState.Deleting) {
+				continue;
+			}
 			
 			if (cell._exclusivelyRendered) {
 				// If the cell was exclusively rendered, it should left alone
@@ -2485,15 +2532,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		var cell = Object.create(cellClass.prototype).initWithCollectionView(this, {reuseIdentifier: identifier, node: node, kind: BMCollectionViewLayoutAttributesType.Cell});
 		cell.layoutQueue = this._cellLayoutQueue;
-		//BMCollectionViewCellMakeForCollectionView(this, {withReuseIdentifier: identifier});
-		
 
-	    //cell.element = $('<div style="position: absolute; left: 0px; top: 0px; visibility: hidden; overflow: visible;">');
-		//if (this.customScroll) cell.element.css({'will-change': 'transform'});
 		// When using custom classes, it is no longer the data set object's responsibility to provide the contents for the cell
-	    if (cellClass == BMCollectionViewCell) cell.element.append(this._dataSet.contentsForCellWithReuseIdentifier(identifier));
+	    if (cellClass == BMCollectionViewCell && this._usesLegacyDataSet) {
+			cell.element.append(this._dataSet.contentsForCellWithReuseIdentifier(identifier));
+		}
 
-	    
 	    this._contentWrapper.append(cell.element);
 	    
 	    // Attach event handlers to the cells
@@ -2551,7 +2595,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			const which = event.which || event.button;
 
 		    // Don't handle non-left clicks here
-		    if (!BMIsTouchDevice && which != 1) return;
+		    if (event.originalEvent.type != 'touchstart' && which != 1) return;
 		    
 		    // Don't handle events originating from buttons and input elements or their direct descendants as well as several whitelisted class names
 		    if (event.target.nodeName == 'BUTTON' || event.target.nodeName == 'INPUT' || event.target.nodeName == 'LABEL' || event.target.nodeName == 'A' ||
@@ -2788,7 +2832,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			const which = event.which || event.button;
 
 		    // Don't handle non-left clicks here
-		    if (!BMIsTouchDevice && which != 1) return;
+		    if (event.originalEvent.type == 'mouseup' && which != 1) return;
 		    
 		    if (event.originalEvent.type == 'touchend') {
 			    // Don't handle other touches than the tracked touch
@@ -3774,7 +3818,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		cell.layoutQueue = this._cellLayoutQueue;
 		
 		// When using custom classes, it is no longer the data set object's responsibility to provide the contents for the cell
-	    if (cellClass == BMCollectionViewCell) cell.element.append(this._dataSet.contentsForSupplementaryViewWithIdentifier(identifier));
+	    if (cellClass == BMCollectionViewCell && this._usesLegacyDataSet) {
+			cell.element.append(this._dataSet.contentsForSupplementaryViewWithIdentifier(identifier));
+		}
 	    this._contentWrapper.append(cell.element);
 	    
 	    return cell;
@@ -3947,7 +3993,15 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		for (var i = 0; i < this.allCells.length; i++) {
 			var cell = this.allCells[i];
 			
-			if (cell.itemType != options.ofType) continue;
+			if (cell.itemType != options.ofType) {
+				continue;
+			}
+
+			// Cells that are in the process of being deleted cannot be returned by this method
+			if (cell._reuseState == BMCollectionViewCellReuseState.Deleting) {
+				continue;
+			}
+
 			if (cell.indexPath.isLooselyEqualToIndexPath(indexPath, {usingComparator: this.identityComparator})) {
 				return cell;
 			}
@@ -4590,8 +4644,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var animationCells = [];
 	    
 	    for (var i = 0; i < retainedCellsLength; i++) {
-			currentAttributes.push(this.allCells[i].attributes);
-			animationCells.push(this.allCells[i]);
+			const cell = this.allCells[i];
+
+			// Skip over any cells that are in the process of being deleted
+			if (cell._reuseState == BMCollectionViewCellReuseState.Deleting) {
+				continue;
+			}
+			currentAttributes.push(cell.attributes);
+			animationCells.push(cell);
 		}
 	    
 	    var oldOffset = this.scrollOffset;
@@ -4791,7 +4851,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    var animationOptions = BMExtend({
 		    duration: _BMCollectionViewAnimationDurationDefault,
 			easing: _BMCollectionViewAnimationEasingDefault,
-			queue: '_BMCollectionViewTransitionLayoutQueue'
 	    }, delegateOptions);
 	    
 	    /*animationOptions.progress = function (elements, complete, remaining, start, tween) {
@@ -4854,6 +4913,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				    cell._unmanage();
 			    }
 			}
+
+			self._applyOverflows();
 
 			self._collectionEnabled = YES;
 			self.isUpdatingData = NO;
@@ -5055,6 +5116,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * This promise resolves resolves when the operation and its associated animations complete.
 	 */
 	_dataUpdatePromise: undefined, // <Promise<void>, nullable>
+
+	/**
+	 * A promise initialized during data updates or similar operations such as animated layout updates. 
+	 * This promise resolves resolves when the operation and its associated animations complete.
+	 */
+	get dataUpdated() { // <Promise<void>, nullable>
+		return this._dataUpdatePromise;
+	},
 	
 	/**
 	 * Should be invoked when the entire data set is updated in bulk.
@@ -5088,6 +5157,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Update the selection index paths
 		this._updateSelectionIndexPaths();
 		
+		// When not animated, invalidate the layout, to obtain the new set of cells that should be displayed
 		if (!animated) {
 			this.layout.collectionViewWillStartUpdates(undefined);
 
@@ -5098,14 +5168,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			self.layout.collectionViewDidStartUpdates();
 			
 			// Have the data set refresh the contents of each cell
-			for (var i = 0; i < this.allCells.length; i++) {
-				var cell = this.allCells[i];
-				
-				if (cell.itemType === BMCollectionViewLayoutAttributesType.Cell) {
-					if (this.dataSet.updateCell) this.dataSet.updateCell(cell, {atIndexPath: cell.indexPath});
-				}
-				else if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView) {
-					if (this.dataSet.updateSupplementaryView) this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: cell.indexPath});
+			if (this._usesLegacyDataSet) {
+				for (let i = 0; i < this.allCells.length; i++) {
+					let cell = this.allCells[i];
+					
+					if (cell.itemType === BMCollectionViewLayoutAttributesType.Cell) {
+						if (this.dataSet.updateCell) {
+							this.dataSet.updateCell(cell, {atIndexPath: cell.indexPath});
+						}
+					}
+					else if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView) {
+						if (this.dataSet.updateSupplementaryView) {
+							this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: cell.indexPath});
+						}
+					}
 				}
 			}
 			
@@ -5184,7 +5260,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this._size = currentSize;
 		
 		// Disable scrolling and interaction during update
-		this._container[0].style.pointerEvents = 'none'; //css({/*overflow: 'hidden', */'pointer-events': 'none'});
+		this._container[0].style.pointerEvents = 'none';
 		var containerScrollOffset = this.scrollOffset;
 		if (!this.iScroll) this._container[0].scrollTo(containerScrollOffset.x, containerScrollOffset.y);
 		if (this.scrollView) this.scrollView.scrollingEnabled = NO;
@@ -5214,6 +5290,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Compare the current content to the new content and data set
 		for (var i = 0; i < oldCells.length; i++) {
 			var cell = oldCells[i];
+
+			// If this cell is in the process of being deleted by a previous data update, don't do any
+			// additional processing on it
+			if (cell._reuseState == BMCollectionViewCellReuseState.Deleting) {
+				continue;
+			}
 			
 			var foundCell = NO;
 			
@@ -5592,7 +5674,13 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		let animationBlock = function () {
 			
-			// Apply the animations
+			// Apply the animations that have been previously prepared on each cell
+
+			// Update the state of the cells that are being deleted, this will allow future animations
+			// to skip animating them
+			for (const cell of deletedCells) {
+				cell._reuseState = BMCollectionViewCellReuseState.Deleting;
+			}
 
 			// Apply the drop shadow animations if needed
 			if (self._droppedShadows) {
@@ -5983,7 +6071,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
                         animation.targets.push({element: self._container[0], properties: {tween: 1}, complete: _ => {
 							self._container[0].style.pointerEvents = 'inherit';
 							self._isPerformingAnimatedScrolling = NO;
-                        }, options: {progress: progress, queue: self._UUID}});
+                        }, options: {progress: progress}});
                     },
 					targetOffset: offset.copy(),
 					startingOffset: self.scrollOffset.copy()
@@ -6267,3 +6355,153 @@ export function BMCollectionViewMakeWithContainer(container, options) {
 }
 
 // @endtype
+
+// #region Data Set Adapter
+
+// A class that makes it possible to use the data source interface for collection views
+// that are still configured using the deprecated data set objects. These objects are automatically
+// created by collection views when the `dataSet` property is set.
+class BMCollectionViewDataSourceAdapter {
+	constructor(dataSet) {
+		this._dataSet = dataSet;
+	}
+
+	collectionViewNumberOfSections(collectionView) {
+		return this._dataSet.numberOfSections();
+	}
+
+	collectionViewNumberOfObjectsInSectionAtIndex(collectionView, index) {
+		return this._dataSet.numberOfObjectsInSectionAtIndex(index);
+	}
+
+	collectionViewIndexPathForObjectAtRow(collectionView, row, args) {
+		return this._dataSet.indexPathForObjectAtRow(row, args);
+	}
+
+	collectionViewIndexPathForObject(collectionView, object) {
+		return this._dataSet.indexPathForObject(object);
+	}
+
+	collectionViewCellForItemAtIndexPath(collectionView, indexPath) {
+		return this._dataSet.cellForItemAtIndexPath(indexPath);
+	}
+
+	collectionViewCellForSupplementaryViewWithIdentifier(collectionView, identifier, args) {
+		return this._dataSet.cellForSupplementaryViewWithIdentifier(identifier, args);
+	}
+
+	collectionViewUseOldData(collectionView, use) {
+		return this._dataSet.useOldData(use);
+	}
+
+	collectionViewIsUsingOldData(collectionView) {
+		return this._dataSet.isUsingOldData();
+	}
+
+    collectionViewMoveItemFromIndexPath(collectionView, indexPath, args) {
+		return this._dataSet.moveItemFromIndexPath(indexPath, args);
+	}
+
+    collectionViewMoveItemsFromIndexPaths(collectionView, indexPaths, args) {
+		return this._dataSet.moveItemsFromIndexPaths(indexPaths, args);
+	}
+
+    collectionViewRemoveItemsAtIndexPaths(collectionView, indexPaths) {
+		return this._dataSet.removeItemsAtIndexPaths(indexPaths);
+	}
+
+    collectionViewInsertItems(collectionView, items, args) {
+		return this._dataSet.insertItems(items, args);
+	}
+
+	static adapterWithDataSet(dataSet) {
+		return new this(dataSet);
+	}
+}
+
+// #endregion
+
+
+
+// #region Data Set Adapter
+
+// A class that makes it possible to use the old data set interface for collection views
+// that are configured using data source objects for compatibility with older code that still
+// references the deprecated data set property. These objects are automatically
+// created by collection views when the `dataSource` property is set.
+class BMCollectionViewDataSetAdapter {
+	constructor(collectionView, dataSource) {
+		this._collectionView = collectionView;
+		this._dataSource = dataSource;
+	}
+
+	numberOfSections() {
+		return this._dataSource.collectionViewNumberOfSections(this._collectionView);
+	}
+
+	numberOfObjectsInSectionAtIndex(index) {
+		return this._dataSource.collectionViewNumberOfObjectsInSectionAtIndex(this._collectionView, index);
+	}
+
+	indexPathForObjectAtRow(row, args) {
+		return this._dataSource.collectionViewNumberOfObjectsInSectionAtIndex(this._collectionView, row, args);
+	}
+
+	indexPathForObject(object) {
+		return this._dataSource.collectionViewIndexPathForObject(this._collectionView, object);
+	}
+
+	contentsForCellWithReuseIdentifier(identifier) {
+		throw new Error(`contentsForCellWithReuseIdentifier is unsupported when using data source objects`);
+	}
+
+	cellForItemAtIndexPath(indexPath) {
+		return this._dataSource.collectionViewCellForItemAtIndexPath(this._collectionView, indexPath);
+	}
+
+	contentsForSupplementaryViewWithIdentifier(identifier) {
+		throw new Error(`contentsForSupplementaryViewWithIdentifier is unsupported when using data source objects`);
+	}
+
+	cellForSupplementaryViewWithIdentifier(identifier, args) {
+		return this._dataSource.collectionViewCellForSupplementaryViewWithIdentifier(this._collectionView, identifier, args);
+	}
+
+	updateCell(cell, {atIndexPath: indexPath}) {
+		throw new Error(`updateCell is unsupported when using data source objects`);
+	}
+
+	updateSupplementaryView(view, {withIdentifier: identifier, atIndexPath: indexPath}) {
+		throw new Error(`updateSupplementaryView is unsupported when using data source objects`);
+	}
+
+	useOldData(use) {
+		return this._dataSource.collectionViewUseOldData(this._collectionView, use);
+	}
+
+	isUsingOldData() {
+		return this._dataSource.collectionViewIsUsingOldData(this._collectionView);
+	}
+
+	moveItemFromIndexPath(indexPath, args) {
+		return this._dataSource.collectionViewMoveItemFromIndexPath(this._collectionView, indexPath, args);
+	}
+
+	moveItemsFromIndexPaths(indexPaths, args) {
+		return this._dataSource.collectionViewMoveItemsFromIndexPaths(this._collectionView, indexPaths, args);
+	}
+
+	removeItemsAtIndexPaths(indexPaths) {
+		return this._dataSource.collectionViewRemoveItemsAtIndexPaths(this._collectionView, indexPaths);
+	}
+
+	insertItems(items, args) {
+		return this._dataSource.collectionViewInsertItems(this._collectionView, items, args);
+	}
+
+	static adapterWithDataSource(collectionView, dataSource) {
+		return new this(collectionView, dataSource);
+	}
+}
+
+// #endregion

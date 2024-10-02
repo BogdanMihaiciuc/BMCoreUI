@@ -1,6 +1,9 @@
 // @type interface BMCollectionViewDataSet<T = any>
 
 /**
+ * @deprecated Use `BMCollectionViewDataSource` instead.
+ * 
+ * ------
  * The specification for a BMCollectionViewDataSet object, which is used to provide information to the collection view regarding the number
  * of sections and objects that it should display, as well as their contents and the contents of any supplementary views defined by the current layout.
  *
