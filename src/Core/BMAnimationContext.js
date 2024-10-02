@@ -626,6 +626,11 @@ BMAnimationContext.prototype = {
 }
 
 /**
+ * A map having DOM nodes as keys which contains delayed animations that have yet to start.
+ */
+BMAnimationContext._pendingAnimations = new Map; // Map<DOMNode, unknown[]>
+
+/**
  * The animation stack holds all animations with their attributes.
  * Whenever an attribute property is changed while there is an active animation, that property
  * will smoothly interpolate to the new value using the top-most animation's attributes.
@@ -756,6 +761,37 @@ export function BMAnimationApply() {
 // Set to `YES` if the environment does not fully support web animations
 var BM_WEB_ANIMATIONS_DISABLED = NO;
 
+
+/**
+ * Stops all current animations for the specified node on the properties that
+ * are specified in an animation that is about to start.
+ * @param node <DOMNode>							The DOM node on which the animation is about to start.
+ * {
+ * 	@param withProperties <Dictionary<unknown>>		The properties that are about to be animated.
+ * 	@param options <Dictionary<unknown>>			The options of the animation that is about to start.
+ * }
+ */
+BMAnimationContext._prepareAnimationForNode = function (node, {withProperties: properties, options}) {
+	const velocity = window.Velocity || window.$?.Velocity;
+	if (!velocity) {
+		return;
+	}
+	
+	// Find all animations targeting the specified node
+	const nodeAnimations = velocity.State.calls.filter(c => c[1]?.[0] == node);
+
+	// For each animation clear out the properties that are about to be animated, except for the tween property
+	for (const call of nodeAnimations) {
+		for (const property in properties) {
+			if (property == 'element' || property == 'tween') {
+				continue;
+			}
+
+			delete call[0]?.[0]?.[property];
+		}
+	}
+}
+
 /**
  * Must be invoked after a <code>BMAnimationBeginWithDuration()</code> call to apply the pending animation.
  * Applying the animation in this way will stop all other running animations on the animation targets.
@@ -849,7 +885,13 @@ export function BMAnimationApplyBlocking(blocking) {
     for (var i = 0; i < animationTargetsLength; i++) {
         var element = animationTargets[i].element;
         
-        if (blocking) velocity(element, 'stop', true);
+        if (blocking && velocity) {
+			// velocity(element, 'stop', true);
+		}
+
+		// Web animations are used if enabled specifically for this animation context, enabled
+		// globally via the build flag and fully supported by the browser
+		const useWebAnimations = (context._useWebAnimations || BM_USE_WEB_ANIMATIONS) && document.body.animate && !BM_WEB_ANIMATIONS_DISABLED;
         
         // Allow each target to set its own options
         var options = animationTargets[i].options ? BMCopyProperties({}, animation.options, animationTargets[i].options) : BMCopyProperties({}, animation.options);
@@ -865,9 +907,15 @@ export function BMAnimationApplyBlocking(blocking) {
 	        delay += stride;
 		}
 
+		if (velocity && !useWebAnimations && !delay) {
+			// When velocity is used, if an element is already part of the velocity calls, clear out any properties
+			// that are part of this new animation
+			BMAnimationContext._prepareAnimationForNode(element, {withProperties: animationTargets[i].properties, options});
+		}
+
 		delete options.complete;
 		
-		if ((context._useWebAnimations || BM_USE_WEB_ANIMATIONS) && document.body.animate && !BM_WEB_ANIMATIONS_DISABLED) {
+		if (useWebAnimations) {
 			if (options.queue) {
 				console.warn('[BMCoreUI] Using the queue animation option with web animations which is not supported. This argument will be ignored.');
 			}
@@ -1031,10 +1079,50 @@ export function BMAnimationApplyBlocking(blocking) {
 			}
 		}
 		else {
-			promises.push(velocity.animate(element, animationTargets[i].properties, options));
-		
 			if (options.queue) {
-				velocity.Utilities.dequeue(element, options.queue);
+				console.warn(`Ignoring deprecated property "queue" for animation context.`);
+			}
+
+			options.queue = false;
+
+			// If a delay is specified, use setTimeout as velocity leaks delayed animations
+			if (options.delay) {
+				const node = element;
+				const properties = animationTargets[i].properties;
+				const animationOptions = options;
+
+				promises.push(new Promise(async resolve => {
+					const delay = options.delay;
+					options.delay = undefined;
+					const pendingAnimation = {node, properties, options: animationOptions, animationContext: context};
+
+					const timeout = setTimeout(async () => {
+						// When the timeout expires, start the animation and remove it from the pending list for the element
+						const pendingAnimations = BMAnimationContext._pendingAnimations.get(element) || [];
+						const index = pendingAnimations?.indexOf(pendingAnimation) ?? -1;
+						if (index != -1) {
+							pendingAnimations.splice(index, 1);
+						}
+
+						// If there are no further pending animations remove the element from the map
+						if (!pendingAnimation?.length) {
+							BMAnimationContext._pendingAnimations.delete(element);
+						}
+
+						// Before starting the animation, ensure that no other animations affect this node's properties
+						BMAnimationContext._prepareAnimationForNode(node, {withProperties: properties, options: animationOptions});
+						const animationResult = await velocity.animate(node, properties, animationOptions);
+						resolve(animationResult);
+					}, delay);
+
+					// Store this animation as pending
+					const pendingAnimations = BMAnimationContext._pendingAnimations.get(element) || [];
+					pendingAnimations.push(pendingAnimation);
+					BMAnimationContext._pendingAnimations.set(element, pendingAnimations);
+				}));
+			}
+			else {
+				promises.push(velocity.animate(element, animationTargets[i].properties, options));
 			}
 		}
 	}
