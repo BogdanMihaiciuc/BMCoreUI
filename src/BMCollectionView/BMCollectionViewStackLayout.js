@@ -628,7 +628,7 @@ BMCollectionViewStackLayout.prototype = BMExtend({}, BMCollectionViewLayout.prot
  * @returns <BMCollectionViewStackLayout>	A stack layout.
  */
 BMCollectionViewStackLayout.stackLayout = function () {
-	return new BMCollectionViewStackLayout();
+	return new this();
 }
 
 // @endtype
