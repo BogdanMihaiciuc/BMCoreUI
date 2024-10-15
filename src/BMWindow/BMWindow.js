@@ -1075,6 +1075,147 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		return this;
 	},
 
+	/**
+	 * Starts a drag event from the specified `mousedown` or `touchstart` event that moves this window.
+	 * When this method is invoked, further mouse and touch events will be blocked until the drag finishes.
+	 * 
+	 * If there is already a drag operation in progress or if this window is full screen or a modal window,
+	 * this method has no effect.
+	 * @param event <MouseEvent | TouchEvent>		The `mousedown` or `touchstart` event from which to begin
+	 * 												the window movement.
+	 */
+	performDragWithEvent(event) {
+		if (event.type == 'mousedown') {
+			this.performDragWithMouseEvent(event);
+		}
+		else if (event.type == 'touchstart') {
+			this.performDragWithTouchEvent(event);
+		}
+	},
+
+	/**
+	 * Starts a drag event from the specified `mousedown` event that will move this window.
+	 * When this method is invoked, further mouse events will be blocked until the drag finishes.
+	 * 
+	 * If there is already a drag operation in progress or if this window is full screen or a modal window,
+	 * this method has no effect.
+	 * @param event <MouseEvent | TouchEvent>		The `mousedown` event from which to begin the window movement.
+	 */
+	performDragWithMouseEvent(event) {
+		// Full screen and modal windows cannot be moved
+		if (this._fullScreen) return;
+
+		this._dragged = YES;
+
+		this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
+		let lastPosition = BMPointMake(event.clientX, event.clientY);
+
+		let mouseMoveEventListener = event => {
+			let position = BMPointMake(event.clientX, event.clientY);
+			const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+
+			// Check if the window can move
+			let canMove = YES;
+			if (this.delegate && this.delegate.windowShouldMove) {
+				canMove = this.delegate.windowShouldMove(this, newPosition);
+			}
+			if (!canMove) return;
+
+			this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
+			this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
+			this._position = newPosition;
+			lastPosition = position;
+			this.layout();
+			event.preventDefault();
+		};
+
+		let mouseUpEventListener = event => {
+			window.removeEventListener('mousemove', mouseMoveEventListener, YES);
+			window.removeEventListener('mouseup', mouseUpEventListener, YES);
+		}
+
+		window.addEventListener('mousemove', mouseMoveEventListener, YES);
+		window.addEventListener('mouseup', mouseUpEventListener, YES);
+
+		event.preventDefault();
+	},
+
+	/**
+	 * The identifier of the touch point that is tracked during a drag operation. `undefined`
+	 * when not tracking a drag.
+	 */
+	_touchDragPoint: undefined, // <String>
+
+	/**
+	 * Starts a drag event from the specified `touchstart` event that will move this window.
+	 * When this method is invoked, further touch events will be blocked until the drag finishes.
+	 * 
+	 * 
+	 * If there is already a drag operation in progress or if this window is full screen or a modal window,
+	 * this method has no effect.
+	 * @param event <MouseEvent | TouchEvent>		The `touchstart` event from which to begin the window movement.
+	 */
+	performDragWithTouchEvent(event) {
+		// If there is already a drag in progress, don't process this new event
+		if (typeof this._touchDragPoint !== 'undefined') {
+			return;
+		}
+
+		// Full screen windows cannot be moved
+		if (this._fullScreen) return;
+
+		// Only use the first touch point
+		this._touchDragPoint = event.changedTouches[0].identifier;
+		this._dragged = YES;
+
+		this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
+		let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+
+		let mouseMoveEventListener = event => {
+			// Look for the actively tracked touch point
+			let touch;
+			for (let changedTouch of event.changedTouches) {
+				if (changedTouch.identifier == this._touchDragPoint) {
+					touch = changedTouch;
+					break;
+				}
+			}
+
+			// If the actively tracked touch point did not move, do not process this event
+			if (!touch) return;
+
+			let position = BMPointMake(touch.clientX, touch.clientY);
+			const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
+
+			// Check if the window can move
+			let canMove = YES;
+			if (this.delegate && this.delegate.windowShouldMove) {
+				canMove = this.delegate.windowShouldMove(this, newPosition);
+			}
+			if (!canMove) return;
+
+			this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
+			this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
+			this._position = newPosition;
+			lastPosition = position;
+			this.layout();
+			event.preventDefault();
+		};
+
+		let mouseUpEventListener = event => {
+			this._touchDragPoint = undefined;
+			window.removeEventListener('touchmove', mouseMoveEventListener);
+			window.removeEventListener('touchend', mouseUpEventListener);
+			window.removeEventListener('touchcancel', mouseUpEventListener);
+		}
+
+		window.addEventListener('touchmove', mouseMoveEventListener);
+		window.addEventListener('touchend', mouseUpEventListener);
+		window.removeEventListener('touchcancel', mouseUpEventListener);
+
+		event.preventDefault();
+	},
+
 	// @override - BMView
 	colorSchemeDidChange(scheme) {
 		BMView.prototype.colorSchemeDidChange.apply(this, arguments);
