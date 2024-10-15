@@ -1,3 +1,15 @@
+# 2.11.1
+
+## BMWindow
+
+Added a new `performDragWithEvent` that can be used to initiate a drag operation that can move a window from an element other than the window's toolbar. The target of the event that is passed in to this method is not required to be a descendant of the window's `node`.
+
+## BMCollectionView
+
+Callbacks registered with `registerDataCompletionCallback` will now only be invoked when all animations are finished if a data or layout update is started while another one is already in progress.
+
+Resolves an issue that caused content sizes and overflows to not be properly applied after multiple data or layout updates are run in parallel.
+
 # 2.11.0
 
 ## BMAnimationContext
