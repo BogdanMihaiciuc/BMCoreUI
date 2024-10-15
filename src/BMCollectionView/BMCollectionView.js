@@ -4594,7 +4594,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * }
 	 */
     setLayout: function (layout, options) {
-		// If there is an in-progress animated update, schedule this call for later
+		// If there is an in-progress animated update, schedule this call for when that update finishes
 		if (this.isUpdatingData) {
 			var self = this;
 			this.registerDataCompletionCallback(function () {
@@ -4625,7 +4625,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		BMAnimationContextBeginStatic();
 
 		let resolveLayoutUpdate;
-		this._dataUpdatePromise = new Promise($1 => resolveLayoutUpdate = $1);
+		const dataUpdatePromise = new Promise($1 => resolveLayoutUpdate = $1);
+		this._dataUpdatePromise = dataUpdatePromise;
 
 	    // Discard the cached attribute pages
 	    this.attributeCache = {};
@@ -4916,16 +4917,19 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 			self._applyOverflows();
 
-			self._collectionEnabled = YES;
-			self.isUpdatingData = NO;
+			// Restore collection invoke the data completion callbacks unless another animation is in progress
+			if (self._dataUpdatePromise == dataUpdatePromise) {
+				self._collectionEnabled = YES;
+				self.isUpdatingData = NO;
+				
+				self._executeDataCompletionCallbacks();
+			}
+
+			// If the delegate animation options contains a complete handler, invoke it here
+			if (delegateOptions.complete) delegateOptions.complete();
 			
-			self._executeDataCompletionCallbacks();
-		    
-		    // If the delegate animation options contains a complete handler, invoke it here
-		    if (delegateOptions.complete) delegateOptions.complete();
-		    
-		    // Run the completion handler if it was specified
-		    if (options && options.completionHandler) options.completionHandler();
+			// Run the completion handler if it was specified
+			if (options && options.completionHandler) options.completionHandler();
 
 			resolveLayoutUpdate();
 	    };
@@ -5152,7 +5156,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var self = this;
 
 		let resolveUpdateData;
-		this._dataUpdatePromise = new Promise(function (resolve, reject) {resolveUpdateData = resolve});
+		const dataUpdatePromise = new Promise(function (resolve, reject) {resolveUpdateData = resolve});
+		this._dataUpdatePromise = dataUpdatePromise;
 		
 		// Update the selection index paths
 		this._updateSelectionIndexPaths();
@@ -5567,11 +5572,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 			animationComplete = YES;
 			
-			// Apply the new size now if it wasn't already applied earlier
-			if (!contentSizeWidthApplied) {
+			// Apply the new size now, unless another animation is in progress
+			if (self._dataUpdatePromise == dataUpdatePromise) {
+				const contentSize = self.layout.contentSize();
 				self._contentWrapper.css({width: contentSize.width + 'px'});
-			} 
-			if (!contentSizeHeightApplied) {
 				self._contentWrapper.css({height: contentSize.height + 'px'});
 			}
 			
@@ -5596,17 +5600,21 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				deletedCells[i].recycle();
 			}
 			
-			self._applyOverflows();
-			self._container[0].style.pointerEvents = 'inherit';//.css({'pointer-events': 'inherit'});
+			// If another update is not in progress, re-enable scrolling and collection
+			if (self._dataUpdatePromise == dataUpdatePromise) {
+				self._applyOverflows();
+				self._container[0].style.pointerEvents = 'inherit';//.css({'pointer-events': 'inherit'});
+				
+				if (self.scrollView) self.scrollView.scrollingEnabled = YES;
 			
-			if (self.scrollView) self.scrollView.scrollingEnabled = YES;
-		
-			self._collectionEnabled = YES;
-		
-			// Set the updating flag back to NO
-			self.isUpdatingData = NO;
+				self._collectionEnabled = YES;
 			
-			self._executeDataCompletionCallbacks();
+				// Set the updating flag back to NO
+				self.isUpdatingData = NO;
+				
+				// Only execute data completion callbacks after all pending updates have finished
+				self._executeDataCompletionCallbacks();
+			}
 			
 			if (options && options.completionHandler) options.completionHandler();
 			if (delegateOptions.complete) delegateOptions.complete.apply(this, arguments);
