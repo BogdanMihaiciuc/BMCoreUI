@@ -1,3 +1,23 @@
+# 2.11.2
+
+## BMAnimationContext
+
+Fixes an error that was thrown when starting animations on environments where jQuery (or any $ global variable) was not available.
+
+Fixes an error that was thrown when starting an animation that included an element with no property changes.
+
+## BMMenu
+
+Menus will no longer use a before element for their backdrop filter effects.
+
+Resolves a positioning issue where the menu was too large to properly fit on any side of a specified point.
+
+Menu items will now be cut off and gain an ellipsis when too long instead of spanning multiple lines.
+
+## BMWindow
+
+Windows will no longer use a before element for their backdrop filter effects.
+
 # 2.11.1
 
 ## BMWindow
