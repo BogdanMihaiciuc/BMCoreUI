@@ -499,7 +499,7 @@ export function __BMVelocityAnimate(node, properties, options, useWebAnimations)
 export function BMHook(element, properties) {
 	if (BM_USE_VELOCITY2) {
 		let node = element;
-		if (element instanceof window.$) {
+		if (window.$ && element instanceof window.$) {
 			node = element[0];
 		}
 
@@ -969,7 +969,7 @@ export function BMAnimationApplyBlocking(blocking) {
 
 			// Set up the animation
 			let node = element;
-			if (element instanceof window.$) {
+			if (window.$ && element instanceof window.$) {
 				node = element[0];
 			}
 
@@ -1071,7 +1071,7 @@ export function BMAnimationApplyBlocking(blocking) {
 
 		}
 		else if (BM_USE_VELOCITY2) {
-			if (element instanceof window.$) {
+			if (window.$ && element instanceof window.$) {
 				promises.push(element[0].velocity(animationTargets[i].properties, options));
 			}
 			else {
@@ -1090,6 +1090,11 @@ export function BMAnimationApplyBlocking(blocking) {
 				const node = element;
 				const properties = animationTargets[i].properties;
 				const animationOptions = options;
+
+				// If there are no properties specified for this element, add a dummy tween property
+				if (!Object.keys(properties).length) {
+					properties.tween = [1, 0];
+				}
 
 				promises.push(new Promise(async resolve => {
 					const delay = options.delay;
@@ -1122,6 +1127,11 @@ export function BMAnimationApplyBlocking(blocking) {
 				}));
 			}
 			else {
+				// If there are no properties specified for this element, add a dummy tween property
+				if (!Object.keys(animationTargets[i].properties).length) {
+					animationTargets[i].properties.tween = [1, 0];
+				}
+
 				promises.push(velocity.animate(element, animationTargets[i].properties, options));
 			}
 		}
