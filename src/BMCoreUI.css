@@ -192,7 +192,7 @@
 	background: rgba(245, 245, 245, .8);
 }
 
-.BMWindow.BMKeyWindow::before, .BMToolWindow::before {
+.BMWindow.BMKeyWindow, .BMToolWindow {
 	backdrop-filter: blur(15px);
 	-webkit-backdrop-filter: blur(15px);
 }
@@ -1169,6 +1169,9 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	color: rgba(0, 0, 0, .8);
 
 	border-radius: 8px;
+
+	backdrop-filter: blur(25px);
+	-webkit-backdrop-filter: blur(25px);
 }
 
 .BMLayoutEditorConstraintPopup::before, .BMMenu::before {
@@ -1181,11 +1184,6 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	bottom: 0;
 
 	border-radius: 8px;
-
-	backdrop-filter: blur(25px);
-	-webkit-backdrop-filter: blur(25px);
-
-	z-index: -1;
 }
 
 .BMMenuSourceNodeShadow {
@@ -1332,6 +1330,10 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 /* The menu's text element should expand to fill all available space */
 .BMMenuItem > span {
 	flex-grow: 1;
+	
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .BMMenuItemHint {

@@ -995,20 +995,37 @@ BMMenu.prototype = {
         // that the first menu item appears directly on the pointer's position
         const point = BMPointMake(rect.right, rect.origin.y - paddingTop);
 
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
         // Determine where to place the menu based on where it fits best, preferring towards
         // the bottom-right of the origin point
         if (kind == BMMenuKind.PullDownMenu) {
             transformOriginX = '50%';
         }
-        else if (width + point.x > document.documentElement.clientWidth) {
-            // If the menu doesn't fit towards the right, open it towards the left
-            transformOriginX = '100%';
-            point.x = rect.origin.x - width;
+        else if (width + point.x > windowWidth) {
+            // If the menu doesn't fit towards the right, open it towards the left, if it has more space
+            if (point.x > windowWidth / 2) {
+                transformOriginX = '100%';
+                point.x = rect.origin.x - width;
+
+                menuNode.style.maxWidth = point.x + 'px'
+            }
+            else {
+                menuNode.style.maxWidth = (window.innerWidth - point.x) + 'px';
+            }
         }
-        if (height + point.y > document.documentElement.clientHeight) {
-            // If the menu doesn't fit towards the bottom, open it towards the top
-            transformOriginY = ' 100%';
-            point.y = rect.bottom + paddingBottom - height;
+        if (height + point.y > windowHeight) {
+            // If the menu doesn't fit towards the bottom, open it towards the top, if it has more space
+            if (point.y > windowHeight / 2) {
+                transformOriginY = ' 100%';
+                point.y = Math.max(rect.bottom + paddingBottom - height, 0);
+
+                menuNode.style.maxHeight = point.y + 'px';
+            }
+            else {
+                menuNode.style.maxHeight = (windowHeight - point.y) + 'px';
+            }
         }
         menuNode.style.transformOrigin = transformOriginX + transformOriginY;
 
