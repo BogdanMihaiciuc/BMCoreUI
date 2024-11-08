@@ -1,3 +1,11 @@
+# 2.11.3
+
+## BMMenu
+
+Resolves an issue where menus appeared smaller than intended and away from the point they were opened from.
+
+Resolves an issue where menus items could appear outside of their menu.
+
 # 2.11.2
 
 ## BMAnimationContext
