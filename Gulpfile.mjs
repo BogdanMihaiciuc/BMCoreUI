@@ -9,7 +9,7 @@ import concat from 'gulp-concat';
 import terser from 'gulp-terser';
 import babel from 'gulp-babel';
 import {createTypeScriptDefinitionsWithContent} from './DTSGen.mjs';
-import packageJson from './package.json' assert { type: "json" };
+import packageJson from './package.json' with { type: "json" };
 
 /**
  * Files to remove from the build.
