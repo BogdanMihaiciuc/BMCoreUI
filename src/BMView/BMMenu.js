@@ -1007,9 +1007,9 @@ BMMenu.prototype = {
             // If the menu doesn't fit towards the right, open it towards the left, if it has more space
             if (point.x > windowWidth / 2) {
                 transformOriginX = '100%';
-                point.x = rect.origin.x - width;
 
-                menuNode.style.maxWidth = point.x + 'px'
+                menuNode.style.maxWidth = point.x + 'px';
+                point.x = rect.origin.x - width;
             }
             else {
                 menuNode.style.maxWidth = (window.innerWidth - point.x) + 'px';
@@ -1019,9 +1019,9 @@ BMMenu.prototype = {
             // If the menu doesn't fit towards the bottom, open it towards the top, if it has more space
             if (point.y > windowHeight / 2) {
                 transformOriginY = ' 100%';
-                point.y = Math.max(rect.bottom + paddingBottom - height, 0);
 
                 menuNode.style.maxHeight = point.y + 'px';
+                point.y = Math.max(rect.bottom + paddingBottom - height, 0);
             }
             else {
                 menuNode.style.maxHeight = (windowHeight - point.y) + 'px';
