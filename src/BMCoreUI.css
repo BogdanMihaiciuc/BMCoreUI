@@ -1172,6 +1172,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 	backdrop-filter: blur(25px);
 	-webkit-backdrop-filter: blur(25px);
+
+	overflow-y: auto;
 }
 
 .BMLayoutEditorConstraintPopup::before, .BMMenu::before {
@@ -1419,8 +1421,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	background: transparent;
 	color: rgba(0, 0, 0, .8);
 
-	backdrop-filter: brightness(90%);
-	-webkit-backdrop-filter: brightness(90%);
+	backdrop-filter: brightness(80%);
+	-webkit-backdrop-filter: brightness(80%);
 }
 
 .BMLayoutEditorConstraintPopupOptionHighlighted, .BMMenuItemHighlighted {
