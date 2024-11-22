@@ -889,10 +889,15 @@ BMMenu.prototype = {
         }
 
         // Make the menu expand
+        menuNode.style.overflow = 'hidden';
         __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0, translateY: 0, translateX: 0}, {
             duration,
             easing,
-            complete: _ => ((menuNode.style.pointerEvents = 'all'), menuContainer.style.pointerEvents = 'all')
+            complete: _ => {
+                menuNode.style.pointerEvents = 'all';
+                menuContainer.style.pointerEvents = 'all';
+                menuNode.style.overflow = '';
+            }
         }, BMMENU_USE_WEB_ANIMATIONS);
 
         // Animate each child node in
@@ -1035,10 +1040,15 @@ BMMenu.prototype = {
         menuNode.style.top = point.y + 'px';
 
         // Animate the menu in
+        menuNode.style.overflow = 'hidden';
         (window.Velocity || $.Velocity).animate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0}, {
             duration: 200,
             easing: 'easeOutQuad',
-            complete: _ => ((menuNode.style.pointerEvents = 'all'), menuContainer.style.pointerEvents = 'all')
+            complete: _ => {
+                menuNode.style.pointerEvents = 'all';
+                menuContainer.style.pointerEvents = 'all';
+                menuNode.style.overflow = '';
+            }
         });
 
         // Animate each menu item in
@@ -1366,6 +1376,8 @@ BMMenu.prototype = {
         }
 
         this._isSupermenuClosing = NO;
+
+        this._node.style.pointerEvents = 'none';
 
         __BMVelocityAnimate(this._node, {
             scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale, 
