@@ -896,20 +896,25 @@ BMMenu.prototype = {
             complete: _ => {
                 menuNode.style.pointerEvents = 'all';
                 menuContainer.style.pointerEvents = 'all';
-                menuNode.style.overflow = '';
             }
         }, BMMENU_USE_WEB_ANIMATIONS);
 
         // Animate each child node in
         let delay = 50;
-        for (let child of menuNode.childNodes) {
+        let delayIncrement = Math.min(16, 100 / menuNode.childNodes.length);
+        
+        for (let i = 0; i < menuNode.childNodes.length; i++) {
+            const child = menuNode.childNodes[i];
             BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
             __BMVelocityAnimate(child, {translateY: '0px', translateZ: 0, opacity: 1}, {
                 duration: 100,
                 easing: 'easeOutQuad',
-                delay: delay
+                delay: delay,
+                complete: i == menuNode.childNodes.length - 1 ? () => {
+                    menuNode.style.overflow = '';
+                } : undefined,
             }, BMMENU_USE_WEB_ANIMATIONS);
-            delay += 16;
+            delay += delayIncrement;
         }
 
         // Retain the preivously focused node, to restore its focus when the menu closes
@@ -1047,20 +1052,25 @@ BMMenu.prototype = {
             complete: _ => {
                 menuNode.style.pointerEvents = 'all';
                 menuContainer.style.pointerEvents = 'all';
-                menuNode.style.overflow = '';
             }
         });
 
         // Animate each menu item in
         let delay = 0;
-        for (let child of menuNode.childNodes) {
+        let delayIncrement = Math.min(16, 100 / menuNode.childNodes.length);
+
+        for (let i = 0; i < menuNode.childNodes.length; i++) {
+            const child = menuNode.childNodes[i];
             BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
             (window.Velocity || $.Velocity).animate(child, {translateY: '0px', translateZ: 0, opacity: 1}, {
                 duration: 100,
                 easing: 'easeOutQuad',
-                delay: delay
+                delay: delay,
+                complete: i == menuNode.childNodes.length - 1 ? () => {
+                    menuNode.style.overflow = '';
+                } : undefined,
             });
-            delay += 16;
+            delay += delayIncrement;
         }
 
         // Retain the preivously focused node, to restore its focus when the menu closes
