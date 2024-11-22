@@ -305,7 +305,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 		this._usesLegacyDataSet = NO;
 		this._dataSource = source;
-		this._dataSet = BMCollectionViewDataSetAdapter.adapterWithDataSource(source);
+		this._dataSet = BMCollectionViewDataSetAdapter.adapterWithDataSource(this, source);
 
 		this.dataSetDidChangeFromDataSet(oldDataSet);
 	},
