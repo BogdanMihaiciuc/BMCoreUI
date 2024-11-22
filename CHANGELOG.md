@@ -1,3 +1,9 @@
+# 2.11.5
+
+## BMMenu
+
+The delay between animating individual items has been reduced for menus with over 6 items, based on the number of items. The more items a menu has, the smaller the delay between animating each items.
+
 # 2.11.4
 
 ## BMMenu
