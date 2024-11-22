@@ -1008,7 +1008,7 @@ BMMenu.prototype = {
             if (point.x > windowWidth / 2) {
                 transformOriginX = '100%';
 
-                menuNode.style.maxWidth = point.x + 'px';
+                menuNode.style.maxWidth = rect.origin.x + 'px';
                 point.x = rect.origin.x - width;
             }
             else {
@@ -1020,7 +1020,7 @@ BMMenu.prototype = {
             if (point.y > windowHeight / 2) {
                 transformOriginY = ' 100%';
 
-                menuNode.style.maxHeight = point.y + 'px';
+                menuNode.style.maxHeight = rect.bottom + 'px';
                 point.y = Math.max(rect.bottom + paddingBottom - height, 0);
             }
             else {
