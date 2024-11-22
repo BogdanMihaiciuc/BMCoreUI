@@ -1,3 +1,11 @@
+# 2.11.6
+
+## BMMenu
+
+Resolves an issue where touch menus flashed while opening.
+
+Increased the maximum delay between animating menu items for large menus.
+
 # 2.11.5
 
 ## BMMenu
