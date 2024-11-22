@@ -1,3 +1,15 @@
+# 2.11.4
+
+## BMMenu
+
+Resolves an issue where submenus could appear over their supermenus if they are very large.
+
+Resolves an issue where scrollbars could appear in a menu while it was opening or closing.
+
+## BMCollectionView
+
+Resolved a crash that occurred when setting the `dataSource` property on a collection view.
+
 # 2.11.3
 
 ## BMMenu
