@@ -890,7 +890,13 @@ BMMenu.prototype = {
 
         // Make the menu expand
         menuNode.style.overflow = 'hidden';
-        __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0, translateY: 0, translateX: 0}, {
+        
+        __BMVelocityAnimate(menuNode, {opacity: 1}, {
+            duration,
+            easing
+        }, BMMENU_USE_WEB_ANIMATIONS);
+
+        __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, translateZ: 0, translateY: 0, translateX: 0}, {
             duration,
             easing,
             complete: _ => {
@@ -901,7 +907,7 @@ BMMenu.prototype = {
 
         // Animate each child node in
         let delay = 50;
-        let delayIncrement = Math.min(16, 100 / menuNode.childNodes.length);
+        let delayIncrement = Math.min(16, 150 / menuNode.childNodes.length);
         
         for (let i = 0; i < menuNode.childNodes.length; i++) {
             const child = menuNode.childNodes[i];
@@ -1057,7 +1063,7 @@ BMMenu.prototype = {
 
         // Animate each menu item in
         let delay = 0;
-        let delayIncrement = Math.min(16, 100 / menuNode.childNodes.length);
+        let delayIncrement = Math.min(16, 150 / menuNode.childNodes.length);
 
         for (let i = 0; i < menuNode.childNodes.length; i++) {
             const child = menuNode.childNodes[i];
@@ -1387,7 +1393,7 @@ BMMenu.prototype = {
 
         this._isSupermenuClosing = NO;
 
-        this._node.style.pointerEvents = 'none';
+        this._node.style.overflow = 'hidden';
 
         __BMVelocityAnimate(this._node, {
             scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale, 
