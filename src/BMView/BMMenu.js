@@ -917,7 +917,9 @@ BMMenu.prototype = {
                 easing: 'easeOutQuad',
                 delay: delay,
                 complete: i == menuNode.childNodes.length - 1 ? () => {
-                    menuNode.style.overflow = '';
+                    if (this._node == menuNode) {
+                        menuNode.style.overflow = '';
+                    }
                 } : undefined,
             }, BMMENU_USE_WEB_ANIMATIONS);
             delay += delayIncrement;
@@ -1073,7 +1075,9 @@ BMMenu.prototype = {
                 easing: 'easeOutQuad',
                 delay: delay,
                 complete: i == menuNode.childNodes.length - 1 ? () => {
-                    menuNode.style.overflow = '';
+                    if (this._node == menuNode) {
+                        menuNode.style.overflow = '';
+                    }
                 } : undefined,
             });
             delay += delayIncrement;
