@@ -1392,7 +1392,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	bringToFrontAnimated: function (animated, args = {}) {
 		this._visible = YES;
 
-		this.becomeKeyWindow();
+		if (!this.isKeyWindow) {
+			this.becomeKeyWindow();
+		}
 
 		for (let window of this._toolWindows) {
 			if (window.opensAutomatically) window.bringToFrontAnimated(animated);
@@ -1450,7 +1452,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					this.anchorRect = undefined;
 					this.anchorNode = undefined;
 
-					if (this._keyboardShortcutsEnabled) {
+					if (this._keyboardShortcutsEnabled && this.isKeyWindow) {
 						this.node.focus();
 					}
 				}
