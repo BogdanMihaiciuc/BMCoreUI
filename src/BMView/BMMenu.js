@@ -983,7 +983,7 @@ BMMenu.prototype = {
 
         // Prepare the initial state of the animation
         BMHook(menuNode, {
-            scaleX: kind == BMMenuKind.PullDownMenu ? .5 : .75, 
+            scaleX: kind == BMMenuKind.PullDownMenu ? 1 : .75, 
             scaleY: kind == BMMenuKind.PullDownMenu ? .5 : .75, 
             opacity: 0
         });
