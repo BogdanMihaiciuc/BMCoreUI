@@ -626,9 +626,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
         return this._anchorPoint;
     },
     set anchorPoint(point) {
-		this._anchorPoint = point && point.copy();
 		this.anchorNode = undefined;
 		this._anchorRect = undefined;
+		this._anchorPoint = point && point.copy();
     },
 
     /**
@@ -641,9 +641,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
         return this._anchorRect;
     },
     set anchorRect(rect) {
-		this._anchorRect = rect && rect.copy();
 		this.anchorNode = undefined;
 		this._anchorPoint = undefined;
+		this._anchorRect = rect && rect.copy();
     },
 
 
