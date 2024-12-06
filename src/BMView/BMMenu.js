@@ -1025,7 +1025,7 @@ BMMenu.prototype = {
                 transformOriginX = '100%';
 
                 menuNode.style.maxWidth = rect.origin.x + 'px';
-                point.x = rect.origin.x - width;
+                point.x = Math.max(rect.origin.x - width, 0);
             }
             else {
                 menuNode.style.maxWidth = (window.innerWidth - point.x) + 'px';
