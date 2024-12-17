@@ -347,6 +347,11 @@ BMMenu.prototype = {
     _node: undefined, // <DOMNode, nullable>
 
     /**
+     * The DOM node containing the menu items.
+     */
+    _itemsContainerNode: undefined, // <DOMNode, nullable>
+
+    /**
      * The container DOM node currently used by this menu
      */
     _containerNode: undefined, // <DOMNode, nullable>
@@ -413,9 +418,15 @@ BMMenu.prototype = {
                 }
 
                 // And add it to the newly highlighted item
-                const nextHighlightedItem = this._node.children[index];
+                const nextHighlightedItem = this._itemsContainerNode.children[index];
                 if (nextHighlightedItem) {
                     nextHighlightedItem.classList.add('BMMenuItemHighlighted');
+                    if (nextHighlightedItem.scrollIntoViewIfNeeded) {
+                        nextHighlightedItem.scrollIntoViewIfNeeded();
+                    }
+                    else {
+                        nextHighlightedItem.scrollIntoView();
+                    }
                 }
             }
 
@@ -487,6 +498,11 @@ BMMenu.prototype = {
         const menuNode = document.createElement('div');
         menuNode.className = this._CSSClass ? `BMMenu ${this._CSSClass}` : 'BMMenu';
         this._node = menuNode;
+
+        const itemContainerNode = document.createElement('div');
+        itemContainerNode.className = 'BMMenuItemsContainer';
+        this._itemsContainerNode = itemContainerNode;
+        menuNode.appendChild(itemContainerNode);
 
         // When opening the menu, reset the highlight index
         this._highlightedIndex = -1;
@@ -608,7 +624,7 @@ BMMenu.prototype = {
             if (item.name.startsWith('---')) {
                 const itemNode = document.createElement('div');
                 itemNode.className = 'BMMenuDivider';
-                this._node.appendChild(itemNode);
+                this._itemsContainerNode.appendChild(itemNode);
                 return;
             }
 
@@ -727,7 +743,7 @@ BMMenu.prototype = {
                 }
             });
 
-            this._node.appendChild(itemNode);
+            this._itemsContainerNode.appendChild(itemNode);
         });
     },
 
@@ -772,6 +788,7 @@ BMMenu.prototype = {
         this._renderMenu();
 
         const menuNode = this._node;
+        const itemsContainerNode = this._itemsContainerNode;
         const menuContainer = this._containerNode;
         if (!this._supermenu) {
             document.body.appendChild(menuContainer);
@@ -860,6 +877,8 @@ BMMenu.prototype = {
             menuNode.style.transformOrigin = '50% 0%';
         }
 
+        this._kind = kind;
+
         const point = BMPointMake(Math.max(sourceRectScaled.origin.x + horizontalDisplacement, 8), sourceRectScaled.bottom + _BMMenuSpacingToNode + displacement);
         BMCopyProperties(menuNode.style, {left: point.x + 'px', top: point.y + 'px'});
 
@@ -889,7 +908,7 @@ BMMenu.prototype = {
         }
 
         // Make the menu expand
-        menuNode.style.overflow = 'hidden';
+        itemsContainerNode.style.overflow = 'hidden';
         
         __BMVelocityAnimate(menuNode, {opacity: 1}, {
             duration,
@@ -907,18 +926,18 @@ BMMenu.prototype = {
 
         // Animate each child node in
         let delay = 50;
-        let delayIncrement = Math.min(16, 150 / menuNode.childNodes.length);
+        let delayIncrement = Math.min(16, 150 / itemsContainerNode.childNodes.length);
         
-        for (let i = 0; i < menuNode.childNodes.length; i++) {
-            const child = menuNode.childNodes[i];
+        for (let i = 0; i < itemsContainerNode.childNodes.length; i++) {
+            const child = itemsContainerNode.childNodes[i];
             BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
             __BMVelocityAnimate(child, {translateY: '0px', translateZ: 0, opacity: 1}, {
                 duration: 100,
                 easing: 'easeOutQuad',
                 delay: delay,
-                complete: i == menuNode.childNodes.length - 1 ? () => {
+                complete: i == itemsContainerNode.childNodes.length - 1 ? () => {
                     if (this._node == menuNode) {
-                        menuNode.style.overflow = '';
+                        itemsContainerNode.style.overflow = '';
                     }
                 } : undefined,
             }, BMMENU_USE_WEB_ANIMATIONS);
@@ -981,7 +1000,10 @@ BMMenu.prototype = {
         this._renderMenu();
 
         const menuNode = this._node;
+        const itemsContainerNode = this._itemsContainerNode;
         const menuContainer = this._containerNode;
+
+        this._kind = kind;
 
         // Prepare the initial state of the animation
         BMHook(menuNode, {
@@ -1053,7 +1075,7 @@ BMMenu.prototype = {
         menuNode.style.top = point.y + 'px';
 
         // Animate the menu in
-        menuNode.style.overflow = 'hidden';
+        itemsContainerNode.style.overflow = 'hidden';
         (window.Velocity || $.Velocity).animate(menuNode, {scaleX: 1, scaleY: 1, opacity: 1, translateZ: 0}, {
             duration: 200,
             easing: 'easeOutQuad',
@@ -1065,18 +1087,18 @@ BMMenu.prototype = {
 
         // Animate each menu item in
         let delay = 0;
-        let delayIncrement = Math.min(16, 150 / menuNode.childNodes.length);
+        let delayIncrement = Math.min(16, 150 / itemsContainerNode.childNodes.length);
 
-        for (let i = 0; i < menuNode.childNodes.length; i++) {
-            const child = menuNode.childNodes[i];
+        for (let i = 0; i < itemsContainerNode.childNodes.length; i++) {
+            const child = itemsContainerNode.childNodes[i];
             BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
             (window.Velocity || $.Velocity).animate(child, {translateY: '0px', translateZ: 0, opacity: 1}, {
                 duration: 100,
                 easing: 'easeOutQuad',
                 delay: delay,
-                complete: i == menuNode.childNodes.length - 1 ? () => {
+                complete: i == itemsContainerNode.childNodes.length - 1 ? () => {
                     if (this._node == menuNode) {
-                        menuNode.style.overflow = '';
+                        itemsContainerNode.style.overflow = '';
                     }
                 } : undefined,
             });
@@ -1354,7 +1376,7 @@ BMMenu.prototype = {
 
         // Delay the actual menu node closing animation to allow time
         // for the menu items to run their animations
-        let delay = this._node.childNodes.length * 16;
+        let delay = Math.min(this._itemsContainerNode.childNodes.length * 16, 150);
         delay = (delay < 0 ? 0 : delay);
 
         // If an item was clicked, further delay closing to allow the selection animation to play
@@ -1367,6 +1389,7 @@ BMMenu.prototype = {
         const sourceNodeShadow = this._sourceNodeShadow;
         const containerNode = this._containerNode;
         const node = this._node;
+        const itemsContainerNode = this._itemsContainerNode;
         const sourceNode = this._sourceNode;
 
         this._sourceNode = undefined;
@@ -1397,7 +1420,7 @@ BMMenu.prototype = {
 
         this._isSupermenuClosing = NO;
 
-        this._node.style.overflow = 'hidden';
+        itemsContainerNode.style.overflow = 'hidden';
 
         __BMVelocityAnimate(this._node, {
             scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale, 
@@ -1435,18 +1458,20 @@ BMMenu.prototype = {
             // if an item was selected
             delay = 200;
         }
-        for (let i = this._node.childNodes.length - 1; i >= 0; i--) {
-            let child = this._node.childNodes[i];
+        const delayIncrement = Math.min(16, 150 / itemsContainerNode.childNodes.length);
+        for (let i = itemsContainerNode.childNodes.length - 1; i >= 0; i--) {
+            let child = itemsContainerNode.childNodes[i];
             __BMVelocityAnimate(child, {translateY: '16px', translateZ: 0, opacity: 0}, {
                 duration: 100,
                 easing: 'easeInQuad',
                 delay: delay
             }, BMMENU_USE_WEB_ANIMATIONS);
-            delay += 16;
+            delay += delayIncrement;
         }
 
         this._node = undefined;
         this._containerNode = undefined;
+        this._itemsContainerNode = undefined;
     },
 
     /**
