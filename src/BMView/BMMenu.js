@@ -1020,11 +1020,12 @@ BMMenu.prototype = {
         const height = menuNode.offsetHeight;
         const width = menuNode.offsetWidth;
         const metrics = window.getComputedStyle(menuNode);
+        const containerMetrics = window.getComputedStyle(itemsContainerNode);
 
         // The paddings are used to adjust the menu's position so that the first
         // or last menu item appears directly on the pointer's position
-        const paddingTop = parseInt(metrics.paddingTop, 10) || 0;
-        const paddingBottom = parseInt(metrics.paddingBottom, 10) || 0;
+        const paddingTop = (parseInt(metrics.paddingTop, 10) || 0) + (parseInt(containerMetrics.paddingTop, 10) || 0);
+        const paddingBottom = (parseInt(metrics.paddingBottom, 10) || 0) + (parseInt(containerMetrics.paddingBottom, 10) || 0);
 
         // The transform origins will be adjusted based on which direction the menu opens in
         let transformOriginX = '0%';
