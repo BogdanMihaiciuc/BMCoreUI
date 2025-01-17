@@ -130,7 +130,7 @@ BMCollectionViewDataSet.prototype = {
 	 * Before the update is finished, the collection view will always invoke this method with the parameter set to NO.
 	 * @param use <Boolean>			YES if the data set should switch to the old data, NO if it should switch to the new data.
 	 */
-	 /*required*/ useOldData: function (use) {},
+	/*required*/ useOldData: function (use) {},
 	 
 	/**
 	 * If this data set performs full data updates, this function is required.
@@ -138,7 +138,7 @@ BMCollectionViewDataSet.prototype = {
 	 * The data set must return YES if it is serving up the old data, NO otherwise.
 	 * @return <Boolean>			YES if this data set is currently serving up the old data, NO otherwise.
 	 */
-	 /*required*/ isUsingOldData: function () {},
+	/*required*/ isUsingOldData: function () {},
 	 
 	/**
 	 * This method may be implemented by data set objects that support moving items for interactive drag gestures.
@@ -154,53 +154,64 @@ BMCollectionViewDataSet.prototype = {
 	 * }
 	 * @return <Boolean>						`YES` if the data set has performed the requested change, `NO` otherwise.
 	 */
-	 moveItemFromIndexPath: function (indexPath, {toIndexPath: toIndexPath}) {},
+	moveItemFromIndexPath: function (indexPath, {toIndexPath: toIndexPath}) {},
 	 
-	 /**
-	  * This method may be implemented by data set objects that support moving items for interactive drag gestures.
-	  * Data set objects implementing this method are expected to update their internal data structures to match
-	  * the items' new positions, then trigger a data update to run on the collection view.
-	  * Optionally, data sets may reject the change and not perform any action or only partially accept the update
-	  * and move just some of the items.
-	  * The order of the items in the array is guaranteed to be such that the target index paths are in ascending order.
-	  * Implementing this method is optional and if it is not implemented, collection view will repeatedly invoke
-	  * `moveItemFromIndexPath(_, {toIndexPath})` passing in each of the items that need to be moved.
-	  * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be moved.
-	  * {
-	  *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should move. This represents the index path of the current layout
-	  * 											before any items may have moved. It is the data set's responsability to adjust this index path as the items shift
-	  * 											within its data structure.
-	  * }
-	  * @return <[BMIndexPath<T>]>					An array of index paths specifying the positions of the items after they have been moved.
-	  * 											The index paths in this array are not required to match either of the lists supplied by
-	  *												collection view.
-	  */
-	  moveItemsFromIndexPaths: function (indexPaths, {toIndexPath: toIndexPath}) {},
+	/**
+	 * This method may be implemented by data set objects that support moving items for interactive drag gestures.
+	 * Data set objects implementing this method are expected to update their internal data structures to match
+	 * the items' new positions, then trigger a data update to run on the collection view.
+	 * Optionally, data sets may reject the change and not perform any action or only partially accept the update
+	 * and move just some of the items.
+	 * The order of the items in the array is guaranteed to be such that the target index paths are in ascending order.
+	 * Implementing this method is optional and if it is not implemented, collection view will repeatedly invoke
+	 * `moveItemFromIndexPath(_, {toIndexPath})` passing in each of the items that need to be moved.
+	 * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be moved.
+	 * {
+	 *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should move. This represents the index path of the current layout
+	 * 											before any items may have moved. It is the data set's responsability to adjust this index path as the items shift
+	 * 											within its data structure.
+	 * }
+	 * @return <[BMIndexPath<T>]>					An array of index paths specifying the positions of the items after they have been moved.
+	 * 											The index paths in this array are not required to match either of the lists supplied by
+	 *												collection view.
+	 */
+	moveItemsFromIndexPaths: function (indexPaths, {toIndexPath: toIndexPath}) {},
 
+	
+	/**
+	 * This method may be implemented by data set objects that support removing items for interactive drag gestures.
+	 * Data set objects implementing this method are expected to update their internal data structures to remove
+	 * the items, then trigger a data update to run on the collection view.
+	 * Optionally, data sets may reject the change and not perform any action or only partially accept the update
+	 * and remove just some of the items, by changing their internal data structures appropriately.
+	 * The order of the items in the array is guaranteed to be such that the target index paths are in ascending order.
+	 * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be removed.
+	 */
+	removeItemsAtIndexPaths: function (indexPaths) {},
 	 
-	 /**
-	  * This method may be implemented by data set objects that support removing items for interactive drag gestures.
-	  * Data set objects implementing this method are expected to update their internal data structures to remove
-	  * the items, then trigger a data update to run on the collection view.
-	  * Optionally, data sets may reject the change and not perform any action or only partially accept the update
-	  * and remove just some of the items, by changing their internal data structures appropriately.
-	  * The order of the items in the array is guaranteed to be such that the target index paths are in ascending order.
-	  * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be removed.
-	  */
-	  removeItemsAtIndexPaths: function (indexPaths) {},
-	 
-	  /**
-	   * This method may be implemented by data set objects that support transferring items from another collection view.
-	   * Data set objects implementing this method are expected to update their internal data structures to add
-	   * the items, then trigger a data update to run on the collection view.
-	   * Optionally, data sets may reject the change and not perform any action or only partially accept the update
-	   * and add just some of the items, by changing their internal data structures appropriately.
-	   * @param items <[AnyObject]>					An array of objects to add to the collection view.
-	   * {
-	   *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should be inserted.
-	   * }
-	   */
-	   insertItems: function (items, {toIndexPath: toIndexPath}) {},
+	/**
+	 * This method may be implemented by data set objects that support transferring items from another collection view.
+	 * Data set objects implementing this method are expected to update their internal data structures to add
+	 * the items, then trigger a data update to run on the collection view.
+	 * Optionally, data sets may reject the change and not perform any action or only partially accept the update
+	 * and add just some of the items, by changing their internal data structures appropriately.
+	 * @param items <[AnyObject]>					An array of objects to add to the collection view.
+	 * {
+	 *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should be inserted.
+	 * }
+	 */
+	insertItems: function (items, {toIndexPath: toIndexPath}) {},
+
+	/**
+	 * This method may be implemented by data set objects that support transferring items to another collection view.
+	 * Data set objects implementing this method are expected to create a copy of the specified item and return it.
+	 * The item is guaranteed to be an object that was returned at some point by the data set when it provided an index path.
+	 * If this method is not implemented, collection view will create a copy of the item by stringifying it and parsing it back
+	 * into an object.
+	 * @param item <AnyObject>						The item whose copy should be created for the transfer.
+	 * @returns <AnyObject>							A copy of the specified item.
+	 */
+	copyOfItem: function (item) {},
 
 };
 

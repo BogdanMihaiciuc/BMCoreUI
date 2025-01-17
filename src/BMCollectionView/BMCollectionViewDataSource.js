@@ -165,6 +165,18 @@ BMCollectionViewDataSet.prototype = {
      */
     collectionViewInsertItems: function (collectionView, items, {toIndexPath: toIndexPath}) {},
 
+	/**
+	 * This method may be implemented by data source objects that support transferring items to another collection view.
+	 * Data source objects implementing this method are expected to create a copy of the specified item and return it.
+	 * The item is guaranteed to be an object that was returned at some point by the data set when it provided an index path.
+	 * If this method is not implemented, collection view will create a copy of the item by stringifying it and parsing it back
+	 * into an object.
+     * @param collectionView <BMCollectionView>     The collection view from which items are being transferred.
+     * @param item <AnyObject>						The item whose copy should be created for the transfer.
+	 * @returns <AnyObject>							A copy of the specified item.
+	 */
+	collectionViewCopyOfItem: function (collectionView, item) {},
+
 };
 
 // @endtype

@@ -3580,17 +3580,22 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				// The list of objects will be a copy of the actual objects
 				let dropShadowMap = new Map;
 				let dropItems = this._draggingIndexPaths.map(indexPath => {
-					const newObject = JSON.parse(JSON.stringify(indexPath.object));
-
-					// stringify + parse strips out undefined values, but this can lead to issues
-					// in Thingworx when testing the new object against the data shape
-					for (const key in indexPath.object) {
-						if (typeof indexPath.object[key] === 'undefined') {
-							newObject[key] = undefined;
-						}
+					if (this._dataSet.copyOfItem) {
+						return this._dataSet.copyOfItem(indexPath.object);
 					}
+					else {
+						const newObject = JSON.parse(JSON.stringify(indexPath.object));
 
-					return newObject;
+						// stringify + parse strips out undefined values, but this can lead to issues
+						// in Thingworx when testing the new object against the data shape
+						for (const key in indexPath.object) {
+							if (typeof indexPath.object[key] === 'undefined') {
+								newObject[key] = undefined;
+							}
+						}
+	
+						return newObject;
+					} 
 				});
 				let index = 0;
 
@@ -6423,7 +6428,15 @@ class BMCollectionViewDataSourceAdapter {
 	}
 
 	static adapterWithDataSet(dataSet) {
-		return new this(dataSet);
+		const adapter = new this(dataSet);
+
+		if (dataSet.copyOfItem) {
+			adapter.collectionViewCopyOfItem = function (collectionView, item) {
+				return dataSet.copyOfItem(item);
+			};
+		}
+
+		return adapter;
 	}
 }
 
@@ -6508,7 +6521,15 @@ class BMCollectionViewDataSetAdapter {
 	}
 
 	static adapterWithDataSource(collectionView, dataSource) {
-		return new this(collectionView, dataSource);
+		const adapter = new this(collectionView, dataSource);
+
+		if (dataSource.collectionViewCopyOfItem) {
+			adapter.copyOfItem = function (item) {
+				return dataSource.collectionViewCopyOfItem(adapter._collectionView, item);
+			};
+		}
+
+		return adapter;
 	}
 }
 
