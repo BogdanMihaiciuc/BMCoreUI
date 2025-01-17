@@ -95,6 +95,10 @@
 
 /* MARK: BMWindow */
 
+.BMWindowAnchorNodeHidden {
+	visibility: hidden !important;
+}
+
 .BMWindowShowcaseWindow, .BMWindowShowcaseWindow *:not(.BMWindowShowcaseWindowSelector) {
 	pointer-events: none !important;
 }

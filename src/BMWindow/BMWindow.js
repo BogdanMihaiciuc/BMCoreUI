@@ -583,6 +583,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * The window toolbar DOM node.
 	 */
 	_toolbar: undefined, // <DOMNode>
+	
 	get toolbar() {
 		return this._toolbar;
 	},
@@ -657,9 +658,21 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
         return this._anchorNode;
     },
     set anchorNode(node) {
+		if (this._keepsNodeHidden && this._visible) {
+			if (this._anchorNode) {
+				this._anchorNode.classList.remove('BMWindowAnchorNodeHidden');
+			}
+		}
+
 		this._anchorNode = node;
 		this._anchorPoint = undefined;
 		this._anchorRect = undefined;
+
+		if (this._keepsNodeHidden && this._visible) {
+			if (this._anchorNode) {
+				this._anchorNode.classList.add('BMWindowAnchorNodeHidden');
+			}
+		}
     },
 	
 	/**
@@ -1289,6 +1302,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	},
 
 	/**
+	 * When set to `YES`, the anchor node remains hidden while the window is visible.
+	 */
+	_keepsNodeHidden: NO, // <Boolean>
+
+	/**
 	 * @protected
 	 * This method is invoked during `bringToFrontAnimated()` to run the animations that will make this window visible.
 	 * Subclasses can override this method to perform custom animations.
@@ -1331,9 +1349,26 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			// and then to the animation node, but inversed
 			const frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
 			const transformRect = frame.rectWithTransformToRect(rect);
+
+			let windowShouldKeepNodeHidden = NO;
+			if (self.delegate && self.delegate.windowShouldKeepNodeHidden) {
+				windowShouldKeepNodeHidden = self.delegate.windowShouldKeepNodeHidden(self, node);
+			}
 			
 			document.body.appendChild(animationNode);
-			node.style.display = 'none';
+			
+			if (windowShouldKeepNodeHidden) {
+				node.classList.add('BMWindowAnchorNodeHidden');
+				this._keepsNodeHidden = YES;
+			}
+			else {
+				node.animate([
+					{opacity: 0, easing: 'cubic-bezier(0.77, 0, 0.175, 1)'}, 
+					{opacity: 0, easing: 'cubic-bezier(0.77, 0, 0.175, 1)', offset: 0.5},
+					{opacity: 1}
+				], _BMWindowAnimationDurationDefault);
+				this._keepsNodeHidden = NO;
+			}
 			
 			__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
 							scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
@@ -1350,18 +1385,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 								easing: _BMWindowAnimationEasingDefault,
 								complete: function () { 
 									animationNode.remove(); 
-									var windowShouldKeepNodeHidden = NO;
-									if (self.delegate && self.delegate.windowShouldKeepNodeHidden) {
-										windowShouldKeepNodeHidden = self.delegate.windowShouldKeepNodeHidden(self, node);
-									}
-									if (windowShouldKeepNodeHidden) {
-										self._nodeDisplay = nodeDisplay;
-									}
-									else {
-										node.style.display = nodeDisplay;
-										self._nodeDisplay = undefined;
-									}
-
 									completionHandler();
 								}
 							}, YES);
@@ -1523,15 +1546,12 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			// Create a copy of the given node which will be used in the animation in place of the original node
 			const node = this._anchorNode;
 			
-			if (typeof self._nodeDisplay != 'undefined') {
-				node.style.display = self._nodeDisplay;
+			if (this._keepsNodeHidden) {
+				node.classList.remove('BMWindowAnchorNodeHidden');
 			}
 			
 			const rect = BMRectMakeWithNodeFrame(node);
 			const animationNode = node.cloneNode(YES);
-			
-			const nodeDisplay = (typeof self._nodeDisplay != 'undefined') ? self._nodeDisplay : node.style.display;
-			self._nodeDisplay = undefined;
 			
 			animationNode.style.position = 'fixed';
 			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
@@ -1550,7 +1570,17 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 							scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height, opacity: 0});
 			
 			document.body.appendChild(animationNode);
-			node.style.display = 'none';
+			
+			if (this._keepsNodeHidden) {
+				node.classList.add('BMWindowAnchorNodeHidden');
+			}
+			else {
+				node.animate([
+					{opacity: 1, easing: 'cubic-bezier(0.77, 0, 0.175, 1)'}, 
+					{opacity: 0, easing: 'cubic-bezier(0.77, 0, 0.175, 1)', offset: 0.5},
+					{opacity: 0}
+				], _BMWindowAnimationDurationDefault);
+			}
 			
 			__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
 							scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
@@ -1565,7 +1595,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 							scaleX: [1, 1 / transformRect.size.width], scaleY: [1, 1 / transformRect.size.height]}, {
 								duration: _BMWindowAnimationDurationDefault,
 								easing: _BMWindowAnimationEasingDefault,
-								complete: function () { node.style.display = nodeDisplay; animationNode.remove(); }
+								complete: function () {
+									node.classList.remove('BMWindowAnchorNodeHidden');
+									animationNode.remove();
+								}
 							}, YES);
 		}
 		else {
