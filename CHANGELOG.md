@@ -1,3 +1,33 @@
+# 2.11.7
+
+## BMCollectionViewDataSource
+
+A new `collectionViewCopyOfItem` method may be implemented on data source objects to provide copies of objects to collection view to use during interactive movement when transferring items to a different collection view. This makes it possible to override the default behaviour of stringifying then parsing the objects to obtain copies. An equivalent method, `copyOfItem` can be used on the deprecated data set objects as well.
+
+## BMMenu
+
+Resolves an issue where a submenu appearing to the right of its parent menu could be cut off.
+
+Resolves an issue where the incorrect animation played when opening or closing a pull down menu.
+
+Resolves an issue where scrollbars could briefly appear when quickly closing a menu after opening it.
+
+Corrected a visual artifact that appeared when scrolling a menu while dark mode was active.
+
+The delay between each individual item animating when closing a menu is now also capped to prevent an excessively long animation from occurring for menus with a large number of items.
+
+When highlighting a menu item in a scrolling menu that is not visible, it will now scroll into view.
+
+## BMWindow
+
+The `bringToFrontAnimated` method will no longer attempt to make the window the key window if was already the key window when this method was invoked. Additionally, the window node will no longer be focused at the end of the animation if it is no longer the key window by then.
+
+Resolved an issue where setting the `anchorPoint` or `anchorRect` properties caused the anchor to be cleared instead.
+
+During a window opening or closing animation, when an anchor node is set, that node will no longer have its _display_ property set to `none`. Instead, a class will be used that sets the node's _visibility_ property to `hidden`. Additionally, when the window delegate does not require the node to remain hidden while the window is open, an animation will run on that node to reveal it again.
+
+When the `anchorNode` property is changed while an open window is keeping the anchor node hidden, the previous anchor node will be displayed and the new anchor node will be hidden.
+
 # 2.11.6
 
 ## BMMenu
