@@ -1,3 +1,10 @@
+# 2.11.8
+
+## BMCollectionViewDataSource
+
+Resolves an issue where the `collectionViewNumberOfObjectsInSectionAtIndex` method was incorrectly used in place of the `collectionViewIndexPathForObjectAtRow` method, causing collection views using data source objects to crash.
+
+
 # 2.11.7
 
 ## BMCollectionViewDataSource
