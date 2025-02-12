@@ -6465,7 +6465,7 @@ class BMCollectionViewDataSetAdapter {
 	}
 
 	indexPathForObjectAtRow(row, args) {
-		return this._dataSource.collectionViewNumberOfObjectsInSectionAtIndex(this._collectionView, row, args);
+		return this._dataSource.collectionViewIndexPathForObjectAtRow(this._collectionView, row, args);
 	}
 
 	indexPathForObject(object) {
