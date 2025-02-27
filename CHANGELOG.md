@@ -1,3 +1,9 @@
+# 2.11.9
+
+## BMWindow
+
+Resolves an issue where the `title` property was missing in the typings.
+
 # 2.11.8
 
 ## BMCollectionViewDataSource
