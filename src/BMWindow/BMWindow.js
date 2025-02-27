@@ -610,6 +610,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * A string that is used for when this window is minimized.
 	 */
 	_title: 'New Window', // <String>
+	
 	get title() {
 		return this._title;
 	},
