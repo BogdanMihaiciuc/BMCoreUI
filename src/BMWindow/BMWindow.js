@@ -2,7 +2,7 @@
 
 import {YES, NO, BMExtend, BMCopyProperties} from '../Core/BMCoreUI'
 import {BMPointMake} from '../Core/BMPoint'
-import {BMRectMake, BMRectMakeWithNodeFrame} from '../Core/BMRect'
+import {BMRectMake, BMRectMakeWithNodeFrame, BMRectMakeWithOrigin} from '../Core/BMRect'
 import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
 import {BMView, BMViewColorScheme} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
@@ -132,15 +132,55 @@ class BMWindowOverlay extends BMView {
 
 // @type BMWindow extends BMView
 
+/**
+ * The duration, in milliseconds, for most window animations.
+ */
 var _BMWindowAnimationDurationDefault = 400;
+
+/**
+ * The easing to use for most window animations.
+ */
 var _BMWindowAnimationEasingDefault = 'easeInOutQuart';
+
+/**
+ * The easing to use for the default window appearing animation.
+ */
 const _BMWindowAnimationEasingIncomingDefault = 'easeOutQuart';
+
+/**
+ * The duration, in milliseconds, to use for the default window appearing animation.
+ */
 const _BMWindowAnimationDurationIncomingDefault = 200;
+
+/**
+ * The easing to use for the default window disappearing animation.
+ */
 const _BMWindowAnimationEasingOutgoingDefault = 'easeInQuart';
+
+/**
+ * The duration, in milliseconds, to use for the default window disappearing animation.
+ */
 const _BMWindowAnimationDurationOutgoingDefault = 200;
 
+/**
+ * The delay, in milliseconds, to wait until hiding the minimize strip after the mouse pointer
+ * moves away from the bottom of the screen.
+ */
+const _BMWindowMinimzeStripHideDelay = 1000;
+
+// The maximum iterations allowed for the window showcase since it's never guaranteed that
+// the algorithm can finish within a known number of iterations; in practice it's rare that
+// this value will ever be reached.
 const BM_WINDOW_SHOWCASE_MAX_ITERATIONS = 5000;
+
+// The maximum z-index to use for the topmost window.
 var BM_WINDOW_Z_INDEX_MAX = 2007;
+
+// A flag that controls the size of a minimized window.
+const BM_WINDOW_MINIMIZED_SIZE = 160;
+
+// A flag that controls the spacing between minimized windows
+const BM_WINDOW_MINIMIZED_SPACING = 16;
 
 /**
  * A window is an object that manages the display and lifecycle of a popup window.
@@ -156,6 +196,8 @@ BMWindow._windows = [];
 // An array containing all minimized non-modal window DOM nodes
 BMWindow._minimizedWindows = [];
 
+// A weak map containing the association between minimized window nodes and window objects
+BMWindow._minimizedWindowMap = new WeakMap;
 
 /**
  * Returns the z-index value that the topmost non-modal window will have.
@@ -167,6 +209,205 @@ BMWindow._minimizedWindows = [];
  */
 BMWindow.zIndexMax = function () {
 	return BM_WINDOW_Z_INDEX_MAX;
+}
+
+/**
+ * Updates the position of all animated windows based on how many there are.
+ * @param animated <Boolean, nullable> 		Defaults to `YES`. If set to `YES`, this change will be animated.
+ */
+BMWindow._updateMinimizedWindowsAnimated = function (animated = YES) {
+	const length = this._minimizedWindows.length * BM_WINDOW_MINIMIZED_SIZE;
+	const spacing = this._minimizedWindows.length - 1 * BM_WINDOW_MINIMIZED_SPACING;
+
+	let left = window.innerWidth / 2 - (length + spacing) / 2;
+
+	if (animated) {
+		BMAnimateWithBlock(() => {
+			BMAnimationContextEnableWebAnimations();
+
+			for (const minimizedWindow of this._minimizedWindows) {
+				const controller = BMAnimationContextGetCurrent().controllerForObject(minimizedWindow, {node: minimizedWindow});
+				controller.registerBuiltInProperty('left', {withValue: left + 'px'});
+				controller.registerBuiltInProperty('top', {withValue: window.innerHeight - BM_WINDOW_MINIMIZED_SIZE + 'px'});
+
+				// Determine where the window thumbnail should be positioned
+				const targetWindow = this._minimizedWindowMap.get(minimizedWindow);
+				const minimizedSize = targetWindow._minimizedSize;
+				const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
+				const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
+				targetFrame.center = minimizedFrame.center;
+	
+				// Move the window thumbnail to the appropriate position
+				const transformRect = targetWindow.frame.rectWithTransformToRect(targetFrame);
+				const windowController = BMAnimationContextGetCurrent().controllerForObject(targetWindow, {node: targetWindow.node});
+				windowController.registerBuiltInPropertiesWithDictionary({translateX: transformRect.left + 'px', translateY: transformRect.top + 'px', scaleX: transformRect.width, scaleY: transformRect.height});
+
+				left += BM_WINDOW_MINIMIZED_SIZE + BM_WINDOW_MINIMIZED_SPACING;
+			}
+		}, {
+			duration: _BMWindowAnimationDurationDefault,
+			easing: _BMWindowAnimationEasingDefault
+		});
+	}
+	else {
+		for (const minimizedWindow of this._minimizedWindows) {
+			// Move the container to the appropriate slot
+			BMHook(minimizedWindow, {left: left + 'px', top: window.innerHeight - BM_WINDOW_MINIMIZED_SIZE + 'px'});
+
+			// Determine where the window thumbnail should be positioned
+			const targetWindow = this._minimizedWindowMap.get(minimizedWindow);
+			const minimizedSize = targetWindow._minimizedSize;
+			const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
+			const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
+			targetFrame.center = minimizedFrame.center;
+
+			// Move the window thumbnail to the appropriate position
+			const transformRect = targetWindow.frame.rectWithTransformToRect(targetFrame);
+			BMHook(targetWindow, {translateX: transformRect.left + 'px', translateY: transformRect.top + 'px', scaleX: transformRect.width, scaleY: transformRect.height});
+
+			left += BM_WINDOW_MINIMIZED_SIZE + BM_WINDOW_MINIMIZED_SPACING;
+		}
+	}
+
+	if (this._minimizedWindows.length) {
+		// If there are any minimized windows, set up an event handler that shows and hides the minimize strip based on the pointer's position
+		this._startMinimizeStripAutohide();
+	}
+	else {
+		// If there are no remaining windows, stop monitoring the pointer's position
+		this._stopMinimizeStripAutohide();
+	}
+}
+
+/**
+ * Set to `YES` while monitoring the mouse pointer to autohide the minimized windows strip.
+ */
+BMWindow._minimizeAutohideActive = NO;
+
+/**
+ * Sets up event handlers that automatically hide the minimize strip after the mouse pointer moves away
+ * from the bottom of the screen for a certain amount of time. For touch devices, this will retain the top part
+ * of the minimize strip so that it can be invoked by tapping it. For mouse devices, this will completely hide
+ * the minimize strip.
+ */
+BMWindow._startMinimizeStripAutohide = function () {
+	// If handlers are already set up, don't take any action
+	if (BMWindow._minimizeAutohideActive) return;
+	BMWindow._minimizeAutohideActive = YES;
+
+	window.addEventListener('mousemove', BMWindow._mouseDidMoveWithEvent);
+}
+
+/**
+ * Brings the minimize strip back into view and stops monitoring the mouse pointer to autohide it.
+ */
+BMWindow._stopMinimizeStripAutohide = function () {
+	// If handlers are not set up, don't take any action
+	if (BMWindow._minimizeAutohideActive) return;
+	BMWindow._minimizeAutohideActive = NO;
+
+	window.removeEventListener('mousemove', BMWindow._mouseDidMoveWithEvent);
+}
+
+/**
+ * Invoked whenever the mouse pointer moves while the minimize strip is visible. Tests if the mouse pointer moves
+ * sufficiently far away from the strip and hides it if it does, or shows the minimize strip if the mouse pointer
+ * moves sufficiently close to the bottom of the viewport.
+ * @param event <MouseEvent>		The event that triggered this action.
+ */
+BMWindow._mouseDidMoveWithEvent = function (event) {
+	const position = BMPointMake(event.clientX, event.clientY);
+	const visibleHeight = BM_WINDOW_MINIMIZED_SIZE + BM_WINDOW_MINIMIZED_SPACING;
+
+	// The rect outside of which the pointer must remain in order for the strip to be hidden
+	const retainVisibilityRect = BMRectMake(0, window.innerHeight - visibleHeight, window.innerWidth, visibleHeight);
+
+	// The rect inside of which the pointer must be in order for the strip to become visible
+	const showRect = BMRectMake(0, window.innerHeight - BM_WINDOW_MINIMIZED_SPACING, window.innerWidth, BM_WINDOW_MINIMIZED_SPACING);
+
+	// Show the minimize strip as soon as the mouse pointer intersects the show rect
+	if (showRect.intersectsPoint(position) && BMWindow._minimizeStripHidden) {
+		BMWindow.showMinimizeStripAnimated();
+	}
+	
+	if (!retainVisibilityRect.intersectsPoint(position)) {
+		if (!BMWindow._minimizeStripHidden) {
+			// If the pointer stops intersecting the retain visibility rect, start a timer that hides
+			// the minimize strip after a delay unless the mouse pointer is brought back
+			if (BMWindow._minimizeStripHideTimeout) return;
+	
+			BMWindow._minimizeStripHideTimeout = window.setTimeout(() => {
+				BMWindow.hideMinimizeStripAnimated();
+				BMWindow._minimizeStripHideTimeout = undefined;
+			}, _BMWindowMinimzeStripHideDelay);
+		}
+	}
+	else {
+		// If the pointer starts intersecting the retain visibility rect before the timer elapses,
+		// cancel it and require the mouse to exit again to hide the strip
+		if (BMWindow._minimizeStripHideTimeout) {
+			window.clearTimeout(BMWindow._minimizeStripHideTimeout);
+			BMWindow._minimizeStripHideTimeout = undefined;
+		}
+	}
+}
+
+/**
+ * Shows the minimize strip if it is hidden.
+ * @param animated <Boolean, nullable>			Defaults to `YES`. If set to `YES`, this change will be animated.
+ * @returns <Promise<void>>						A promise that resolves when the associated animation completes.
+ */
+BMWindow.showMinimizeStripAnimated = async function () {
+	// Wait for the entire timeout to hide the strip again
+	if (BMWindow._minimizeStripHideTimeout) {
+		window.clearTimeout(BMWindow._minimizeStripHideTimeout);
+		BMWindow._minimizeStripHideTimeout = undefined;
+	}
+
+	if (!BMWindow._minimizeStripHidden) return;
+	BMWindow._minimizeStripHidden = NO;
+
+	document.body.classList.remove('BMWindowMinimizeStripHidden');
+	document.body.classList.add('BMWindowMinimizeStripShown');
+
+	// After the shown animation ends, remove the animation class
+	if (!document.body.getAnimations) return;
+
+	if (BMWindow._minimizedWindows.length) {
+		// Immediately commit the animation
+		window.getComputedStyle(BMWindow._minimizedWindows[0]);
+
+		const animation = BMWindow._minimizedWindows[0].getAnimations()[0];
+		if (animation) {
+			await animation.finished;
+			document.body.classList.remove('BMWindowMinimizeStripShown');
+		}
+	}
+}
+
+/**
+ * Hides the minimize strip if it is visible.
+ * @param animated <Boolean, nullable>			Defaults to `YES`. If set to `YES`, this change will be animated.
+ */
+BMWindow.hideMinimizeStripAnimated = function () {
+	if (BMWindow._minimizeStripHidden) return;
+	BMWindow._minimizeStripHidden = YES;
+
+	// Before hiding the minimize strip, add the appropraite classes to all minimize elements in order
+	// to play the minimize animation
+	for (const node of BMWindow._minimizedWindows) {
+		if (!node.classList.contains('BMWindowMinimizedControl')) {
+			node.classList.add('BMWindowMinimizedControl');
+		}
+
+		const window = BMWindow._minimizedWindowMap.get(node);
+		if (window && !window.node.classList.contains('BMWindowMinimizedThumbnail')) {
+			window.node.classList.add('BMWindowMinimizedThumbnail');
+		}
+	}
+
+	document.body.classList.add('BMWindowMinimizeStripHidden');
+	document.body.classList.remove('BMWindowMinimizeStripShown');
 }
 
 /**
@@ -1716,6 +1957,21 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	},
 
 	/**
+	 * The size that this should be when minimized.
+	 */
+	get _minimizedSize() { // <BMSize>
+		const minimizedSize = BMSizeMake(BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
+		if (this.frame.size.width > this.frame.size.height) {
+			minimizedSize.height = BM_WINDOW_MINIMIZED_SIZE * (this.frame.size.height / this.frame.size.width);
+		}
+		else {
+			minimizedSize.width = BM_WINDOW_MINIMIZED_SIZE * (this.frame.size.width / this.frame.size.height);
+		}
+
+		return minimizedSize;
+	},
+
+	/**
 	 * Minimizes this window. This method will raise an error if this window is modal.
 	 * If this window is already minimized, this method will have no effect.
 	 * @param animated <Boolean, nullable>				Defaults to `YES`. If set to `YES`, this change will be animated, otherwise it will be instant.
@@ -1732,10 +1988,18 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			this.delegate.windowWillMinimize(this);
 		}
 
+		this.resignKeyWindow();
+
+		// Temporarily show the minimize strip while minimizing a window
+		BMWindow.showMinimizeStripAnimated();
+
+		// Determine the minimized size
+		const minimizedSize = this._minimizedSize;
+
 		let minimizedWindow = document.createElement('div');
 		minimizedWindow.className = 'BMWindowMinimized';
 		minimizedWindow.innerText = this.title;
-		minimizedWindow.style.left = 2 + BMWindow._minimizedWindows.length * 258 + 'px';
+		minimizedWindow.style.left = window.innerWidth / 2 + (BMWindow._minimizedWindows.length - 1) * BM_WINDOW_MINIMIZED_SIZE / 2 + (BMWindow._minimizedWindows.length + 0.5) * BM_WINDOW_MINIMIZED_SPACING + 'px';
 		minimizedWindow.addEventListener('click', event => {
 			if (event.altKey) {
 				BMWindow.restoreAllAnimated(YES);
@@ -1746,6 +2010,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		});
 
 		BMWindow._minimizedWindows.push(minimizedWindow);
+		BMWindow._minimizedWindowMap.set(minimizedWindow, this);
+
+		BMWindow._updateMinimizedWindowsAnimated();
 
 		document.body.appendChild(minimizedWindow);
 
@@ -1758,50 +2025,38 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			var node = minimizedWindow;
 			
 			var rect = BMRectMakeWithNodeFrame(node);
-			var animationNode = node.cloneNode(YES);
-			
-			animationNode.style.position = 'fixed';
-			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
-			animationNode.style.transform = '';
-			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
-			
-			// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
-			animationNode.style.pointerEvents = 'none';
 			
 			// Compute the transform and apply it first to the window
 			// and then to the animation node, but inversed
 			var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-			var transformRect = frame.rectWithTransformToRect(rect);
-			
-			BMHook(animationNode, {translateX:  -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
-							scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height, opacity: 0});
-			
-			document.body.appendChild(animationNode);
-			node.style.display = 'none';
-			
-			__BMVelocityAnimate(this._window, {opacity: 0, translateX: transformRect.origin.x + 'px', translateY: transformRect.origin.y + 'px', 
-							scaleX: transformRect.size.width, scaleY: transformRect.size.height}, {
-								duration: _BMWindowAnimationDurationDefault,
-								easing: _BMWindowAnimationEasingDefault,
-								display: 'none'
-							}, YES);
-			
-			// After finishing the animation, remove the temporary node and restore the original node's display
-			__BMVelocityAnimate(animationNode, {opacity: [1, 0], translateX: ['0px', -transformRect.origin.x + 'px'], translateY: ['0px', -transformRect.origin.y + 'px'], 
-							scaleX: [1, 1 / transformRect.size.width], scaleY: [1, 1 / transformRect.size.height]}, {
-								duration: _BMWindowAnimationDurationDefault,
-								easing: _BMWindowAnimationEasingDefault,
-								complete: function () { 
-									node.style.display = 'block'; 
-									animationNode.remove(); 
+			const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
+			targetFrame.center = rect.center;
+			var transformRect = frame.rectWithTransformToRect(targetFrame);
 
-									if (self.delegate && self.delegate.windowDidMinimize) {
-										self.delegate.windowDidMinimize(self);
-									}
+			BMHook(node, {opacity: 0});
 
-									if (args && args.completionHandler) args.completionHandler();
-								}
-							}, YES);
+			this.node.style.pointerEvents = 'none';
+			this.node.inert = 'true';
+			
+			__BMVelocityAnimate(this._window, {
+				translateX: transformRect.origin.x + 'px',
+				translateY: transformRect.origin.y + 'px', 
+				scaleX: transformRect.size.width,
+				scaleY: transformRect.size.height
+			}, {
+				duration: _BMWindowAnimationDurationDefault,
+				easing: _BMWindowAnimationEasingDefault,
+				complete: function () { 
+
+					if (self.delegate && self.delegate.windowDidMinimize) {
+						self.delegate.windowDidMinimize(self);
+					}
+
+					if (args && args.completionHandler) args.completionHandler();
+				}
+			}, YES);
+
+			__BMVelocityAnimate(node, {opacity: 1}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault});
 		}
 	},
 
@@ -1822,71 +2077,77 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			this.delegate.windowWillRestore(this);
 		}
 
+		// Prevent this window from reacting to minimize strip autohide animations
+		this.node.classList.remove('BMWindowMinimizedThumbnail');
+
+		// Temporarily show the minimize strip while minimizing a window
+		BMWindow.showMinimizeStripAnimated();
+
 		let self = this;
 
 		if (animated) {
-				// Create a copy of the given node which will be used in the animation in place of the original node
-				var node = this._minimizedWindow;
-				var rect = BMRectMakeWithNodeFrame(node);
-				var animationNode = node.cloneNode(YES);
+			// Create a copy of the given node which will be used in the animation in place of the original node
+			var node = this._minimizedWindow;
+			var rect = BMRectMakeWithNodeFrame(node);
+			var animationNode = node.cloneNode(YES);
 
-				this._minimizedWindow = undefined;
-				let removedWindow = NO;
-				for (let i = 0, length = BMWindow._minimizedWindows.length, windows = BMWindow._minimizedWindows; i < length; i++) {
-					if (windows[i] == node) {
-						windows.splice(i, 1);
-						i--;
-						length--;
-						removedWindow = YES;
-						continue;
-					}
-
-					if (removedWindow) {
-						windows[i].style.left = 2 + 258 * i + 'px';
-					}
+			this._minimizedWindow = undefined;
+			let removedWindow = NO;
+			for (let i = 0, length = BMWindow._minimizedWindows.length, windows = BMWindow._minimizedWindows; i < length; i++) {
+				if (windows[i] == node) {
+					windows.splice(i, 1);
+					i--;
+					length--;
+					removedWindow = YES;
+					break;
 				}
+			}
 
-				if (!this.isKeyWindow) this.becomeKeyWindow();
-				
-				animationNode.style.position = 'fixed';
-				animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
-				animationNode.style.transform = '';
-				BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
-				
-				// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
-				animationNode.style.pointerEvents = 'none';
-				
-				// Compute the transform and apply it first to the window
-				// and then to the animation node, but inversed
-				var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
-				var transformRect = frame.rectWithTransformToRect(rect);
-				
-				document.body.appendChild(animationNode);
-				node.style.display = 'none';
-				
-				__BMVelocityAnimate(this._window, {opacity: 1, translateX: ['0px', transformRect.origin.x + 'px'], translateY: ['0px', transformRect.origin.y + 'px'], 
-								scaleX: [1, transformRect.size.width], scaleY: [1, transformRect.size.height]}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									display: 'block'
-								}, YES);
-				
-				// After finishing the animation, remove the temporary node and restore the original node's display
-				__BMVelocityAnimate(animationNode, {opacity: [0, 1], translateX: -transformRect.origin.x + 'px', translateY: -transformRect.origin.y + 'px', 
-								scaleX: 1 / transformRect.size.width, scaleY: 1 / transformRect.size.height}, {
-									duration: _BMWindowAnimationDurationDefault,
-									easing: _BMWindowAnimationEasingDefault,
-									complete: function () { 
-										animationNode.remove(); 
-										node.remove();
+			BMWindow._updateMinimizedWindowsAnimated();
 
-										if (self.delegate && self.delegate.windowDidRestore) {
-											self.delegate.windowDidRestore(self);
-										}
+			if (!this.isKeyWindow) this.becomeKeyWindow();
+			
+			animationNode.style.position = 'fixed';
+			animationNode.style.zIndex = BM_WINDOW_Z_INDEX_MAX + 1;
+			animationNode.style.transform = '';
+			BMCopyProperties(animationNode.style, {left: rect.origin.x + 'px', top: rect.origin.y + 'px', width: rect.size.width + 'px', height: rect.size.height + 'px', margin: 0});
+			
+			// Disable pointer events on the new view so that hover states do not cause the layer to be redrawn mid-animation
+			animationNode.style.pointerEvents = 'none';
+			
+			document.body.appendChild(animationNode);
+			node.style.display = 'none';
+			
+			__BMVelocityAnimate(this._window, {
+				opacity: 1,
+				translateX: '0px',
+				translateY: '0px', 
+				scaleX: 1,
+				scaleY: 1
+			}, {
+				duration: _BMWindowAnimationDurationDefault,
+				easing: _BMWindowAnimationEasingDefault,
+				display: 'block'
+			}, YES);
+			
+			// After finishing the animation, remove the temporary node and restore the original node's display
+			__BMVelocityAnimate(animationNode, {opacity: [0, 1]}, {
+				duration: _BMWindowAnimationDurationDefault,
+				easing: _BMWindowAnimationEasingDefault,
+				complete: function () { 
+					animationNode.remove(); 
+					node.remove();
 
-										if (args && args.completionHandler) args.completionHandler();
-									}
-								}, YES);
+					self.node.style.pointerEvents = '';
+					self.node.removeAttribute('inert');
+
+					if (self.delegate && self.delegate.windowDidRestore) {
+						self.delegate.windowDidRestore(self);
+					}
+
+					if (args && args.completionHandler) args.completionHandler();
+				}
+			}, YES);
 		}
 	},
 
@@ -2136,6 +2397,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				}
 				this._minimizedWindow.remove();
 			}
+
+			BMWindow._updateMinimizedWindowsAnimated(NO);
 		}
 
 		BMView.prototype.release.call(this);
