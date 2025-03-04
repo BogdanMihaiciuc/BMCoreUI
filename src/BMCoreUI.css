@@ -237,26 +237,84 @@
 	left: 0px;
 	bottom: 2px;
 
-	width: 256px;
-	height: 32px;
+	width: 160px;
+	height: 160px;
 
-	background-color: white;
-	color: rgba(0, 0, 0, .8);
-	font-weight: 500;
+	color: white;
+	font-weight: 600;
 	line-height: 32px;
-	vertical-align: middle;
 
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 
 	padding-left: 8px;
-
-	transition: left .3s ease;
+	padding-right: 8px;
 
 	z-index: 2008;
 
 	border-radius: 4px;
-	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, .1), 0px 3px 8px rgba(0, 0, 0, .1);
+	text-shadow: 0px 0px 1px rgba(0, 0, 0, .5), 0px 3px 8px rgba(0, 0, 0, .33), 0px 8px 20px black, 0px 12px 30px black;
 	cursor: default;
+
+    display: flex;
+    align-items: end;
+    justify-content: center;
+}
+
+@keyframes BMWindowMinimizeStripHide {
+	0% {
+		transform: translateY(0px);
+	}
+
+	100% {
+		transform: translateY(180px);
+	}
+}
+
+@keyframes BMWindowMinimizeStripHideOpacity {
+	0% {
+		opacity: 1;
+	}
+
+	100% {
+		opacity: 0;
+	}
+}
+
+@keyframes BMWindowMinimizeStripShow {
+	0% {
+		transform: translateY(180px);
+	}
+
+	100% {
+		transform: translateY(0px);
+	}
+}
+
+@keyframes BMWindowMinimizeStripShowOpacity {
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 1;
+	}
+}
+
+.BMWindowMinimizeStripHidden > .BMWindowMinimizedThumbnail,
+.BMWindowMinimizeStripHidden > .BMWindowMinimizedControl {
+	animation-name: BMWindowMinimizeStripHide, BMWindowMinimizeStripHideOpacity;
+	animation-duration: 200ms, 200ms;
+	animation-timing-function: ease-in, ease-in;
+	animation-fill-mode: forwards, forwards;
+	animation-composition: accumulate, replace;
+}
+
+.BMWindowMinimizeStripShown > .BMWindowMinimizedThumbnail,
+.BMWindowMinimizeStripShown > .BMWindowMinimizedControl {
+	animation-name: BMWindowMinimizeStripShow, BMWindowMinimizeStripShowOpacity;
+	animation-duration: 200ms, 200ms;
+	animation-timing-function: ease-out, ease-out;
+	animation-composition: accumulate, replace;
 }
 
 @media (prefers-color-scheme: dark) {
