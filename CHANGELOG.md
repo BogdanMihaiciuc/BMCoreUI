@@ -1,3 +1,28 @@
+# 2.12.0
+
+## BMWindow
+
+Updates the appearance of minimized windows so that now they include a thumbnail preview of the minimized window. Minimized windows also disappear after a short period, but can be brought back up by moving the mouse cursor towards the bottom edge of the browser window.
+
+The following methods can now be overridden by subclasses to respond to the window being moved:
+ - `dragPositionDidChangeFromPosition(_, {toPosition, event})`: invoked during a drag whenever the pointer moves
+ - `dragBeganAtPosition(_, {withEvent})`: invoked at the beginning of a drag operation
+ - `dragEndedAtPosition(_, {withEvent})`: invoked at the end of a drag operation
+
+## BMPopover
+
+Resolves an issue where the popover size did not match the size that was set in the initializer if the direction was left or right.
+
+A new `retainsDirection` property can be set on popovers. When set to `YES`, this will cause the popover to retain the direction it is currently displayed in, or the first direction assigned to it and not use a more suitable direction when its configuration changes.
+
+A new static `setRetainsDirection` method can be used to set the default behaviour of all popovers whose `retainsDirection` property is not set.
+
+The `size`, `edgeInsets`, `indicatorSize`, `borderRadius`, `permittedDirections` and any of the anchor properties can now be set and animated while the popover is visible.
+
+## BMCollectionView
+
+Resolves an error where collection view was not properly sending the `withEvent` argument for the `collectionViewCanDoubleClickCell(_, _, {withEvent})` delegate method.
+
 # 2.11.9
 
 ## BMWindow
