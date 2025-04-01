@@ -2682,7 +2682,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    
 		    cellEventCanDoubleClick = NO;
 		    if (self.delegate && self.delegate.collectionViewCanDoubleClickCell) {
-			    cellEventCanDoubleClick = self.delegate.collectionViewCanDoubleClickCell(self, cell);
+			    cellEventCanDoubleClick = self.delegate.collectionViewCanDoubleClickCell(self, cell, {withEvent: event});
 		    }
 		    
 		    if (cellEventCanDoubleClick) cellEventDoubleClickTimeout = window.setTimeout(function () {
