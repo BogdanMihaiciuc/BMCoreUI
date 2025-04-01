@@ -179,6 +179,10 @@ var BM_WINDOW_Z_INDEX_MAX = 2007;
 // A flag that controls the size of a minimized window.
 const BM_WINDOW_MINIMIZED_SIZE = 160;
 
+// A flag that controls the spacing between the edges of the window
+// and the minimized window
+const BM_WINDOW_MINIMIZED_EDGE_SPACING = 30;
+
 // A flag that controls the spacing between minimized windows
 const BM_WINDOW_MINIMIZED_SPACING = 16;
 
@@ -217,7 +221,7 @@ BMWindow.zIndexMax = function () {
  */
 BMWindow._updateMinimizedWindowsAnimated = function (animated = YES) {
 	const length = this._minimizedWindows.length * BM_WINDOW_MINIMIZED_SIZE;
-	const spacing = this._minimizedWindows.length - 1 * BM_WINDOW_MINIMIZED_SPACING;
+	const spacing = (this._minimizedWindows.length - 1) * BM_WINDOW_MINIMIZED_SPACING;
 
 	let left = window.innerWidth / 2 - (length + spacing) / 2;
 
@@ -233,12 +237,14 @@ BMWindow._updateMinimizedWindowsAnimated = function (animated = YES) {
 				// Determine where the window thumbnail should be positioned
 				const targetWindow = this._minimizedWindowMap.get(minimizedWindow);
 				const minimizedSize = targetWindow._minimizedSize;
-				const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
+				const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE - BM_WINDOW_MINIMIZED_EDGE_SPACING);
 				const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
 				targetFrame.center = minimizedFrame.center;
+				targetFrame.origin.y = minimizedFrame.bottom - targetFrame.height;
 	
 				// Move the window thumbnail to the appropriate position
-				const transformRect = targetWindow.frame.rectWithTransformToRect(targetFrame);
+				const windowFrame = targetWindow._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : targetWindow.frame;
+				const transformRect = windowFrame.rectWithTransformToRect(targetFrame);
 				const windowController = BMAnimationContextGetCurrent().controllerForObject(targetWindow, {node: targetWindow.node});
 				windowController.registerBuiltInPropertiesWithDictionary({translateX: transformRect.left + 'px', translateY: transformRect.top + 'px', scaleX: transformRect.width, scaleY: transformRect.height});
 
@@ -257,13 +263,14 @@ BMWindow._updateMinimizedWindowsAnimated = function (animated = YES) {
 			// Determine where the window thumbnail should be positioned
 			const targetWindow = this._minimizedWindowMap.get(minimizedWindow);
 			const minimizedSize = targetWindow._minimizedSize;
-			const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
+			const minimizedFrame = BMRectMake(left, window.innerHeight - BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE - BM_WINDOW_MINIMIZED_EDGE_SPACING);
 			const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
 			targetFrame.center = minimizedFrame.center;
 
 			// Move the window thumbnail to the appropriate position
-			const transformRect = targetWindow.frame.rectWithTransformToRect(targetFrame);
-			BMHook(targetWindow, {translateX: transformRect.left + 'px', translateY: transformRect.top + 'px', scaleX: transformRect.width, scaleY: transformRect.height});
+			const windowFrame = targetWindow._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : targetWindow.frame;
+			const transformRect = windowFrame.rectWithTransformToRect(targetFrame);
+			BMHook(targetWindow.node, {translateX: transformRect.left + 'px', translateY: transformRect.top + 'px', scaleX: transformRect.width, scaleY: transformRect.height});
 
 			left += BM_WINDOW_MINIMIZED_SIZE + BM_WINDOW_MINIMIZED_SPACING;
 		}
@@ -289,6 +296,8 @@ BMWindow._minimizeAutohideActive = NO;
  * from the bottom of the screen for a certain amount of time. For touch devices, this will retain the top part
  * of the minimize strip so that it can be invoked by tapping it. For mouse devices, this will completely hide
  * the minimize strip.
+ * 
+ * Additionally, sets up event handlers to reposition the minimize strip whenever the browser window resized.
  */
 BMWindow._startMinimizeStripAutohide = function () {
 	// If handlers are already set up, don't take any action
@@ -296,6 +305,7 @@ BMWindow._startMinimizeStripAutohide = function () {
 	BMWindow._minimizeAutohideActive = YES;
 
 	window.addEventListener('mousemove', BMWindow._mouseDidMoveWithEvent);
+	window.addEventListener('resize', BMWindow._viewportDidResizeWithEvent);
 }
 
 /**
@@ -307,6 +317,16 @@ BMWindow._stopMinimizeStripAutohide = function () {
 	BMWindow._minimizeAutohideActive = NO;
 
 	window.removeEventListener('mousemove', BMWindow._mouseDidMoveWithEvent);
+	window.removeEventListener('resize', BMWindow._viewportDidResizeWithEvent);
+}
+
+/**
+ * Invoked whenever the viewport resizes while the minimize strip is visible. Updates the position
+ * of the minimize strip and its windows to match the new viewport size.
+ * @param event <Event>			The event that triggered this action.
+ */
+BMWindow._viewportDidResizeWithEvent = function (event) {
+	BMWindow._updateMinimizedWindowsAnimated(NO);
 }
 
 /**
@@ -357,7 +377,7 @@ BMWindow._mouseDidMoveWithEvent = function (event) {
  * @param animated <Boolean, nullable>			Defaults to `YES`. If set to `YES`, this change will be animated.
  * @returns <Promise<void>>						A promise that resolves when the associated animation completes.
  */
-BMWindow.showMinimizeStripAnimated = async function () {
+BMWindow.showMinimizeStripAnimated = async function (animated) {
 	// Wait for the entire timeout to hide the strip again
 	if (BMWindow._minimizeStripHideTimeout) {
 		window.clearTimeout(BMWindow._minimizeStripHideTimeout);
@@ -1200,7 +1220,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			dragHandle.style.cursor = 'nwse-resize';
 			node.appendChild(dragHandle);
 			
-			
 			// Initialize dragging touch events for the drag handler
 			dragHandle.addEventListener('mousedown', event => {
 
@@ -1349,6 +1368,60 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	},
 
 	/**
+	 * @protected
+	 * Invoked whenever a drag operation began for this window.
+	 * @param position <BMPoint>					The position where the drag began, relative to the viewport.
+	 * {
+	 * 	@param withEvent <MouseEvent | TouchEvent>	The event that triggered this action.
+	 * }
+	 */
+	dragBeganAtPosition(position, {withEvent: event}) {
+		event.preventDefault();
+	},
+
+	/**
+	 * @protected
+	 * Invoked whenever the pointer position changes during a drag event. Displaces this window's
+	 * frame by the amount the event pointer has moved.
+	 * @param fromPosition <BMPoint>			The previous pointer position relative to the viewport.
+	 * {
+	 * 	@param toPosition <BMPoint>				The current pointer position relative to the viewport.
+	 * 	@param event <MouseEvent | TouchEvent>	The event that triggered this action.
+	 * }
+	 */
+	dragPositionDidChangeFromPosition(fromPosition, {toPosition, event}) {
+		const currentPosition = BMPointMake(this.leftConstraint.constant, this.topConstraint.constant);
+		const newPosition = BMPointMake(
+			currentPosition.x + toPosition.x - fromPosition.x,
+			currentPosition.y + toPosition.y - fromPosition.y
+		);
+
+		// Check if the window can move
+		let canMove = YES;
+		if (this.delegate && this.delegate.windowShouldMove) {
+			canMove = this.delegate.windowShouldMove(this, newPosition);
+		}
+		if (!canMove) return;
+
+		this.leftConstraint.constant = newPosition.x;
+		this.topConstraint.constant = newPosition.y;
+		this.layout();
+		event.preventDefault();
+	},
+
+	/**
+	 * @protected
+	 * Invoked whenever a drag operation ended for this window.
+	 * @param position <BMPoint>					The position where the drag began, relative to the viewport.
+	 * {
+	 * 	@param withEvent <MouseEvent | TouchEvent>	The event that triggered this action.
+	 * }
+	 */
+	dragEndedAtPosition(position, {withEvent: event}) {
+		// Intentionally blank
+	},
+
+	/**
 	 * Starts a drag event from the specified `mousedown` event that will move this window.
 	 * When this method is invoked, further mouse events will be blocked until the drag finishes.
 	 * 
@@ -1362,37 +1435,25 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
 		this._dragged = YES;
 
-		this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
 		let lastPosition = BMPointMake(event.clientX, event.clientY);
 
 		let mouseMoveEventListener = event => {
 			let position = BMPointMake(event.clientX, event.clientY);
-			const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-
-			// Check if the window can move
-			let canMove = YES;
-			if (this.delegate && this.delegate.windowShouldMove) {
-				canMove = this.delegate.windowShouldMove(this, newPosition);
-			}
-			if (!canMove) return;
-
-			this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
-			this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
-			this._position = newPosition;
+			this.dragPositionDidChangeFromPosition(lastPosition, {toPosition: position, event});
 			lastPosition = position;
-			this.layout();
-			event.preventDefault();
 		};
 
 		let mouseUpEventListener = event => {
 			window.removeEventListener('mousemove', mouseMoveEventListener, YES);
 			window.removeEventListener('mouseup', mouseUpEventListener, YES);
+
+			this.dragEndedAtPosition(lastPosition.copy(), {withEvent: event});
 		}
 
 		window.addEventListener('mousemove', mouseMoveEventListener, YES);
 		window.addEventListener('mouseup', mouseUpEventListener, YES);
 
-		event.preventDefault();
+		this.dragBeganAtPosition(lastPosition.copy(), {withEvent: event});
 	},
 
 	/**
@@ -1423,7 +1484,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		this._touchDragPoint = event.changedTouches[0].identifier;
 		this._dragged = YES;
 
-		this._position = BMPointMake(this.node.offsetLeft, this.node.offsetTop);
 		let lastPosition = BMPointMake(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
 
 		let mouseMoveEventListener = event => {
@@ -1440,21 +1500,8 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			if (!touch) return;
 
 			let position = BMPointMake(touch.clientX, touch.clientY);
-			const newPosition = BMPointMake(this._position.x + position.x - lastPosition.x, this._position.y + position.y - lastPosition.y);
-
-			// Check if the window can move
-			let canMove = YES;
-			if (this.delegate && this.delegate.windowShouldMove) {
-				canMove = this.delegate.windowShouldMove(this, newPosition);
-			}
-			if (!canMove) return;
-
-			this.leftConstraint.constant = this._position.x + position.x - lastPosition.x;
-			this.topConstraint.constant = this._position.y + position.y - lastPosition.y;
-			this._position = newPosition;
+			this.dragPositionDidChangeFromPosition(lastPosition, {toPosition: position, event});
 			lastPosition = position;
-			this.layout();
-			event.preventDefault();
 		};
 
 		let mouseUpEventListener = event => {
@@ -1462,13 +1509,15 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			window.removeEventListener('touchmove', mouseMoveEventListener);
 			window.removeEventListener('touchend', mouseUpEventListener);
 			window.removeEventListener('touchcancel', mouseUpEventListener);
+
+			this.dragEndedAtPosition(lastPosition.copy(), {withEvent: event});
 		}
 
 		window.addEventListener('touchmove', mouseMoveEventListener);
 		window.addEventListener('touchend', mouseUpEventListener);
 		window.removeEventListener('touchcancel', mouseUpEventListener);
 
-		event.preventDefault();
+		this.dragBeganAtPosition(lastPosition.copy(), {withEvent: event});
 	},
 
 	// @override - BMView
@@ -1960,12 +2009,13 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	 * The size that this should be when minimized.
 	 */
 	get _minimizedSize() { // <BMSize>
-		const minimizedSize = BMSizeMake(BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE);
-		if (this.frame.size.width > this.frame.size.height) {
-			minimizedSize.height = BM_WINDOW_MINIMIZED_SIZE * (this.frame.size.height / this.frame.size.width);
+		const minimizedSize = BMSizeMake(BM_WINDOW_MINIMIZED_SIZE, BM_WINDOW_MINIMIZED_SIZE - BM_WINDOW_MINIMIZED_EDGE_SPACING);
+		const aspectRatio = minimizedSize.width / minimizedSize.height;
+		if (this.frame.size.width / this.frame.size.height > aspectRatio) {
+			minimizedSize.height = minimizedSize.height * (this.frame.size.height / this.frame.size.width) * aspectRatio;
 		}
 		else {
-			minimizedSize.width = BM_WINDOW_MINIMIZED_SIZE * (this.frame.size.width / this.frame.size.height);
+			minimizedSize.width = minimizedSize.width * (this.frame.size.width / this.frame.size.height) / aspectRatio;
 		}
 
 		return minimizedSize;
@@ -1993,13 +2043,25 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		// Temporarily show the minimize strip while minimizing a window
 		BMWindow.showMinimizeStripAnimated();
 
+		this.node.classList.add('BMWindowMinimizedPreview');
+
 		// Determine the minimized size
 		const minimizedSize = this._minimizedSize;
 
 		let minimizedWindow = document.createElement('div');
 		minimizedWindow.className = 'BMWindowMinimized';
-		minimizedWindow.innerText = this.title;
-		minimizedWindow.style.left = window.innerWidth / 2 + (BMWindow._minimizedWindows.length - 1) * BM_WINDOW_MINIMIZED_SIZE / 2 + (BMWindow._minimizedWindows.length + 0.5) * BM_WINDOW_MINIMIZED_SPACING + 'px';
+
+		const minimizedWindowTitle = document.createElement('span');
+		minimizedWindowTitle.innerText = this.title;
+		minimizedWindow.appendChild(minimizedWindowTitle);
+
+		minimizedWindow.style.left = 
+			// Move to the center of the screen
+			(window.innerWidth / 2) + 
+			// At the end of the current minimized windows
+			(BMWindow._minimizedWindows.length * BM_WINDOW_MINIMIZED_SIZE + (BMWindow._minimizedWindows.length - 1) * BM_WINDOW_MINIMIZED_SPACING) / 2 +
+			// Then displace current minimized windows by half the current window size and add in the spacing
+			BM_WINDOW_MINIMIZED_SPACING / 2 - BM_WINDOW_MINIMIZED_SIZE / 2 + 'px';
 		minimizedWindow.addEventListener('click', event => {
 			if (event.altKey) {
 				BMWindow.restoreAllAnimated(YES);
@@ -2025,18 +2087,20 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			var node = minimizedWindow;
 			
 			var rect = BMRectMakeWithNodeFrame(node);
+			rect.size.height -= BM_WINDOW_MINIMIZED_EDGE_SPACING;
 			
 			// Compute the transform and apply it first to the window
 			// and then to the animation node, but inversed
 			var frame = self._fullScreen ? BMRectMake(0, 0, window.innerWidth, window.innerHeight) : self.frame;
 			const targetFrame = BMRectMakeWithOrigin(BMPointMake(0, 0), {size: minimizedSize});
 			targetFrame.center = rect.center;
+			targetFrame.origin.y = window.innerHeight - BM_WINDOW_MINIMIZED_EDGE_SPACING - targetFrame.size.height;
 			var transformRect = frame.rectWithTransformToRect(targetFrame);
 
 			BMHook(node, {opacity: 0});
 
 			this.node.style.pointerEvents = 'none';
-			this.node.inert = 'true';
+			this.node.inert = YES;
 			
 			__BMVelocityAnimate(this._window, {
 				translateX: transformRect.origin.x + 'px',
@@ -2056,7 +2120,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				}
 			}, YES);
 
-			__BMVelocityAnimate(node, {opacity: 1}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault});
+			const title = minimizedWindow.querySelector('span');
+			__BMVelocityAnimate(title, {translateX: ['0px', '-30px']}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault}, YES);
+
+			__BMVelocityAnimate(node, {opacity: 1}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault}, YES);
 		}
 	},
 
@@ -2129,6 +2196,9 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				easing: _BMWindowAnimationEasingDefault,
 				display: 'block'
 			}, YES);
+
+			const title = animationNode.querySelector('span');
+			__BMVelocityAnimate(title, {translateX: ['30px', '0px']}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault}, YES);
 			
 			// After finishing the animation, remove the temporary node and restore the original node's display
 			__BMVelocityAnimate(animationNode, {opacity: [0, 1]}, {
@@ -2138,8 +2208,10 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 					animationNode.remove(); 
 					node.remove();
 
+					self.node.classList.remove('BMWindowMinimizedPreview');
+
 					self.node.style.pointerEvents = '';
-					self.node.removeAttribute('inert');
+					self.node.inert = NO;
 
 					if (self.delegate && self.delegate.windowDidRestore) {
 						self.delegate.windowDidRestore(self);
