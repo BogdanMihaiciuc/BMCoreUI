@@ -1,5 +1,13 @@
 # 2.12.0
 
+## BMLayoutConstraint
+
+Resolves an issue where an unsolvable constraint could cause the entire layout process to crash instead of ingnoring that constraint as intended.
+
+## BMView
+
+The `keyPressedWithEvent` method can now optionally return `YES` to indicate that it has handled the key press event.
+
 ## BMWindow
 
 Updates the appearance of minimized windows so that now they include a thumbnail preview of the minimized window. Minimized windows also disappear after a short period, but can be brought back up by moving the mouse cursor towards the bottom edge of the browser window.
@@ -8,6 +16,14 @@ The following methods can now be overridden by subclasses to respond to the wind
  - `dragPositionDidChangeFromPosition(_, {toPosition, event})`: invoked during a drag whenever the pointer moves
  - `dragBeganAtPosition(_, {withEvent})`: invoked at the beginning of a drag operation
  - `dragEndedAtPosition(_, {withEvent})`: invoked at the end of a drag operation
+
+Resolves an issue where closing a window would cause all tool windows to be dismissed again if they were already dismissed.
+
+## BMToolWindow
+
+Resolves an issue where tool windows references were not properly removed from their parent window when released.
+
+Tool windows will now forward all unhandled keyboard shortcuts to their parent window.
 
 ## BMPopover
 
