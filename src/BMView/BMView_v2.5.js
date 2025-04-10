@@ -2276,7 +2276,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * @param shortcut <BMKeyboardShortcut>			The keyboard shortcut to register.
 	 */
 	registerKeyboardShortcut(shortcut) {
-		if (!Object.keys(this._keyboardShortcuts).length) this._enableKeyboardShortcuts();
+		if (!Object.keys(this._keyboardShortcuts).length) {
+            this._enableKeyboardShortcuts();
+        }
 
         if (!this._keyboardShortcuts[shortcut.keyCode]) {
             this._keyboardShortcuts[shortcut.keyCode] = [];
@@ -2306,7 +2308,9 @@ BMView.prototype = BMExtend(BMView.prototype, {
             }
         }
 
-		if (!Object.keys(this._keyboardShortcuts).length) this._disableKeyboardShortcuts();
+		if (!Object.keys(this._keyboardShortcuts).length) {
+            this._disableKeyboardShortcuts();
+        }
 	},
 
 	/**
@@ -2314,9 +2318,12 @@ BMView.prototype = BMExtend(BMView.prototype, {
 	 * and handle key presses. Subclasses that override this method should invoke the base implementation to allow
 	 * keyboard shortcuts to be handled correctly.
 	 * @param event <KeyboardEvent>			The event that triggered this action.
+     * @return <Boolean, nullable>          `YES` if a keyboard shortcut was handled, `NO` or `undefined` otherwise.
 	 */
 	keyPressedWithEvent(event) {
-        if (!this._keyboardShortcuts[event.code]) return;
+        if (!this._keyboardShortcuts[event.code]) return NO;
+
+        let shortcutHandled = NO;
 
 		// Check if a shortcut key has been pressed.
 		for (const shortcut of this._keyboardShortcuts[event.code]) {
@@ -2331,8 +2338,11 @@ BMView.prototype = BMExtend(BMView.prototype, {
 			if (bitmap == shortcut._modifierBitmap) {
 				if (shortcut.preventsDefault) event.preventDefault();
 				shortcut.target[shortcut.action](event, {forKeyboardShortcut: shortcut});
+                shortcutHandled = YES;
 			}
 		}
+
+        return shortcutHandled;
 	},
 
 	/**
