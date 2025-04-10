@@ -1,5 +1,6 @@
 // @ts-check
 
+import { BMView } from '../BMView/BMView_v2.5';
 import {YES, NO, BMExtend} from '../Core/BMCoreUI'
 import {BMWindow} from './BMWindow'
 
@@ -26,6 +27,11 @@ BMToolWindow.prototype = BMExtend(Object.create(BMWindow.prototype), {
 	opensAutomatically: YES, // <Boolean>
 
 	/**
+	 * The window to which this tool window is associated.
+	 */
+	_parentWindow: undefined, // <BMWindow>
+
+	/**
 	 * Initializes this tool window with the given frame and associates it with the given window.
 	 * @param frame <BMRect>		The window's frame.
 	 * {
@@ -41,8 +47,14 @@ BMToolWindow.prototype = BMExtend(Object.create(BMWindow.prototype), {
 		this.node.classList.add('BMToolWindow');
 		window._toolWindows.push(this);
 
+		this._parentWindow = window;
+
 		// If the window is the key window, make this tool window visible
-		if (BMWindow._keyWindow == window) this.bringToFrontAnimated(YES);
+		if (BMWindow._keyWindow == window) {
+			this.bringToFrontAnimated(YES);
+		}
+
+		this._enableKeyboardShortcuts();
 
 		return this;
 	},
@@ -53,6 +65,22 @@ BMToolWindow.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
 	resignKeyWindow() {
 		// This operation is a no-op for tool windows
+	},
+
+	keyPressedWithEvent(event, args) {
+		const handled = BMView.prototype.keyPressedWithEvent.apply(this, [event, args]);
+
+		if (!handled) {
+			this._parentWindow?.keyPressedWithEvent(event, args);
+		}
+	},
+
+	release() {
+		const index = this._parentWindow._toolWindows.indexOf(this);
+		if (index != -1) {
+			this._parentWindow._toolWindows.splice(index, -1);
+		}
+		BMWindow.prototype.release.call(this);
 	}
 });
 
