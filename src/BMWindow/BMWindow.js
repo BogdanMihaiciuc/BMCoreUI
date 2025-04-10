@@ -1918,9 +1918,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		
 		animated = (animated === undefined ? YES : animated);
 		
-		//__BMVelocityAnimate(this._blocker, 'stop');
-		//__BMVelocityAnimate(this._window, 'stop');
-		
 		var self = this;
 
 		this._blocker.style.pointerEvents = 'none';
@@ -1931,8 +1928,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		}
 		this._visible = NO;
 
+		// Dismiss all associated tool windows if they are visible
 		for (let window of this._toolWindows) {
-			window.dismissAnimated(animated);
+			if (window._visible) {
+				window.dismissAnimated(animated);
+			}
 		}
 		
 		if (animated) {
@@ -1941,10 +1941,6 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				duration: _BMWindowAnimationDurationDefault,
 				easing: _BMWindowAnimationEasingDefault,
 				display: 'none',
-				/*progress: function (elements, complete) {
-					self._blocker.style.webkitBackdropFilter = 'blur(' + ((1 - complete) * 15).toFixed(2) + 'px)';
-					self._blocker.style.backdropFilter = 'blur(' + ((1 - complete) * 15).toFixed(2) + 'px)';
-				},*/
 				complete: function () {
 					self.windowDidClose();
 					if (self.delegate && self.delegate.windowDidClose) {
