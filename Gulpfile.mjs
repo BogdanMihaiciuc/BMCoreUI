@@ -199,7 +199,7 @@ async function cleanBuildDir(cb) {
  * Copies files into the build directory.
  */
 function copy(cb) {
-    src('src/**')
+    src('src/**', {encoding: false})
         .pipe(dest(`${outPath}/`))
         .on('end', () => {
             fs.copyFileSync('metadata.xml', 'build/metadata.xml');
@@ -222,7 +222,7 @@ async function prepareBuild(cb) {
 
         // Copy required dependencies
         for (const dependency in packageJson.dependencies) {
-            const dependencyPackageJson = (await import(`./node_modules/${dependency}/package.json`, {assert: {type: 'json'}})).default;
+            const dependencyPackageJson = (await import(`./node_modules/${dependency}/package.json`, {with: {type: 'json'}})).default;
             await new Promise(resolve => src(`node_modules/${dependency}/${dependencyPackageJson.main}`).pipe(dest(outPath)).on('end', resolve));
         }
 
@@ -349,7 +349,7 @@ async function prepareBuild(cb) {
 
     if (!args.l) {
         // Create a zip of the build directory
-        const zipStream = src('build/**')
+        const zipStream = src('build/**', {encoding: false})
             .pipe(zip(zipName))
             .pipe(dest('zip'));
     
