@@ -3,7 +3,7 @@
 import {YES, NO, BMExtend, BMCopyProperties} from '../Core/BMCoreUI'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMRectMake, BMRectMakeWithNodeFrame, BMRectMakeWithOrigin} from '../Core/BMRect'
-import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
+import {BMAnimateWithBlock, BMAnimationContextGetCurrent, BMAnimationContextEnableWebAnimations, __BMVelocityAnimate, BMHook, BMAnimationContextBeginStatic, BMAnimationApply, BMAnimationBeginWithDuration, BMAnimationContextAddCompletionHandler} from '../Core/BMAnimationContext'
 import {BMView, BMViewColorScheme} from '../BMView/BMView_v2.5'
 import {BMLayoutOrientation} from '../BMView/BMLayoutSizeClass'
 import { BMSizeMake } from '../Core/BMSize'
@@ -746,16 +746,30 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	set frame(frame) {
 		if (this._fullScreen) return;
 
+		const currentFrame = this._frame ?? frame;
+
 		frame = frame.integralRect;
 
 		this._frame = frame.copy();
 		
-		BMCopyProperties(this._window.style, {
-			left: frame.origin.x + 'px',
-			top: frame.origin.y + 'px',
-			width: frame.size.width + 'px',
-			height: frame.size.height + 'px'
-		});
+		let context = BMAnimationContextGetCurrent();
+		if (context) {
+			const controller = context.controllerForObject(this, {node: this._window});
+			controller.registerBuiltInPropertiesWithDictionary({
+				left: [frame.origin.x + 'px', currentFrame.origin.x + 'px'],
+				top: [frame.origin.y + 'px', currentFrame.origin.y + 'px'],
+				width: [frame.size.width + 'px', currentFrame.size.width + 'px'],
+				height: [frame.size.height + 'px', currentFrame.size.height + 'px']
+			});
+		}
+		else {
+			BMCopyProperties(this._window.style, {
+				left: frame.origin.x + 'px',
+				top: frame.origin.y + 'px',
+				width: frame.size.width + 'px',
+				height: frame.size.height + 'px'
+			});
+		}
 
 		switch (this.frameHorizontalPositionLayoutAttribute) {
 			case BMLayoutAttribute.Left:
@@ -847,6 +861,26 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	
 	get toolbar() {
 		return this._toolbar;
+	},
+
+	/**
+	 * Defined for non-modal windows. The drag handle used to resize the window.
+	 */
+	_dragHandle: undefined, // <DOMNode>
+
+	/**
+	 * Controls whether the window resize handle appears.
+	 */
+	_resizable: YES, // <Boolean>
+
+	get resizable() {
+		return this._resizable;
+	},
+	set resizable(resizable) {
+		if (this._dragHandle) {
+			this._dragHandle.style.display = resizable ? 'block' : 'none';
+		}
+		this._resizable = resizable;
 	},
 
 	/**
@@ -1069,7 +1103,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		this.widthConstraint.isActive = YES;
 		this.heightConstraint.isActive = YES;
 
-		if (!modal && withToolbar) {
+		if (!modal) {
 			// In non-modal mode, allow the toolbar to move the window
 			this.maxLeftConstraint = this.left.greaterThanOrEqualTo(0);
 			this.maxTopConstraint = this.top.greaterThanOrEqualTo(0);
@@ -1086,7 +1120,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 			window.addEventListener('resize', this._boundViewportDidResize = this._viewportDidResize.bind(this));
 
 			// Initialize dragging touch events for the toolbar
-			this._toolbar.addEventListener('mousedown', event => {
+			this._toolbar?.addEventListener('mousedown', event => {
 				// Don't process events originating from children of the toolbar
 				if (event.target != this._toolbar) return;
 
@@ -1130,7 +1164,7 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 	
 			let touchDragPoint;
 	
-			this._toolbar.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
+			this._toolbar?.addEventListener('touchstart', /** @type {TouchEvent} */ event => {
 				// If there is already a drag in progress, don't process this new event
 				if (typeof touchDragPoint !== 'undefined') {
 					return;
@@ -1194,11 +1228,11 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				event.preventDefault();
 			});
 
-			this._toolbar.addEventListener('dbclick', event => {
+			this._toolbar?.addEventListener('dbclick', event => {
 				this.minimizeAnimated(YES);
 			});
 
-			this._toolbar.addEventListener('wheel', /** @param {WheelEvent} event */ event => {
+			this._toolbar?.addEventListener('wheel', /** @param {WheelEvent} event */ event => {
 				// Scrolling on the toolbar should enter showcase
 				if (event.deltaY > 0) {
 					// Allow the delegate to suppress this behaviour
@@ -2191,7 +2225,15 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 				duration: _BMWindowAnimationDurationDefault,
 				easing: _BMWindowAnimationEasingDefault,
 				display: 'block'
-			}, YES);
+			}, YES)?.then(() => {
+				BMHook(this._window, {
+					opacity: 1,
+					translateX: '0px',
+					translateY: '0px', 
+					scaleX: 1,
+					scaleY: 1
+				});
+			});
 
 			const title = animationNode.querySelector('span');
 			__BMVelocityAnimate(title, {translateX: ['30px', '0px']}, {duration: _BMWindowAnimationDurationDefault, easing: _BMWindowAnimationEasingDefault}, YES);
@@ -2238,30 +2280,48 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		
 		var self = this;
 
+		BMAnimationContextBeginStatic();
+
 		this.widthConstraint.constant = window.innerWidth;
 		this.heightConstraint.constant = window.innerHeight;
 		this.leftConstraint.constant = 0;
 		this.topConstraint.constant = 0;
+
+		BMAnimationApply();
 		
 		if (animated) {
-			BMAnimateWithBlock(() => {
-				let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
-				controller.registerBuiltInPropertiesWithDictionary({left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
+			const completionHandler = function () {
+				if (self.delegate && self.delegate.windowDidEnterFullScreen) self.delegate.windowDidEnterFullScreen(self);
+				if (args && args.completionHandler) args.completionHandler();
+				
+				self._window.classList.add('BMFullScreenWindow');
+			};
 
-				const frame = this.frame.copy();
-				this.layout();
+			// If an animation context is already started, reuse it
+			let contextStarted = NO;
+			if (!BMAnimationContextGetCurrent()) {
+				contextStarted = YES;
+				BMAnimationBeginWithDuration(300, {duration: 300, easing: 'easeInOutQuart',
+					complete: completionHandler
+				});
+			}
+			else {
+				BMAnimationContextAddCompletionHandler(completionHandler);
+			}
 
-				// When the window contains elements whose intrinsic size must be measured, upon finishing the layout, the window will continue to keep its
-				// temporary frame used for measuring, so it has to be reset prior to the animation starting
-				BMCopyProperties(this.node.style, {left: frame.origin.x + 'px', top: frame.origin.y + 'px', width: frame.size.width + 'px', height: frame.size.height + 'px'})
-			}, {duration: 300, easing: 'easeInOutQuart',
-				complete: function () {
-					if (self.delegate && self.delegate.windowDidEnterFullScreen) self.delegate.windowDidEnterFullScreen(self);
-					if (args && args.completionHandler) args.completionHandler();
-					
-					self._window.classList.add('BMFullScreenWindow');
-				}
-			});
+			let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
+
+			const frame = this.frame.copy();
+			this.layout();
+			controller.registerBuiltInPropertiesWithDictionary({left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
+
+			// When the window contains elements whose intrinsic size must be measured, upon finishing the layout, the window will continue to keep its
+			// temporary frame used for measuring, so it has to be reset prior to the animation starting
+			BMCopyProperties(this.node.style, {left: frame.origin.x + 'px', top: frame.origin.y + 'px', width: frame.size.width + 'px', height: frame.size.height + 'px'})
+			
+			if (contextStarted) {
+				BMAnimationApply();
+			}
 		}
 		else {
 			self._window.classList.add('BMFullScreenWindow');
@@ -2296,44 +2356,51 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 		
 		var self = this;
 
+		BMAnimationContextBeginStatic();
+
 		this.widthConstraint.constant = this.frame.width;
 		this.heightConstraint.constant = this.frame.height;
 		this.leftConstraint.constant = this.frame.left;
 		this.topConstraint.constant = this.frame.top;
+
+		BMAnimationApply();
 		
 		if (animated) {
 			self._window.classList.remove('BMFullScreenWindow');
 			var frame = self.frame;
 			BMCopyProperties(self._window.style, {left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
-			/*__BMVelocityAnimate(this._window, {left: frame.origin.x + 'px', top: frame.origin.y + 'px', width: frame.size.width + 'px', height: frame.size.height + 'px'}, {
-				duration: 300,
-				easing: 'easeInOutQuart',
-				complete: function () {
-					if (self.delegate && self.delegate.windowDidExitFullScreen) self.delegate.windowDidExitFullScreen(self);
-					if (args && args.completionHandler) args.completionHandler();
-					
-					self.frame = self.frame;
-				}
-			});*/
 
-			BMAnimateWithBlock(() => {
-				let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
-				controller.registerBuiltInProperty('left', {withValue: frame.origin.x + 'px'});
-				controller.registerBuiltInProperty('top', {withValue: frame.origin.y + 'px'});
-				controller.registerBuiltInProperty('width', {withValue: frame.size.width + 'px'});
-				controller.registerBuiltInProperty('height', {withValue: frame.size.height + 'px'});
-				this._fullScreen = NO;
-				this.layout();
-				BMCopyProperties(self._window.style, {left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
-			}, {
-				duration: 300, easing: 'easeInOutQuart',
-				complete: function () {
-					if (self.delegate && self.delegate.windowDidExitFullScreen) self.delegate.windowDidExitFullScreen(self);
-					if (args && args.completionHandler) args.completionHandler();
-					
-					self.frame = self.frame;
-				}
-			});
+			const completionHandler = function () {
+				if (self.delegate && self.delegate.windowDidExitFullScreen) self.delegate.windowDidExitFullScreen(self);
+				if (args && args.completionHandler) args.completionHandler();
+				
+				self.frame = self.frame;
+			};
+
+			// If an animation context is already started, reuse it
+			let contextStarted = NO;
+			if (!BMAnimationContextGetCurrent()) {
+				contextStarted = YES;
+				BMAnimationBeginWithDuration(300, {duration: 300, easing: 'easeInOutQuart',
+					complete: completionHandler
+				});
+			}
+			else {
+				BMAnimationContextAddCompletionHandler(completionHandler);
+			}
+
+			this._fullScreen = NO;
+			this.layout();
+			let controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
+			controller.registerBuiltInProperty('left', {withValue: frame.origin.x + 'px'});
+			controller.registerBuiltInProperty('top', {withValue: frame.origin.y + 'px'});
+			controller.registerBuiltInProperty('width', {withValue: frame.size.width + 'px'});
+			controller.registerBuiltInProperty('height', {withValue: frame.size.height + 'px'});
+			BMCopyProperties(self._window.style, {left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px'});
+
+			if (contextStarted) {
+				BMAnimationApply();
+			}
 		}
 		else {
 			self._window.classList.remove('BMFullScreenWindow');

@@ -21,7 +21,6 @@ BMWindowDelegate.prototype = {
 	 */
 	windowDidAppear(window) {},
 
-
 	/**
 	 * Invoked whenever the window is about to be resized. 
 	 * 
