@@ -1127,12 +1127,16 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         }
 
         if (!this._isDetached) {
+            const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
+
             // If not detached, apply a displacement to this popover that is half of the regular
             // drag distance, until this popover is fully detached
-            BMHook(this.node, {
-                translateX: `${(toPosition.x - this._initialDragPosition.x) / 3 | 0}px`,
-                translateY: `${(toPosition.y - this._initialDragPosition.y) / 3 | 0}px`,
-            });
+            for (const node of popoverLayers) {
+                BMHook(node, {
+                    translateX: `${(toPosition.x - this._initialDragPosition.x) / 3 | 0}px`,
+                    translateY: `${(toPosition.y - this._initialDragPosition.y) / 3 | 0}px`,
+                });
+            }
 
             const distance = toPosition.distanceToPoint(this._initialDragPosition);
             if (distance > BMPopoverDragThreshold) {
@@ -1158,11 +1162,15 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
             // If the drag operation didn't cause this popover to detach, animate it back to its
             // regular position
             BMAnimateWithBlock(() => {
-                const controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
-                controller.registerBuiltInPropertiesWithDictionary({
-                    translateX: '0px',
-                    translateY: '0px',
-                });
+                const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
+
+                for (const node of popoverLayers) {
+                    const controller = BMAnimationContextGetCurrent().controllerForObject(node, {node});
+                    controller.registerBuiltInPropertiesWithDictionary({
+                        translateX: '0px',
+                        translateY: '0px',
+                    });
+                }
             }, {duration: 500, easing: 'easeInOutQuart'});
         }
 
@@ -1194,19 +1202,24 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
 
         let promise;
 
-        // If a temporary transform was applied to this node, clear it
-        if (BMAnimationContextGetCurrent()) {
-            const controller = BMAnimationContextGetCurrent().controllerForObject(this, {node: this.node});
-            controller.registerBuiltInPropertiesWithDictionary({
-                translateX: '0px',
-                translateY: '0px',
-            });
+        const popoverLayers = [this.contentNode, this._background, this._dropShadowContainer];
 
-            promise = new Promise(r => BMAnimationContextAddCompletionHandler(r));
+        // If a temporary transform was applied to this node, clear it
+        for (const node of popoverLayers) {
+            if (BMAnimationContextGetCurrent()) {
+                const controller = BMAnimationContextGetCurrent().controllerForObject(node, {node});
+                controller.registerBuiltInPropertiesWithDictionary({
+                    translateX: '0px',
+                    translateY: '0px',
+                });
+
+                promise = new Promise(r => BMAnimationContextAddCompletionHandler(r));
+            }
+            else {
+                BMHook(node, {translateX: '0px', translateY: '0px'});
+            }
         }
-        else {
-            BMHook(this.node, {translateX: '0px', translateY: '0px'});
-        }
+        
 
         if (animationContextStarted) {
             BMAnimationApplyBlocking(YES);
@@ -1229,7 +1242,9 @@ BMPopover.prototype = BMExtend(Object.create(BMWindow.prototype), {
         for (const layer of popoverLayers) {
             BMHook(layer, {scaleX: .75, scaleY: .75, opacity: 0});
 
-            __BMVelocityAnimate(layer, {scaleX: 1, scaleY: 1, opacity: 1}, {duration: 300, easing: [0,1.59,.49,1], complete: first ? completionHandler : undefined}, YES);
+            __BMVelocityAnimate(layer, {scaleX: 1, scaleY: 1, opacity: 1}, {duration: 300, easing: [0,1.59,.49,1], complete: first ? completionHandler : undefined}, YES)?.then(() => {
+                BMHook(layer, {scaleX: 1, scaleY: 1, opacity: 1});
+            });
             first = NO;
         }
     },
