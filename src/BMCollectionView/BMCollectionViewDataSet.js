@@ -150,11 +150,12 @@ BMCollectionViewDataSet.prototype = {
 	 * use. In this case, data sets that don't support moving items may simply return `NO` from this method.
 	 * @param indexPath <BMIndexPath<T>>			The item's current index path.
 	 * {
-	 * 	@param toIndexPath <BMIndexPath<T>>		The index path to which the item should move.
+	 * 	@param toIndexPath <BMIndexPath<T>>			The index path to which the item should move.
+	 * 	@param session <BMDragSession>				The drag session through which this change was performed.
 	 * }
-	 * @return <Boolean>						`YES` if the data set has performed the requested change, `NO` otherwise.
+	 * @return <Boolean>							`YES` if the data set has performed the requested change, `NO` otherwise.
 	 */
-	moveItemFromIndexPath: function (indexPath, {toIndexPath: toIndexPath}) {},
+	moveItemFromIndexPath: function (indexPath, {toIndexPath: toIndexPath, session}) {},
 	 
 	/**
 	 * This method may be implemented by data set objects that support moving items for interactive drag gestures.
@@ -168,14 +169,15 @@ BMCollectionViewDataSet.prototype = {
 	 * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be moved.
 	 * {
 	 *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should move. This represents the index path of the current layout
-	 * 											before any items may have moved. It is the data set's responsability to adjust this index path as the items shift
+	 * 											before any items may have moved. It is the data set's responsibility to adjust this index path as the items shift
 	 * 											within its data structure.
+	 * 	@param session <BMDragSession>			The drag session through which this change was performed.
 	 * }
-	 * @return <[BMIndexPath<T>]>					An array of index paths specifying the positions of the items after they have been moved.
+	 * @return <[BMIndexPath<T>]>				An array of index paths specifying the positions of the items after they have been moved.
 	 * 											The index paths in this array are not required to match either of the lists supplied by
-	 *												collection view.
+	 *											collection view.
 	 */
-	moveItemsFromIndexPaths: function (indexPaths, {toIndexPath: toIndexPath}) {},
+	moveItemsFromIndexPaths: function (indexPaths, {toIndexPath: toIndexPath, session}) {},
 
 	
 	/**
@@ -185,9 +187,13 @@ BMCollectionViewDataSet.prototype = {
 	 * Optionally, data sets may reject the change and not perform any action or only partially accept the update
 	 * and remove just some of the items, by changing their internal data structures appropriately.
 	 * The order of the items in the array is guaranteed to be such that the target index paths are in ascending order.
-	 * @param indexPaths <[BMIndexPath<T>]>		An array of index paths identifying which items have to be removed.
+	 * @param indexPaths <[BMIndexPath<T>]>			An array of index paths identifying which items have to be removed.
+	 * {
+	 * 	@param session <BMDragSession, nullable>	The drag session through which this change was performed, if it occurred
+	 * 												through a drag and drop gesture.
+	 * }
 	 */
-	removeItemsAtIndexPaths: function (indexPaths) {},
+	removeItemsAtIndexPaths: function (indexPaths, {session}) {},
 	 
 	/**
 	 * This method may be implemented by data set objects that support transferring items from another collection view.
@@ -195,14 +201,47 @@ BMCollectionViewDataSet.prototype = {
 	 * the items, then trigger a data update to run on the collection view.
 	 * Optionally, data sets may reject the change and not perform any action or only partially accept the update
 	 * and add just some of the items, by changing their internal data structures appropriately.
-	 * @param items <[AnyObject]>					An array of objects to add to the collection view.
+	 * @param items <[AnyObject]>								An array of objects to add to the collection view, using the default representation
+	 * 															of the items in the drop session. Additional representations, if needed, can be obtained
+	 * 															from the drop session.
 	 * {
-	 *  @param toIndexPath <BMIndexPath<T>>		The starting index path to which the items should be inserted.
+	 *  @param toIndexPath <BMIndexPath<T>>						The starting index path to which the items should be inserted.
+	 * 	@param session <BMDropSession, nullable>				The drop session through which this change was performed, if it occurred
+	 * 															through a drag and drop gesture.
 	 * }
+	 * @return <Promise<void> or void>							An optional promise that resolves when data has updated, if it cannot be updated synchronously.
 	 */
-	insertItems: function (items, {toIndexPath: toIndexPath}) {},
+	insertItems: function (items, {toIndexPath: toIndexPath, session}) {},
 
 	/**
+	 * Invoked by collection after a successful transfer via a drop session to determine the index path associated
+	 * with the specified drag item during the associated data update. Data set objects which implement this method
+	 * should return the index path associated with the appropriate representation of the specified drag item that
+	 * was accepted through the drop session.
+	 * @param item <BMDragItem>						The drag item for which to obtain the associated index path.
+	 * @return <BMIndexPath<T>, nullable>			The associated index path if it could be determined, `undefined` otherwise.
+	 */
+	indexPathForDragItem: function (item) {},
+
+	/**
+	 * This method should be implemented by data set objects that support transferring items via drag and drop
+	 * to create the drag items that will be part of a drag session.
+	 * 
+	 * Data set objects implementing this method should return a drag item for the specified index path with
+	 * the appropriate representations that potential drop targets can verify to determine if they can accept
+	 * the items being transferred through the session.
+	 * @param indexPath <BMIndexPath<T>>		The index path for which to create a drag item.
+	 * {
+	 * 	@param session <BMDragSession>			The drag session that will be used to transfer the items.
+	 * }
+	 * @return <BMDragItem>						The drag item.
+	 */
+	dragItemForIndexPath: function (indexPath, {session}) {},
+
+	/**
+	 * @deprecated Not used if `dragItemForIndexPath` is implemented.
+	 * 
+	 * ------
 	 * This method may be implemented by data set objects that support transferring items to another collection view.
 	 * Data set objects implementing this method are expected to create a copy of the specified item and return it.
 	 * The item is guaranteed to be an object that was returned at some point by the data set when it provided an index path.

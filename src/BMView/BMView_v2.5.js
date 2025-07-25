@@ -11,6 +11,7 @@ import {BMViewport} from './BMViewport'
 import {BMLayoutAttribute, BMLayoutConstraintRelation, BMLayoutConstraint, BMLayoutConstraintPriorityRequired, BMLayoutConstraintKind} from './BMLayoutConstraint_v2.5'
 import * as kiwi from 'kiwi.js'
 import { BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
+import { BMDragSession } from './BMDragSession'
 
 
 // When set to YES, this will cause view to use transforms instead of left/right for positioning
@@ -2377,6 +2378,26 @@ BMView.prototype = BMExtend(BMView.prototype, {
 		this.node.removeEventListener('keydown', this._keypressHandler);
 		this._keyboardShortcutsEnabled = NO;
 	},
+
+    // #endregion
+
+    // #region Gestures
+
+    /**
+     * Initiates a drag session with the specified drag delegate from a touch or mouse event.
+     * @param event <MouseEvent or TouchEvent>      The event that triggered the drag gesture.
+     * {
+     *  @param delegate <BMDragDelegate>            The drag session delegate supplying items and
+     *                                              handling events for the session.
+     *  @param touchIdentifier <Number, nullable>   If the event is a touch event and this is specified,
+     *                                              it represents the identifier of the touch point that
+     *                                              will be tracked throughout the drag session. If not
+     *                                              specified, the first changed touch will be used.
+     * }
+     */
+    performDragWithEvent(event, {delegate, touchIdentifier}) {
+        BMDragSession._beginDragWithEvent(event, {dragDelegate: delegate, view: this, touchIdentifier});
+    },
 
     // #endregion
 

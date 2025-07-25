@@ -9,6 +9,10 @@ export * from './Core/BMIndexPath'
 export * from './Core/BMKeyPath'
 export * from './Core/BMColor'
 
+export * from './BMView/BMDragSession';
+export {BMDragPreview} from './BMView/BMDragSessionPreview';
+export {BMDragSessionActionKind, BMDropSessionActionKind} from './BMView/BMDragSessionActions';
+
 export * from './BMView/BMLayoutSizeClass'
 export * from './BMView/BMViewport'
 export * from './BMView/BMLayoutConstraint_v2.5'

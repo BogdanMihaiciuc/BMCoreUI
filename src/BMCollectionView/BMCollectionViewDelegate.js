@@ -75,7 +75,7 @@ BMCollectionViewDelegate.prototype = {
 
 	/**
 	 * Invoked by the collection view whenever any cell should be selected to determine whether that selection is allowed. 
-	 * The actuall cell may not be visible on screen and as such it may not have a BMCollectionViewCell object associated with it.
+	 * The actual cell may not be visible on screen and as such it may not have a BMCollectionViewCell object associated with it.
 	 * You may invoke the cellAtIndexPath(indexPath) method to obtain a reference to the cell if it is visible.
 	 * If this method is not implemented by the delegate object, the collection view will assume that the cell may be selected.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
@@ -95,7 +95,7 @@ BMCollectionViewDelegate.prototype = {
 
 	/**
 	 * Invoked by the collection view whenever any cell should be deselected to determine whether that selection is allowed. 
-	 * The actuall cell may not be visible on screen and as such it may not have a BMCollectionViewCell object associated with it.
+	 * The actual cell may not be visible on screen and as such it may not have a BMCollectionViewCell object associated with it.
 	 * You may invoke the cellAtIndexPath(indexPath) method to obtain a reference to the cell if it is visible.
 	 * If this method is not implemented by the delegate object, the collection view will assume that the cell may be deselected.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
@@ -220,8 +220,8 @@ BMCollectionViewDelegate.prototype = {
 	 * Invoked by the collection view whenever any cell is clicked or tapped. Delegate objects can implement this method to react
 	 * to cell click or tap events.
 	 * Delegate objects can optionally return YES from this method to signal to the collection view that they wish to handle this event
-	 * and prevent the default actions from occuring.
-	 * By default, when returning NO or nothing from this method, the collection view will togle the selection state of the clicked cell.
+	 * and prevent the default actions from occurring.
+	 * By default, when returning NO or nothing from this method, the collection view will toggle the selection state of the clicked cell.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
@@ -235,7 +235,7 @@ BMCollectionViewDelegate.prototype = {
 	 * Invoked by the collection view whenever any cell is double clicked or double tapped. Delegate objects can implement this method to react
 	 * to cell click or tap events.
 	 * Delegate objects can optionally return YES from this method to signal to the collection view that they wish to handle this event
-	 * and prevent the default actions from occuring.
+	 * and prevent the default actions from occurring.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
@@ -249,7 +249,7 @@ BMCollectionViewDelegate.prototype = {
 	 * Invoked by the collection view whenever any cell is long clicked or long tapped. Delegate objects can implement this method to react
 	 * to cell click or tap events.
 	 * Delegate objects can optionally return YES from this method to signal to the collection view that they wish to handle this event
-	 * and prevent the default actions from occuring.
+	 * and prevent the default actions from occurring.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
 	 * {
@@ -263,7 +263,7 @@ BMCollectionViewDelegate.prototype = {
 	 * Invoked by the collection view whenever any cell is right clicked. Delegate objects can implement this method to react
 	 * to cell click events.
 	 * Delegate objects can optionally return YES from this method to signal to the collection view that they wish to handle this event
-	 * and prevent the default actions from occuring.
+	 * and prevent the default actions from occurring.
 	 * By default, when returning NO or nothing from this method, the browser's default context menu will appear.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that triggered this event.
@@ -298,7 +298,6 @@ BMCollectionViewDelegate.prototype = {
 	 */
 	collectionViewDidResizeCell: function (collectionView, cell, {toSize: size}) {},
 
-	
 	/**
 	 * Invoked by the collection view whenever the user begins begins to click or touch a cell to determine if it can treat the event sequence
 	 * as the beginning of a drag & drop operation.
@@ -313,12 +312,10 @@ BMCollectionViewDelegate.prototype = {
 	 * @return <Boolean>							`YES` if interaction movement can begin for the specified cell, `NO` otherwise.
 	 */
 	collectionViewCanMoveCell: function (collectionView, cell, {atIndexPath: indexPath}) {},
-
-
 	
 	/**
 	 * Invoked by the collection view immediately before starting an interactive drag gesture for a cell.
-	 * Delegate objects can implement this method to perform any changes that might be needed to accomodate this gesture.
+	 * Delegate objects can implement this method to perform any changes that might be needed to accommodate this gesture.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that is about to be dragged.
 	 * {
@@ -334,72 +331,214 @@ BMCollectionViewDelegate.prototype = {
 	 * If this method is not implemented, collection view will assume that items cannot be transferred.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param indexPaths <[BMIndexPath]>			The index paths that may be transferred by the drag gesture.
+	 * {
+	 * 	@param session <BMDragSession>				The drag session through which the items may be transferred.
+	 * }
 	 * @return <Boolean>							`YES` if the index paths can be removed, `NO` otherwise.
 	 */
-	collectionViewCanTransferItemsAtIndexPaths: function (collectionView, indexPaths) {},
+	collectionViewCanTransferItemsAtIndexPaths: function (collectionView, indexPaths, {session}) {},
 
 	/**
-	 * Invoked by collection view to determine how to handle the transfer of the given items to a different
-	 * collection view.
+	 * Invoked by collection view to determine whether the items at the specified index paths may be reordered as
+	 * a result of a drag and drop gesture.
+	 * 
+	 * Delegate objects may implement this method and return `YES` to allow items to be reordered during the drag
+	 * and drop gesture or `NO` to prevent this behaviour. **The default return value is assumed to be `YES` when
+	 * this method is not implemented.**
+	 * @param collectionView <BMCollectionView>		The collection view that started the drag session.
+	 * @param indexPaths <[BMIndexPath]>			The index paths of the items that are part of the drag session.
+	 * {
+	 * 	@param session <BMDragSession>				The drag session through which the items are reordered.
+	 * }
+	 * @return <Boolean>							`YES` if the items can be moved, `NO` otherwise.
+	 */
+	collectionViewCanReorderItemsAtIndexPaths: function (collectionView, indexPaths, {session}) {},
+
+	/**
+	 * Invoked by collection view to determine how to handle the transfer of the items at the specified index paths to
+     * a different view.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param indexPaths <[BMIndexPath]>			The index paths that will be transferred by the drag gesture.
+	 * {
+	 * 	@param session <BMDragSession>				The drag session through which the items are transferred.
+	 * }
 	 * @return <BMCollectionViewTransferPolicy>		The desired accept policy.
 	 */
-	collectionViewTransferPolicyForItemsAtIndexPaths: function (collectionView, items) {},
+	collectionViewTransferPolicyForItemsAtIndexPaths: function (collectionView, items, {session}) {},
 
 	/**
 	 * Invoked by collection view to determine if the given items may be imported from another collection view.
+	 * 
 	 * Delegate object can implement this method to let collection view know whether or not it can import the items.
 	 * If this method is not implemented, collection view will assume that items cannot be imported.
-	 * @param collectionView <BMCollectionView>		The calling collection view.
-	 * @param items <[AnyObject]>					The items that might be imported.
-	 * @return <Boolean>							`YES` if the items can be imported, `NO` otherwise.
+	 * @param collectionView <BMCollectionView>				The calling collection view.
+	 * @param items <[AnyObject]>							The items that might be imported, using the default representation
+	 * 												        supplied by the item provider. The actual item providers can be obtained
+     *                                                      from the drop session.
+	 * {
+	 * 	@param session <BMDropSession>						The associated drop session.
+	 * }
+	 * @return <Boolean or BMCollectionViewAcceptRegion>	`YES` if the items can be imported, `NO` if they can not
+	 * 														or an accept region to further customize how the items can be
+	 * 														imported from the source view.
 	 */
-	collectionViewCanAcceptItems: function (collectionView, items) {},
+	collectionViewCanAcceptItems: function (collectionView, items, {session}) {},
+
+	/**
+	 * Invoked by collection view to obtain a preview element for the specified drop session item.
+	 * 
+	 * Delegate objects may optionally implement and return an element to customize the appearance of
+	 * the specified element when the drop session enters the collection view's frame.
+	 * @param collectionView <BMCollectionView>		The collection view.
+	 * @param session <BMDropSession>				The drop session.
+	 * {
+	 * 	@param item <BMDragItem>					The item for which to return a preview.
+	 * }
+	 * @return <DOMNode, nullable>					A preview for the item, or `undefined` to retain the
+	 * 												preview supplied by the view that started the drag session.
+	 */
+	collectionViewPreviewForDropSession: function (collectionView, session, {item}) {},
+
+    /**
+     * Invoked by collection view at the start of a drag and drop gesture when the accept region was set to `.Anywhere` or
+     * `YES` was returned from `collectionViewCanAcceptItems`.
+     * 
+     * Delegate objects implementing this method should provide the drop action that will be used for this drop session.
+     * A default action of kind `.Accept` is used when this method is not implemented.
+     * @param collectionView <BMCollectionView>     The collection view for which the drop session started.
+     * @param session <BMDropSession>               The drop session that started.
+     * @return <BMDropAction>                       The drop action to use.
+     */
+    collectionViewDropActionForDropSession: function (collectionView, session) {},
+
+	/**
+	 * Invoked by collection view during a drag and drop gesture if the accept region has been specified as `.Position` in
+	 * `collectionViewCanAcceptItems`, to determine the appropriate drop action for the drop session's new position.
+	 * 
+	 * Delegate objects implementing this method may return a `BMDropSessionAction` object describing the behaviour of
+	 * ending the session at its current position, or `undefined` to retain the previous action.
+	 * @param collectionView <BMCollectionView>		The collection view the drop session is tracking.
+	 * @param session <BMDropSession>				The drop session.
+	 * {
+	 * 	@param position <BMPoint>					The position of the drop session relative to the collection view's bounds.
+	 * }
+	 * @return <BMDropSessionAction, nullable>		The new drop action, or `undefined` to retain the current action.
+	 */
+	collectionViewDropSessionDidUpdate: function (collectionView, session, {position}) {},
+
+	/**
+	 * Invoked by collection view during a drag and drop gesture if the accept region has been specified as `.Position` or
+	 * `.Cell` in `collectionViewCanAcceptItems`, to determine the appropriate drop action for the drop session's new position
+	 * when the gesture enters the frame of the cell at the specified index path.
+	 * 
+	 * Delegate objects implementing this method may return a `BMDropSessionAction` object describing the behaviour of
+	 * ending the session at its current position, or `undefined` to retain the previous action.
+	 * @param collectionView <BMCollectionView>		The collection view the drop session is tracking.
+	 * @param session <BMDropSession>				The drop session.
+	 * {
+	 * 	@param indexPath <BMIndexPath>				The index path of the cell the drag and drop gesture has entered.
+	 * }
+	 * @return <BMDropSessionAction, nullable>		The new drop action, or `undefined` to retain the current action.
+	 */
+	collectionViewDropSessionDidEnterIndexPath: function (collectionView, session, {indexPath}) {},
+
+	/**
+	 * Invoked by collection view during a drag and drop gesture if the accept region has been specified as `.Position` or
+	 * `.Cell` in `collectionViewCanAcceptItems` when the gesture exits the frame of the cell at the specified index path.
+	 * 
+	 * If the accept region was set to `.Cell` in `collectionViewCanAcceptItems`, collection view will automatically update
+	 * the drop session to ignore the drop. If the accept region was set to `.Position`, `collectionViewDropSessionDidUpdate`
+	 * will be subsequently invoked to obtain a new drop action.
+	 * 
+	 * Delegate objects can optionally implement this method to perform any necessary cleanup if the drop session is no
+	 * longer acceptable outside of any cell.
+	 * @param collectionView <BMCollectionView>		The collection view the drop session is tracking.
+	 * @param session <BMDropSession>				The drop session.
+	 * {
+	 * 	@param indexPath <BMIndexPath>				The index path of the cell the drag and drop gesture has entered.
+	 * }
+	 */
+	collectionViewDropSessionDidExitIndexPath: function (collectionView, session, {indexPath}) {},
+
+	/**
+	 * Invoked by collection when a drop session is about to finish, regardless of its outcome.
+	 * 
+	 * Delegate objects can optionally implement this method to perform any cleanup.
+	 * @param collectionView <BMCollectionView>		The collection view for which the drop session is ending.
+	 * @param session <BMDropSession>				The drop session that will end.
+	 */
+	collectionViewDropSessionWillFinish: function (collectionView, session) {},
 
 	/**
 	 * Invoked by collection view to determine how to handle the import of the given items from a different
 	 * collection view.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
-	 * @param items <[AnyObject]>					The items that might be imported.
+	 * @param items <[AnyObject]>					The items that might be imported, using the default representation
+	 * 												supplied by the item provider. The actual item providers can be obtained
+     *                                              from the drop session.
+	 * {
+	 * 	@param session <BMDropSession>				The associated drop session.
+	 * }
 	 * @return <BMCollectionViewAcceptPolicy>		The desired accept policy.
 	 */
-	collectionViewAcceptPolicyForItems: function (collectionView, items) {},
+	collectionViewAcceptPolicyForItems: function (collectionView, items, {session}) {},
 
 	/**
 	 * Invoked by collection view to determine if the items at the specified index paths may be removed by an interactive
 	 * drag gesture.
+	 * 
 	 * Delegate object can implement this method to let collection view know whether or not it can remove the items.
 	 * If this method is not implemented, collection view will assume that items cannot be removed.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param indexPaths <[BMIndexPath]>			The index paths that may be removed by the drag gesture.
+	 * {
+	 * 	@param session <BMDropSession>				The associated drag session.
+	 * }
 	 * @return <Boolean>							`YES` if the index paths can be removed, `NO` otherwise.
 	 */
-	collectionViewCanRemoveItemsAtIndexPaths: function (collectionView, indexPaths) {},
+	collectionViewCanRemoveItemsAtIndexPaths: function (collectionView, indexPaths, {session}) {},
+
+	/**
+	 * Invoked by collection view to determine what message to display for a drag session that will delete
+	 * the items at the specified index paths.
+	 * 
+	 * Delegate object can implement this method to provide a customized message that will be displayed to
+	 * the user while the drag session is in progress. The default message that will be displayed when this
+	 * method is not implemented is `"Remove"`.
+	 * @param collectionView <BMCollectionView>		The calling collection view.
+	 * @param indexPaths <[BMIndexPath]>			The index paths that may be removed by the drag gesture.
+	 * {
+	 * 	@param session <BMDropSession>				The associated drag session.
+	 * }
+	 * @return <String>								The message to display.
+	 */
+	collectionDeleteMessageForIndexPaths: function (collectionView, indexPaths, {session}) {},
 	
 	/**
 	 * Invoked by the collection view immediately before a drag gesture is about to end for a cell. This is invoked before any
 	 * associated animations begin.
-	 * Delegate objects can implement this method to perform any changes that might be needed to accomodate this gesture.
+	 * Delegate objects can implement this method to perform any changes that might be needed to accommodate this gesture.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that is about to be dragged.
 	 * {
 	 * 	@param atIndexPath <BMIndexPath>			The cell's new index path.
+	 * 	@param session <BMDragSession>				The drag session managing the interactive movement.
 	 * }
 	 */
-	collectionViewWillFinishInteractiveMovementForCell: function (collectionView, cell, {atIndexPath: indexPath}) {},
+	collectionViewWillFinishInteractiveMovementForCell: function (collectionView, cell, {atIndexPath: indexPath, session}) {},
 	
 	/**
 	 * Invoked by the collection view immediately after a drag gesture has ended for a cell. This is invoked after any
 	 * associated animations end.
-	 * Delegate objects can implement this method to perform any changes that might be needed to accomodate this gesture.
+	 * Delegate objects can implement this method to perform any changes that might be needed to accommodate this gesture.
 	 * @param collectionView <BMCollectionView>		The calling collection view.
 	 * @param cell <BMCollectionViewCell>			The cell that is about to be dragged.
 	 * {
 	 * 	@param atIndexPath <BMIndexPath>			The cell's new index path.
+	 * 	@param session <BMDragSession>				The drag session managing the interactive movement.
 	 * }
 	 */
-	collectionViewDidFinishInteractiveMovementForCell: function (collectionView, cell, {atIndexPath: indexPath}) {}
+	collectionViewDidFinishInteractiveMovementForCell: function (collectionView, cell, {atIndexPath: indexPath, session}) {}
 
 };	
 

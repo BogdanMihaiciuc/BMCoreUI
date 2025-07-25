@@ -5,8 +5,8 @@ import {BMInset} from '../Core/BMInset'
 import {BMPointMake} from '../Core/BMPoint'
 import {BMSizeMake} from '../Core/BMSize'
 import {BMRect, BMRectMake, BMRectMakeWithNodeFrame, BMRectMakeWithOrigin, BMRectByInterpolatingRect} from '../Core/BMRect'
-import {BMIndexPathNone} from '../Core/BMIndexPath'
-import {BMAnimateWithBlock, BMAnimationContextBeginStatic, BMAnimationContextGetCurrent, BMAnimationContextAddCompletionHandler, BMAnimationApply, __BMVelocityAnimate, BMHook} from '../Core/BMAnimationContext'
+import {BMIndexPathMakeWithRow, BMIndexPathNone} from '../Core/BMIndexPath'
+import {BMAnimateWithBlock, BMAnimationContextBeginStatic, BMAnimationContextGetCurrent, BMAnimationContextAddCompletionHandler, BMAnimationApply, __BMVelocityAnimate, BMHook, BMAnimationBeginWithDuration} from '../Core/BMAnimationContext'
 import {BMView, BMViewLayoutQueue} from '../BMView/BMView_v2.5'
 import {BMCollectionViewLayoutAttributesMakeForCellAtIndexPath, BMCollectionViewLayoutAttributesType, BMCollectionViewLayoutAttributesStyleDefaults, _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes} from './BMCollectionViewLayoutAttributes'
 import {BMJQueryShim, BMCollectionViewCell, BMCollectionViewCellReuseState} from './BMCollectionViewCell'
@@ -16,6 +16,9 @@ import {IScroll} from '../iScroll/iscroll-probe'
 import { BMLayoutAttribute } from '../BMView/BMLayoutConstraint_v2.5'
 import { BMMenuSourceNodeCSSClass } from '../BMView/BMMenu'
 import { BMKeyboardShortcut, BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut'
+import { BMDragSession, BMDragSessionAction, BMDragTransferKind, BMDropSessionAction } from '../BMView/BMDragSession'
+import { BMDragPreview } from '../BMView/BMDragSessionPreview'
+import { BMDragSessionActionKind, BMDropSessionActionKind } from '../BMView/BMDragSessionActions'
 
 // When set to YES, this will cause collection view to use static animation contexts when setting up animations
 const BM_COLLECTION_VIEW_USE_STATIC_CONTEXT = YES;
@@ -78,6 +81,45 @@ export var BMCollectionViewAcceptPolicy = Object.freeze({ // <enum>
 
 // @endtype
 
+// @type BMCollectionViewAcceptRegion
+
+/**
+ * Constants which describe the region by which a drag and drop gesture can be accepted as it
+ * enters the collection view's frame.
+ */
+export const BMCollectionViewAcceptRegion = Object.freeze({ // <enum>
+
+	/**
+	 * Indicates that the drop session will have the same drop action regardless of where
+	 * in the collection view's frame it is.
+	 */
+	Anywhere: 'Accept', // <enum>
+
+	/**
+	 * Indicates that the drop session's drop action changes based on the cell in which the
+	 * drop occurs. Drops outside of any cell's frame are rejected. The delegate object is
+	 * expected to implement the {@link BMCollectionViewDelegate.collectionViewDropSessionDidEnterCell} method
+	 * provide the appropriate drop action for each cell.
+	 */
+	Cell: 'Cell', // <enum>
+
+	/**
+	 * Indicates the drop session's drop action depends on the specific position in which the drop occurs.
+	 * The delegate object is expected to implement the {@link BMCollectionViewDelegate.collectionViewDropSessionDidUpdate}
+	 * method to provide the appropriate action as the drop session's position updates.
+	 */
+	Position: 'Position', // <enum>
+
+	/**
+	 * Indicates that the collection view cannot process the session's items and no further updates will
+	 * be provided regarding this drop session.
+	 */
+	Nowhere: 'Reject', // <enum>
+
+});
+
+// @endtype
+
 // @type BMCollectionView Global Symbols
 
 // Set to YES during a drag & drop operation
@@ -127,6 +169,24 @@ var _BMCollectionViewSnappingScrollThreshold = 200; // <Number>
  * @return <Boolean>					YES if the objects are equal, NO otherwise.
  */
 var _BMCollectionViewIdentityComparator = function (o1, o2) { return o1 == o2; }; // <Boolean ^ (AnyObject, AnyObject)>
+
+/**
+ * The number of pixels determining how close to an edge the drag session position must be
+ * for a collection view to start scrolling.
+ */
+const _BMCollectionViewDragScrollDistance = 32;
+
+/**
+ * How much to multiply the distance to the edge to obtain the final scrolling speed during
+ * a drag and drop gesture.
+ */
+const _BMCollectionViewDragScrollMultiplier = 20;
+
+/**
+ * The number of milliseconds to wait for a data source to insert items asynchronously after a drop
+ * before playing the generic drop animation for the drop previews.
+ */
+const _BMCollectionViewAsynchronousDropDelay = 200;
 
 // @endtype
 
@@ -239,7 +299,6 @@ export function BMCollectionView() { // <constructor>
 BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? Object.create(BMView.prototype) : {}, {
 	constructor: BMCollectionView,
 
-	// MARK: BMView overrides
 	//#region BMView overrides
 
 	// @override - BMView
@@ -809,6 +868,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var customScrollRequired = args && args.customScroll;
 	
 		_BMCollectionViews.set(this, true);
+		BMDragSession._dropTargets.set(this, this);
 		
 		this._container = BMJQueryShim.shimWithDOMNode(node);
 		this.layout = new BMCollectionViewFlowLayout();
@@ -2071,6 +2131,30 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * @param indexPaths <[BMIndexPath<T>]>			The index paths of the cell whose size should be measured.
 	 */
 	measureSizesOfCellsAtIndexPaths(indexPaths) {
+		// Skip index paths that have already been measured
+		indexPaths = indexPaths.filter(indexPath => {
+			// Return the cached size if it is available.
+			let identifier;
+			if (this._dataSet.identifierForIndexPath) {
+				identifier = this._dataSet.identifierForIndexPath(indexPath);
+
+				if (this._measures[identifier]) {
+					return NO;
+				}
+			}
+			else {
+				let length = this._measuredIndexPaths.length;
+				for (let i = 0; i < length; i++) {
+					let measure = this._measuredIndexPaths[i];
+					if (measure.indexPath.isEqualToIndexPath(indexPath, {usingComparator: this.identityComparator})) {
+						return NO;
+					}
+				}
+			}
+
+			return YES;
+		});
+
 		const queue = BMViewLayoutQueue.layoutQueue();
 		const iterators = indexPaths.map(p => this._measuredSizeOfCellAtIndexPathGenerator(p, {layoutQueue: queue, dequeue: NO}));
 
@@ -2092,23 +2176,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		while (YES) {
 			const result = iterator.next();
 			if (result.done) return result.value;
-		}
-
-		// Return the cached size if it is available.
-		let identifier;
-		if (this._dataSet.identifierForIndexPath) {
-			identifier = this._dataSet.identifierForIndexPath(indexPath);
-
-			if (this._measures[identifier]) return this._measures[identifier];
-		}
-		else {
-			let length = this._measuredIndexPaths.length;
-			for (let i = 0; i < length; i++) {
-				let measure = this._measuredIndexPaths[i];
-				if (measure.indexPath.isEqualToIndexPath(indexPath, {usingComparator: this.identityComparator})) {
-					return this._measuredIndexPaths[i].size;
-				}
-			}
 		}
 
 		if (BM_COLLECTION_VIEW_DEBUG_MEASURE) {
@@ -2909,6 +2976,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    return cell;
 	    
 	},
+
+	// #region Drag and drop
 	
 	isDragging: NO,
 
@@ -2954,6 +3023,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * 	@param toIndexPath <BMIndexPath<T>>					The suggested index path at which to add the items.
 	 * 	@param withDropShadows <Map<AnyObject, DOMNode>>	A map containing the link between drop shadows and the items.
 	 * }
+	 * @return <Promise<void>>								A promise that resolves when the associated data update
+	 * 														has completed.
 	 */
 	_insertItems: async function (items, args) {
 		this._droppedShadows = args.withDropShadows;
@@ -2966,6 +3037,605 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	},
 
 	/**
+	 * An array containing the cells whose index paths are part of the current drag session, or
+	 * `undefined` while there is no drag session in progress for this collection view.
+	 */
+	_draggingCells: undefined, // <[BMCollectionViewCell], nullable>
+
+	/**
+	 * A map that keeps track of the association between drag items in a drag session and the cells
+	 * whose items they represent.
+	 */
+	_cellItemMap: undefined, // <Map<BMDragItem, BMCollectionViewCell>>
+
+	/**
+	 * Begins a drag gesture from the specified event. The drag event will move the cell from which
+	 * the event originates, or all selected cells if that cell is selected.
+	 * @param event <Event>						The event triggering this action.
+	 * {
+	 * 	@param forCell <BMCollectionViewCell>	The cell from which this event originates.
+	 * 	@param touchIdentifier <AnyObject>		If this event is a `TouchEvent`, this represents the identifier
+	 * 											of the touch point that will control this drag & drop operation.
+	 * }
+	 */
+	beginDragWithEvent(event, args) {
+		const cell = args.forCell;
+
+		let cells;
+
+		if (this.isCellAtIndexPathSelected(cell.indexPath)) {
+			cells = [cell];
+			// Sort the index paths in ascending order
+			this._selectedIndexPaths.sort((i1, i2) => i2.section == i1.section ? i1.row - i2.row : i1.section - i2.section).forEach(indexPath => {
+				let retainedCell = this.retainCellForIndexPath(indexPath);
+
+				if (retainedCell != cell) {
+					cells.push(retainedCell);
+				}
+				retainedCell.isDragging = YES;
+
+				retainedCell.node.classList.add('BMCollectionViewCellDragging');
+			});
+		}
+		else {
+			cells = [cell];
+			cell.isDragging = YES;
+			cell.retain();
+
+			cell.node.classList.add('BMCollectionViewCellDragging');
+		}
+
+		this._draggingCells = cells;
+		this._cellItemMap = new Map();
+
+		BMDragSession._beginDragWithEvent(event, {dragDelegate: this, view: this, touchIdentifier: args.touchIdentifier});
+	},
+
+	/**
+	 * Creates and returns a fallback drag item for the specified index path if the data source
+	 * object cannot provide a customized drag item.
+	 * @param indexPath <BMIndexPath>		The index path for which to return a drag item.
+	 * @return <BMDragItem>					A drag item;
+	 */
+	_defaultDragItemForIndexPath(indexPath) {
+		const object = this.dataSet.copyOfItem?.(indexPath.object) ?? JSON.parse(JSON.stringify(indexPath.object));
+
+		return {
+			canConformToType(type) {
+				return type == 'default' || type == 'object';
+			},
+
+			itemOfType(type) {
+				if (type != 'default' && type != 'object') {
+					throw new Error(`Cannot provide an item representation of type "${type}"`);
+				}
+
+				return object;
+			}
+		}
+	},
+
+	dragSessionInitialItems(session) {
+		this._draggingIndexPaths = [];
+
+		const items = this._draggingCells.map(cell => {
+			const item = this.dataSet.dragItemForIndexPath?.(cell.indexPath, {session}) ?? this._defaultDragItemForIndexPath(cell.indexPath);
+			this._cellItemMap.set(item, cell);
+			this._draggingIndexPaths.push(cell.indexPath);
+			return item;
+		});
+
+		this._draggingIndexPaths.sort((i1, i2) => i1.section == i2.section ? i1.row - i2.row : i1.section - i2.section);
+
+		return items;
+	},
+
+	dragSessionPreviewForItem(session, item) {
+		const cell = this._cellItemMap.get(item);
+
+		cell.node.classList.remove('BMCollectionViewCellDragging');
+		const preview = BMDragPreview.dragPreviewWithCopyOfSourceNode(cell.node, {forItem: item});
+		cell.node.classList.add('BMCollectionViewCellDragging');
+
+		return preview;
+	},
+
+	/**
+	 * The current drag action to use based on the current drag position.
+	 */
+	_dragAction: undefined, // <BMDragSessionAction, nullable>
+
+	/**
+	 * Set to `YES` while a drag session started by this collection view is in its frame.
+	 */
+	_dragSessionInFrame: NO, // <Boolean>
+
+	/**
+	 * The amount by which to scroll on the Y axis during the current drag session.
+	 */
+	_dragScrollDirectionY: 0, // <Number>
+
+	/**
+	 * The amount by which to scroll on the X axis during the current drag session.
+	 */
+	_dragScrollDirectionX: 0, // <Number>
+
+	/**
+	 * Whenever the pointer moves to the edges of this collection view during a drag session,
+	 * this method periodically scrolls the collection view's contents appropriately.
+	 */
+	_dragScroll() {
+		// This callback runs continuously during the drag & drop operation - it is removed upon the operation finishing
+		this._scrollFrameIdentifier = window.requestAnimationFrame(() => this._dragScroll());
+
+		// Don't perform the scroll during data updates
+		if (this.isUpdatingData) {
+			return;
+		}
+
+		if (this._dragScrollDirectionX || this._dragScrollDirectionY) {
+			const offset = this.scrollOffset;
+			offset.x = offset.x + this._dragScrollDirectionX;
+			offset.y = offset.y + this._dragScrollDirectionY;
+
+			offset.x = Math.max(0, Math.min(offset.x, this.size.width - this.frame.size.width));
+			offset.y = Math.max(0, Math.min(offset.y, this.size.height - this.frame.size.height));
+
+			this.scrollOffset = offset;
+		}
+	},
+
+	/**
+	 * The identifier of the animation frame callback used to scroll this collection during a drag session while the
+	 * mouse pointer 
+	 */
+	_scrollFrameIdentifier: undefined, // <Number, nullable>
+
+	dragSessionDidEnter(session) {
+		this._dragSessionInFrame = YES;
+		this._dragAction = BMDragSessionAction.actionWithKind(BMDragSessionActionKind.Ignore);
+		this._scrollFrameIdentifier = window.requestAnimationFrame(() => this._dragScroll());
+	},
+
+	dragSessionDidUpdate(session) {
+		if (this._dragSessionInFrame) {
+			if (this.delegate?.collectionViewCanReorderItemsAtIndexPaths?.(this, this._draggingIndexPaths, {session}) ?? YES) {
+				// If item movement is supported, determine the new index path to which the items should move
+				// Instruct the data set to move the item, if the new index path does not match the index path of any dragging item
+				const localPoint = this.positionOfDragSession(session);
+				const targetIndexPath = this.indexPathAtPoint(localPoint);
+
+				let canMoveItem = YES;
+				if (!targetIndexPath) {
+					return;
+				}
+
+				// If the target index path is an index path of an item that's part of the session, don't perform the reorder
+				this._draggingIndexPaths.forEach(indexPath => {
+					if (targetIndexPath.row == indexPath.row && targetIndexPath.section == indexPath.section) {
+						canMoveItem = NO;
+					}
+				});
+
+				if (canMoveItem) {
+					if (this.dataSet.moveItemsFromIndexPaths && this._draggingIndexPaths.length > 1) {
+					// Instruct the data set to move the items in bulk if possible
+						const newIndexPaths = this.dataSet.moveItemsFromIndexPaths(this._draggingIndexPaths, {toIndexPath: targetIndexPath});
+						this._draggingIndexPaths = newIndexPaths.sort((i1, i2) => i1.section == i2.section ? i1.row - i2.row : i1.section - i2.section);
+					}
+					else {
+						// Otherwise move them one by one
+						this._draggingIndexPaths.forEach((indexPath, index) => {
+							let destinationIndexPath = targetIndexPath.copy();
+							destinationIndexPath.object = indexPath.object;
+							destinationIndexPath.row += index;
+							if (this.dataSet.moveItemFromIndexPath(indexPath, {toIndexPath: destinationIndexPath})) {
+								this._draggingIndexPaths[index] = destinationIndexPath;
+							}
+						});
+					}
+				}
+			}
+
+			// Determine the scrolling direction
+			const viewportFrame = BMRectMakeWithNodeFrame(this.node);
+			const slope = _BMCollectionViewDragScrollDistance;
+			const multi = _BMCollectionViewDragScrollMultiplier;
+			if (session.position.x - viewportFrame.origin.x < slope) {
+				this._dragScrollDirectionX = 
+					(session.position.x - viewportFrame.origin.x - slope) / slope * multi;
+			}
+			else if (viewportFrame.right - session.position.x < slope) {
+				this._dragScrollDirectionX = (slope - viewportFrame.right + session.position.x) / slope * multi;
+			}
+			else {
+				this._dragScrollDirectionX = 0;
+			}
+
+			if (session.position.y - viewportFrame.origin.y < slope) {
+				this._dragScrollDirectionY = (session.position.y - viewportFrame.origin.y - slope) / slope * multi;
+			}
+			else if (viewportFrame.bottom - session.position.y < slope) {
+				this._dragScrollDirectionY = (slope - viewportFrame.bottom + session.position.y) / slope * multi;
+			}
+			else {
+				this._dragScrollDirectionY = 0;
+			}
+		}
+
+		return this._dragAction;
+	},
+
+	dragSessionDidExit(session) {
+		this._dragSessionInFrame = NO;
+		if (this.delegate?.collectionViewCanRemoveItemsAtIndexPaths?.(this, this._draggingIndexPaths, {session})) {
+			const message = this.delegate?.collectionDeleteMessageForIndexPaths?.(this, this._draggingIndexPaths, {session}) ?? 'Remove';
+			this._dragAction = BMDragSessionAction.actionWithKind(BMDragSessionActionKind.Delete, {message});
+		}
+
+		if (this._scrollFrameIdentifier) {
+			this._dragScrollDirectionX = 0;
+			this._dragScrollDirectionY = 0;
+			window.cancelAnimationFrame(this._scrollFrameIdentifier);
+			this._scrollFrameIdentifier = undefined;
+		}
+	},
+
+	dragSessionWillFinish(session) {
+		this.delegate?.collectionViewWillFinishInteractiveMovementForCell?.(this, this._draggingCells[0], {atIndexPath: this._draggingCells[0].indexPath, session});
+	},
+
+	dragSessionPerformMoveForItems(session, items) {
+		const indexPaths = items.map(i => this._cellItemMap.get(i).indexPath).sort((i1, i2) => {
+			return i1.section == i2.section ? i1.row - i2.row : i1.section - i2.section;
+		});
+
+		this.dataSet.removeItemsAtIndexPaths(indexPaths, {session});
+	},
+
+	dragSessionPerformDelete(session) {
+		this.dataSet.removeItemsAtIndexPaths(this._draggingIndexPaths, {session});
+	},
+
+	dragSessionTransferKind(session) {
+		const acceptPolicy = this.delegate?.collectionViewTransferPolicyForItemsAtIndexPaths?.(this, this._draggingIndexPaths, {session});
+		switch (acceptPolicy) {
+			case BMCollectionViewTransferPolicy.Move:
+				return BMDragTransferKind.Move;
+			case BMCollectionViewTransferPolicy.Copy:
+			default:
+				return BMDragTransferKind.Copy;
+		}
+	},
+
+	dragSessionDidFinish(session) {
+		// Remove the dragging class from the cell
+		this._draggingCells.forEach(cell => {
+			cell.node.classList.remove('BMCollectionViewCellDragging');
+			cell.isDragging = NO;
+
+			// Release the cell
+			cell.release();
+		});
+
+		this._draggingCells = undefined;
+		this._cellItemMap = undefined;
+		this._draggingIndexPaths = undefined;
+		
+		this.delegate?.collectionViewDidFinishInteractiveMovementForCell?.(this, this._draggingCells[0], {atIndexPath: this._draggingCells[0].indexPath, session});
+	},
+
+	dragSessionRequiresCustomDropAnimationForItems(session, items) {
+		// Collection view only needs to customize the drop animation for partial transfers
+		// where the transfer kind is move
+		if (session.transferKind == BMDragTransferKind.Move && session.action._action == BMDropSessionActionKind.AcceptPartially) {
+			return YES;
+		}
+		return NO;
+	},
+
+	dragSessionAnimateDropWithPreviews(session, previews) {
+		// If this collection view was already waiting for the data set to insert some data from a drop,
+		// play the generic drop animation for those previews
+		if (this._dropPreviews) {
+			for (const preview of this._dropPreviews) {
+				preview.performDrop();
+			}
+		}
+
+		this._dropPreviews = previews.slice();
+		const dropPreviews = this._dropPreviews;
+
+		// After this method returns, the drag session will instruct collection view to perform the move for the
+		// affected items, which should trigger a synchronous data update to use and clear the drag previews
+		queueMicrotask(() => {
+			if (this._dropPreviews == dropPreviews) {
+				this._dropPreviews = undefined;
+			}
+		});
+	},
+
+	/**
+	 * The kind of region being tracked during a drop session. `undefined` if a drop session is
+	 * not in progress.
+	 */
+	_dropSessionRegionKind: undefined, // <BMCollectionViewAcceptRegion, nullable>
+
+	/**
+	 * The current drop action to use based on the current drop session position.
+	 */
+	_dropAction: undefined, // <BMDropSessionAction, nullable>
+
+	/**
+	 * The index path associated with the current drop session, if any.
+	 */
+	_dropIndexPath: undefined, // <BMIndexPath, nullable>
+
+	dropSessionCanBegin(session) {
+		this._lastDropIndexPath = undefined;
+		this._dropIndexPath = undefined;
+		this._dropAction = undefined;
+
+		const items = session.items.map(i => i.itemOfType('default'));
+		const canBegin = this.delegate?.collectionViewCanAcceptItems?.(this, items, {session}) ?? NO;
+
+		// The drop session can begin if the response is not `NO` or `.Nowhere`.
+		if (canBegin != NO && canBegin != BMCollectionViewAcceptRegion.Nowhere) {
+			if (canBegin == YES || canBegin == BMCollectionViewAcceptRegion.Anywhere) {
+				// If the drop session can be accepted anywhere, request the drop action from the delegate
+				this._dropAction = this.delegate?.collectionViewDropActionForDropSession?.(this, session);
+				this._dropAction ??= BMDropSessionAction.actionWithKind(BMDropSessionActionKind.Accept);
+				this._dropSessionRegionKind = BMCollectionViewAcceptRegion.Anywhere;
+			}
+			else {
+				this._dropSessionRegionKind = canBegin;
+			}
+
+			return YES;
+		}
+
+		return NO;
+	},
+
+	dropSessionDidEnter(session) {
+		this._dragScrollDirectionX = 0;
+		this._dragScrollDirectionY = 0;
+		this._scrollFrameIdentifier = window.requestAnimationFrame(() => this._dragScroll());
+	},
+
+	dropSessionDidExit(session) {
+		if (this._scrollFrameIdentifier) {
+			this._dragScrollDirectionX = 0;
+			this._dragScrollDirectionY = 0;
+			window.cancelAnimationFrame(this._scrollFrameIdentifier);
+			this._scrollFrameIdentifier = undefined;
+		}
+	},
+
+	/**
+	 * Returns the position of the specified drag or drop session relative to the collection view's bounds.
+	 * @param session <BMDragSession or BMDropSession>		The drag or drop session.
+	 * @return <BMPoint>									The coordinates relative to the bounds.
+	 */
+	positionOfDragSession(session) {
+		const point = session.position;
+
+		// Determine the index path over which this session currently is
+        const viewportFrame = BMRectMakeWithNodeFrame(this.node);
+
+		// Discover the coordinates of the point that are relative to the collection view's bounds
+		let localPoint = BMPointMake(
+            point.x - viewportFrame.origin.x,
+            point.y - viewportFrame.origin.y,
+        );
+		localPoint.x += this.scrollOffset.x;
+		localPoint.y += this.scrollOffset.y;
+
+		return localPoint;
+	},
+
+	/**
+	 * Determines the index path at the specified point whose coordinates are relative to the bounds.
+	 * @param point <BMPoint>					The point.
+	 * @return <BMIndexPath, nullable>			The index path, if any cell's frame intersects the point,
+	 * 											or `undefined` otherwise.
+	 */
+	indexPathAtPoint(point) {
+		// Create a rect around this point with a size of 64 by 64 pixels.
+		const rect = BMRectMake(0, 0, 64, 64);
+		rect.center = point;
+
+		// Request the attributes within the given rect
+		const attributes = this.layout.attributesForElementsInRect(rect);
+
+		// Find the index path to which the cell should move
+		let targetIndexPath;
+		attributes.forEach(attribute => {
+			if (attribute.itemType != BMCollectionViewLayoutAttributesType.Cell) {
+                return;
+            }
+
+			if (attribute.frame.containsPoint(point)) {
+				targetIndexPath = attribute.indexPath.copy();
+			}
+		});
+
+		return targetIndexPath;
+	},
+
+	/**
+	 * The most recent index path the current drop session has been over.
+	 */
+	_lastDropIndexPath: undefined, // <BMIndexPath>
+
+	dropSessionDidUpdate(session) {
+		const localPoint = this.positionOfDragSession(session);
+		const targetIndexPath = this.indexPathAtPoint(localPoint);
+
+		if (targetIndexPath) {
+			this._lastDropIndexPath = targetIndexPath;
+		}
+
+		if (this._dropSessionRegionKind == BMCollectionViewAcceptRegion.Anywhere) {
+			return this._dropAction;
+		}
+
+		// Determine the scrolling direction
+		const viewportFrame = BMRectMakeWithNodeFrame(this.node);
+		const slope = _BMCollectionViewDragScrollDistance;
+		const multi = _BMCollectionViewDragScrollMultiplier;
+		if (session.position.x - viewportFrame.origin.x < slope) {
+			this._dragScrollDirectionX = 
+				(session.position.x - viewportFrame.origin.x - slope) / slope * multi;
+		}
+		else if (viewportFrame.right - session.position.x < slope) {
+			this._dragScrollDirectionX = (slope - viewportFrame.right + session.position.x) / slope * multi;
+		}
+		else {
+			this._dragScrollDirectionX = 0;
+		}
+
+		if (session.position.y - viewportFrame.origin.y < slope) {
+			this._dragScrollDirectionY = (session.position.y - viewportFrame.origin.y - slope) / slope * multi;
+		}
+		else if (viewportFrame.bottom - session.position.y < slope) {
+			this._dragScrollDirectionY = (slope - viewportFrame.bottom + session.position.y) / slope * multi;
+		}
+		else {
+			this._dragScrollDirectionY = 0;
+		}
+
+        // If the index path changes, notify the delegate using the appropriate methods
+        if (!targetIndexPath) {
+            if (this._dropIndexPath) {
+                this._dropIndexPath = undefined;
+                this.delegate?.collectionViewDropSessionDidExitIndexPath?.(this, session, {indexPath: this._dropIndexPath});
+
+                if (this._dropSessionRegionKind == BMCollectionViewAcceptRegion.Cell) {
+                    return BMDropSessionAction.actionWithKind(BMDropSessionActionKind.Ignore);
+                }
+            }
+        }
+        else {
+            let isNewIndexPath = NO;
+            if (!this._dropIndexPath) {
+                isNewIndexPath = YES;
+            }
+            else {
+                if (!this._dropIndexPath.isEqualToIndexPath(targetIndexPath, {usingComparator: this.identityComparator})) {
+                    isNewIndexPath = YES;
+                    this.delegate?.collectionViewDropSessionDidExitIndexPath?.(this, session, {indexPath: this._dropIndexPath});
+                }
+            }
+
+            this._dropIndexPath = targetIndexPath;
+
+            if (isNewIndexPath) {
+                const action = this.delegate?.collectionViewDropSessionDidEnterIndexPath?.(this, session, {indexPath: this._dropIndexPath});
+                
+                if (this._dropSessionRegionKind == BMCollectionViewAcceptRegion.Cell) {
+                    return action;
+                }
+            }
+        }
+
+        if (this._dropSessionRegionKind == BMCollectionViewAcceptRegion.Position) {
+            const action = this.delegate?.collectionViewDropSessionDidUpdate?.(this, session, {position: localPoint});
+            return action;
+        }
+	},
+
+    dropSessionPreviewForItem(session, item) {
+        const node = this.delegate?.collectionViewPreviewForDropSession?.(this, session, {item});
+        if (node) {
+            return BMDragPreview.dragPreviewWithPreviewNode(node, {forItem: item});
+        }
+    },
+
+	dropSessionWillFinish(session) {
+		this.delegate?.collectionViewDropSessionWillFinish?.(this, session);
+	},
+
+	dropSessionRequiresCustomDropAnimationForItems(session, items) {
+		return YES;
+	},
+
+	dropSessionTransferKind(session) {
+		const acceptPolicy = this.delegate?.collectionViewAcceptPolicyForItems?.(this, session.items.map(i => i.itemOfType('default')), {session});
+		switch (acceptPolicy) {
+			case BMCollectionViewAcceptPolicy.Move:
+				return BMDragTransferKind.Move;
+			case BMCollectionViewAcceptPolicy.Copy:
+			default:
+				return BMDragTransferKind.Copy;
+		}
+	},
+
+	/**
+	 * The drop previews that must be animated at the end of a successful drop session. Only set while performing
+	 * the data update associated with accepting items via a drop session.
+	 */
+	_dropPreviews: undefined, // <[BMDropPreview], nullable>
+
+	dropSessionPerformDrop(session) {
+		// If this collection view was already waiting for the data set to insert some data from a drop,
+		// play the generic drop animation for those previews
+		if (this._dropPreviews) {
+			for (const preview of this._dropPreviews) {
+				preview.performDrop();
+			}
+		}
+
+		// If there are no items to accept, don't perform any other changes
+		if (!session.dropItems.length) {
+			return;
+		}
+
+		let toIndexPath = this._lastDropIndexPath;
+		if (!toIndexPath) {
+			const sectionCount = this.numberOfSections();
+			const row = this.numberOfObjectsInSectionAtIndex(sectionCount - 1) - 1;
+			const section = sectionCount - 1;
+			toIndexPath = this.indexPathForObjectAtRow(row, {inSectionAtIndex: section}) ?? BMIndexPathMakeWithRow(row, {section});
+		}
+
+		// Instruct the data set to insert the items to the appropriate index path
+		this._dropPreviews = session.dropPreviews.slice();
+
+		const items = session.dropItems.map(i => i.itemOfType('default'));
+		const result = this.dataSet.insertItems(items, {toIndexPath, session});
+
+		if (result) {
+			// If the data set performs the change asynchronously, give it 200ms to trigger the data update, otherwise
+			// play the generic drop animation for the previews
+			const dropPreviews = this._dropPreviews;
+			let resolved = NO;
+			result.then(() => {
+				resolved = YES;
+
+				if (this._dropPreviews == dropPreviews) {
+					this._dropPreviews = undefined;
+				}
+			});
+
+			setTimeout(() => {
+				if (!resolved) {
+					if (this._dropPreviews == dropPreviews) {
+						this._dropPreviews = undefined;
+					}
+
+					for (const preview of dropPreviews) {
+						preview.performDrop();
+					}
+				}
+			}, _BMCollectionViewAsynchronousDropDelay);
+		}
+		else {
+			this._dropPreviews = undefined;
+		}
+	},
+
+	/**
 	 * Begins a drag gesture from the given event. The drag event will move the cell from which
 	 * the event originates.
 	 * @param event <Event>						The event triggering this action.
@@ -2975,7 +3645,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * 											of the touch point that will control this drag & drop operation.
 	 * }
 	 */
-	beginDragWithEvent(event, args) {
+	_beginDragWithEvent(event, args) {
 		if (this.isDragging) return;
 		// TODO Consider splitting up this giant method
 
@@ -3018,7 +3688,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 		else {
 			cells = [cell];
-			cell.isDraggging = YES;
+			cell.isDragging = YES;
 			cell.retain();
 
 			cell.node.classList.add('BMCollectionViewCellDragging');
@@ -3082,18 +3752,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 
 			draggingShadows.push(otherDraggingShadow);
 			let index = draggingShadows.length;
-
-			// __BMVelocityAnimate(otherDraggingShadow, {
-			// 	rotateZ: ((index) * 60 / cells.length) + 'deg',
-			// 	left: [draggingShadowTargetPoint.x + 'px', sourceRect.origin.x + 'px'],
-			// 	top: [draggingShadowTargetPoint.y + 'py', sourceRect.origin.x + 'px']
-			// }, {
-			// 	easing: 'easeInOutQuad',
-			// 	duration: 300,
-			// 	complete() {
-			// 		areDraggingShadowsAnimating = NO;
-			// 	}
-			// });
+			
 			(window.Velocity || $.Velocity).animate(otherDraggingShadow, {tween: 1}, {
 				easing: 'easeInOutQuad',
 				duration: 300,
@@ -3122,15 +3781,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		BMHook(draggingIndicator, {scaleX: 0, scaleY: 0});
 		draggingShadowsToAdd.forEach(shadow => document.body.appendChild(shadow));
 		document.body.appendChild(draggingIndicator);
-
-		// (window.Velocity || $.Velocity).animate(draggingIndicator, {
-		// 	opacity: [1, 0],
-		// 	scaleX: [1, 0],
-		// 	scaleY: [1, 0]
-		// }, {
-		// 	duration: 300,
-		// 	easing: 'easeOutQuad'
-		// });
 
 		__BMVelocityAnimate(draggingIndicator, {
 			opacity: [1, 0],
@@ -3342,10 +3992,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 
 			// Temporarily suspend these updates while a data update is in progress
-			if (this.isUpdatingData) return event.preventDefault(), event.stopPropagation();
+			if (this.isUpdatingData) {
+				event.preventDefault();
+				event.stopPropagation();
+				return;
+			}
 
 
-			// 3. Enabling scrolling while close to the collection view's edges.
+			// 3. Enable scrolling while close to the collection view's edges.
 			if (clientX - collectionViewViewportFrame.origin.x < 32) {
 				scrollDirectionX = (clientX - collectionViewViewportFrame.origin.x - 32) / 32 * 20;
 			}
@@ -3773,7 +4427,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			// Remove the dragging class from the cell
 			cells.forEach(cell => {
 				cell.node.classList.remove('BMCollectionViewCellDragging');
-				cell.isDraggging = NO;
+				cell.isDragging = NO;
 
 				// Release the cell
 				cell.release();
@@ -4381,7 +5035,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 * Highlights the index path to the specified direction of the currently highlighted index path.
 	 * @param arrow <String>				The key code of the keyboard arrow that was pressed.
 	 * {
-	 * 	@param withEvent <KeyboardEvent>	The event that triggerred this action.
+	 * 	@param withEvent <KeyboardEvent>	The event that triggered this action.
 	 * }
 	 */
 	keyboardArrowPressed(arrow, args) {
@@ -5133,6 +5787,49 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	get dataUpdated() { // <Promise<void>, nullable>
 		return this._dataUpdatePromise;
 	},
+
+	/**
+	 * Finds and returns the drop preview associated with the specified layout attributes, if any exists.
+	 * @param attributes <BMCollectionViewLayoutAttributes>		Tha attributes for which to find the drop preview.
+	 * {
+	 * 	@param previewMap <Map<BMIndexPath<T>, BMDropPreview>, nullable>
+	 * 															An optional mapping between index paths and drop items
+	 * 															used to find the drop preview for the item representation
+	 * 															that the data set actually inserted. The default item
+	 * 															representation will be used if this is not provided.
+	 * }
+	 * @returns <BMDropPreview, nullable>						The drop preview if it was found, `undefined` otherwise.
+	 */
+	_dropPreviewForLayoutAttributes: function (attributes, {previewMap}) {
+		if (!this._dropPreviews) {
+			return;
+		}
+
+		let dropPreview;
+
+		if (this._cellItemMap) {
+			for (const [item, cell] of this._cellItemMap.entries()) {
+				if (cell.indexPath.isLooselyEqualToIndexPath(attributes.indexPath, {usingComparator: this.identityComparator})) {
+					return this._dropPreviews.find(p => p.item == item);
+				}
+			}
+		}
+		else if (previewMap) {
+			for (const [indexPath, preview] of previewMap.entries()) {
+				if (indexPath.isEqualToIndexPath(attributes.indexPath, {usingComparator: this.identityComparator})) {
+					dropPreview = preview;
+					break;
+				}
+			}
+		}
+		else {
+			// If the data set did not provide the new index paths, assume that the default representation
+			// was used and instead look for the object
+			dropPreview = this._dropPreviews.find(p => p.item.itemOfType('default') == attributes.indexPath.object);
+		}
+
+		return dropPreview;
+	},
 	
 	/**
 	 * Should be invoked when the entire data set is updated in bulk.
@@ -5272,8 +5969,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Disable scrolling and interaction during update
 		this._container[0].style.pointerEvents = 'none';
 		var containerScrollOffset = this.scrollOffset;
-		if (!this.iScroll) this._container[0].scrollTo(containerScrollOffset.x, containerScrollOffset.y);
-		if (this.scrollView) this.scrollView.scrollingEnabled = NO;
+
+		if (!this.iScroll) {
+			this._container[0].scrollTo(containerScrollOffset.x, containerScrollOffset.y);
+		}
+
+		if (this.scrollView) {
+			this.scrollView.scrollingEnabled = NO;
+		}
 		
 		// Get the new content
 		var attributes = this.layout.attributesForElementsInRect(this._bounds);
@@ -5284,6 +5987,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var deletedCells = [];
 		var insertedCells = [];
 		var movingCells = [];
+
+		// Contains cells that are temporarily hidden due to a drop animation
+		const sessionDropCells = [];
+
+		// Contains moving cells that have associated drop previews
+		const dropMovingCells = [];
 		
 		var supplementaryViewsToInsert = this.layout.supplementaryViewsToInsert();
 		var supplementaryViewsToDelete = this.layout.supplementaryViewsToDelete();
@@ -5297,6 +6006,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var visibleRect = new BMRect(BMPointMake(this._bounds.origin.x + this._offscreenBufferSize, this._bounds.origin.y + this._offscreenBufferSize), this._frame.size.copy());
 		var currentVisibleRect = new BMRect(BMPointMake(oldBounds.origin.x + this._offscreenBufferSize, oldBounds.origin.y + this._offscreenBufferSize), this._frame.size.copy());
 		
+		// If this update occurs because of a drag & drop operation, try to obtain the associated index paths from the data set
+		let dropPreviewMap;
+		if (this._dropPreviews && this.dataSet.indexPathForDragItem) {
+			dropPreviewMap = new Map();
+
+			for (const preview of this._dropPreviews) {
+				const indexPath = this.dataSet.indexPathForDragItem(preview.item);
+
+				if (indexPath) {
+					dropPreviewMap.set(indexPath, preview);
+				}
+			}
+		}
+
 		// Compare the current content to the new content and data set
 		for (var i = 0; i < oldCells.length; i++) {
 			var cell = oldCells[i];
@@ -5314,13 +6037,17 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				var attribute = attributes[j];
 				
 				// Skip cells with different item types
-				if (cell.itemType !== attribute.itemType) continue;
+				if (cell.itemType !== attribute.itemType) {
+					continue;
+				}
 				
 				// Two cells refer to the same object if they are the same type and their index paths are loosely equal
 				if (cell.indexPath.isLooselyEqualToIndexPath(attribute.indexPath, {usingComparator: this.identityComparator})) {
 					
 					// For supplementary views, it is also required that they have the same type identifier
-					if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView && cell.reuseIdentifier !== attribute.identifier) continue;
+					if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView && cell.reuseIdentifier !== attribute.identifier) {
+						continue;
+					}
 					
 					// If they are equal, mark the cell as moving and continue
 					cell.targetAttributes = attribute;
@@ -5330,17 +6057,35 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					
 					// Instruct the data set to update this cell's content
 					if (cell.itemType === BMCollectionViewLayoutAttributesType.Cell) {
-						if (this.dataSet.updateCell) this.dataSet.updateCell(cell, {atIndexPath: attribute.indexPath});
+
+						// If a drop preview exists for this cell, store it so that the drop is performed
+						// at the appropriate position
+						if (this._dropPreviews) {
+							const dropPreview = this._dropPreviewForLayoutAttributes(cell.targetAttributes, {previewMap: dropPreviewMap});
+
+							if (dropPreview) {
+								cell._dropPreview = dropPreview;
+								dropMovingCells.push(cell);
+							}
+						}
+						
+						if (this.dataSet.updateCell) {
+							this.dataSet.updateCell(cell, {atIndexPath: attribute.indexPath});
+						}
 					}
 					else if (cell.itemType === BMCollectionViewLayoutAttributesType.SupplementaryView) {
-						if (this.dataSet.updateSupplementaryView) this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: attribute.indexPath});
+						if (this.dataSet.updateSupplementaryView) {
+							this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: attribute.indexPath});
+						}
 					}
 					
 					break;
 				}
 			}
 			
-			if (foundCell)  continue;
+			if (foundCell) {
+				continue;
+			}
 			
 			// If the cell wasn't found in the new layout, check to see if its object still exists in the data set
 			if (cell.itemType === BMCollectionViewLayoutAttributesType.Cell) {
@@ -5351,9 +6096,22 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					var attribute = this.layout.attributesForCellAtIndexPath(indexPath);
 					cell.targetAttributes = attribute;
 					movingCells.push(cell);
+
+					// If a drop preview exists for this cell, store it so that the drop is performed
+					// at the appropriate position
+					if (this._dropPreviews) {
+						const dropPreview = this._dropPreviewForLayoutAttributes(cell.targetAttributes, {previewMap: dropPreviewMap});
+
+						if (dropPreview) {
+							cell._dropPreview = dropPreview;
+							dropMovingCells.push(cell);
+						}
+					}
 					
 					// Instruct the data set to update this cell's content
-					if (this.dataSet.updateCell) this.dataSet.updateCell(cell, {atIndexPath: attribute.indexPath});
+					if (this.dataSet.updateCell) {
+						this.dataSet.updateCell(cell, {atIndexPath: attribute.indexPath});
+					}
 				}
 				else {
 					// Otherwise the cell was removed from the data set
@@ -5381,7 +6139,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					movingCells.push(cell);
 					
 					// Instruct the data set to update this supplementary view's content
-					if (this.dataSet.updateSupplementaryView) this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: attribute.indexPath});
+					if (this.dataSet.updateSupplementaryView) {
+						this.dataSet.updateSupplementaryView(cell, {withIdentifier: cell.reuseIdentifier, atIndexPath: attribute.indexPath});
+					}
 				}
 				else {
 					// Otherwise find its final attributes
@@ -5396,12 +6156,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// Construct the cells for the new attributes
 		var newCells = [];
-
-		// If this update occurs because of a drag & drop operation, the collection view's viewport frame will be needed
-		var viewportFrame;
-		if (this._droppedShadows) {
-			viewportFrame = BMRectMakeWithNodeFrame(this._container[0]);
-		}
 		
 		// Compare the remaining new content to the old data set
 		for (var i = 0; i < attributes.length; i++) {
@@ -5424,53 +6178,55 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					var oldAttribute = this.layout.initialAttributesForMovingCellFromIndexPath(oldIndexPath, {toIndexPath: attribute.indexPath, withTargetAttributes: attribute});
 					attribute.initialAttributes = oldAttribute;
 					//oldAttribute.indexPath = attribute.indexPath;
+
+					// If a drop preview exists for this cell, store it so that the drop is performed
+					// at the appropriate position
+					if (this._dropPreviews) {
+						const dropPreview = this._dropPreviewForLayoutAttributes(cell.targetAttributes, {previewMap: dropPreviewMap});
+
+						if (dropPreview) {
+							cell._dropPreview = dropPreview;
+							dropMovingCells.push(cell);
+						}
+					}
 				}
 				else {
 					// Otherwise this is a new element
 
-					// Check if there is a drop shadow associated with this element and transition from that shadow
-					let droppedShadow;
-					if (this._droppedShadows && (droppedShadow = this._droppedShadows.get(attribute.indexPath.object))) {
-						var initialAttributes = attribute.copy();
+					// Check if there is a drop preview associated with this element and transition from that preview
+					if (this._dropPreviews) {
+						// Find if a newly inserted index path matches this cell's index path
+						const dropPreview = this._dropPreviewForLayoutAttributes(attribute, {previewMap: dropPreviewMap});
 
-						// Figure out the viewport coordinates of the frame
-						let frame = attribute.frame.copy();
-						frame.offset(-this.scrollOffset.x, -this.scrollOffset.y);
-						frame.offset(viewportFrame.left, viewportFrame.top);
+						let initialAttributes = attribute;
+						
+						// If a preferred scroll offset is provided by the layout, displace the cell initially so that it
+						// starts out at the position it will be in at the end of the scroll animation, relative to the viewport
+						const displacement = BMPointMake(
+							preferredScrollOffset.x - scrollOffset.x,
+							preferredScrollOffset.y - scrollOffset.y
+						);
 
-						// Figure out the frame of the drop shadow
-						// Because BMRectMakeWithNodeFrame takes transforms (including rotation) into account,
-						// the rotation is temporarily removed to improve the fidelity of the animation
-						BMHook(droppedShadow.node, {rotateZ: '0deg'});
-						let dropFrame = BMRectMakeWithNodeFrame(droppedShadow.node);
-						BMHook(droppedShadow.node, {rotateZ: droppedShadow.rotation + 'deg'});
+						if (displacement.x || displacement.y) {
+							initialAttributes = attribute.copy();
+							initialAttributes.frame = initialAttributes.frame.copy();
+							initialAttributes.frame.offset(displacement.x, displacement.y);
+						}
 
-						// Find the transform to be applied to the cell
-						let cellTransform = frame.rectWithTransformToRect(dropFrame);
-						// Find the reverse transform to be applied to the drop shadow and save it for the frame
-						let shadowTransform = dropFrame.rectWithTransformToRect(frame);
-						droppedShadow.transform = shadowTransform;
-
-						// Offset the frame back into collection view coordinates
-						frame.offset(this.scrollOffset.x, this.scrollOffset.y);
-						frame.offset(-viewportFrame.left, -viewportFrame.top);
-
-						// Apply the transform to the initial attributes
-						frame.origin.x += cellTransform.origin.x;
-						frame.origin.y += cellTransform.origin.y;
-
-						initialAttributes.frame = frame;
-						initialAttributes.style.rotateZ = droppedShadow.rotation + 'deg';
-						initialAttributes.style.scaleX = cellTransform.size.width;
-						initialAttributes.style.scaleY = cellTransform.size.height;
-						initialAttributes.style.opacity = 0;
+						if (dropPreview) {
+							newCell._dropPreview = dropPreview;
+							attribute.initialAttributes = initialAttributes;
+							insertedCells.push(newCell);
+						}
+						else {
+							const initialAttributes = this.layout.initialAttributesForAppearingCellAtIndexPath(attribute.indexPath, {withTargetAttributes: attribute});
+							attribute.initialAttributes = initialAttributes;
+						}
 					}
 					else {
 						var initialAttributes = this.layout.initialAttributesForAppearingCellAtIndexPath(attribute.indexPath, {withTargetAttributes: attribute});
+						attribute.initialAttributes = initialAttributes;
 					}
-					
-					attribute.initialAttributes = initialAttributes;
-					//initialAttributes.indexPath = attribute.indexPath;
 				}
 				
 				newCell.attributes = attribute.initialAttributes;
@@ -5596,7 +6352,14 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				animationCells[i].release();
 
 				// Additionally, unmanage hidden cells
-				if (animationCells[i].attributes.isHidden) animationCells[i]._unmanage();
+				if (animationCells[i].attributes.isHidden) {
+					animationCells[i]._unmanage();
+				}
+			}
+
+			// Remove the hiding class from inserted cells
+			for (const cell of sessionDropCells) {
+				cell.node.classList.remove('BMCollectionViewCellInserting');
 			}
 			
 			// Destroy the deleted cells
@@ -5629,56 +6392,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			
 		};
 		
-		
-					
-		// Apply the new scroll offset, if it changed
-		/*if (oldBounds.origin.x != self._bounds.origin.x || oldBounds.origin.y != self._bounds.origin.y) {
-			
-			if (self.scrollView) {
-				var currentOffset = self.scrollView.offset.copy();
-				var targetOffset = self._bounds.origin.copy();
-				
-				targetOffset.x += self._offscreenBufferSize;
-				targetOffset.y += self._offscreenBufferSize;
-
-				animationOptions.progress = function (elements, fraction) {
-					var offsetX = currentOffset.x + fraction * (targetOffset.x - currentOffset.x);
-					var offsetY = currentOffset.y + fraction * (targetOffset.y - currentOffset.y);
-					
-					self.scrollView.offset = BMPointMake(offsetX, offsetY);
-				}
-			}
-			else if (self.iScroll) {
-				var currentOffset = scrollOffset;
-				var targetOffset = self._bounds.origin.copy();
-				
-				targetOffset.x += self._offscreenBufferSize;
-				targetOffset.y += self._offscreenBufferSize;
-
-				animationOptions.progress = function (elements, fraction) {
-					var offsetX = currentOffset.x + fraction * (targetOffset.x - currentOffset.x);
-					var offsetY = currentOffset.y + fraction * (targetOffset.y - currentOffset.y);
-					
-					self.iScroll._translate(-offsetX, -offsetY);
-				}
-			}
-			else {
-				var currentOffset = scrollOffset;
-				var targetOffset = self._bounds.origin.copy();
-				
-				targetOffset.x += self._offscreenBufferSize;
-				targetOffset.y += self._offscreenBufferSize;
-
-				animationOptions.progress = function (elements, fraction) {
-					var offsetX = currentOffset.x + fraction * (targetOffset.x - currentOffset.x);
-					var offsetY = currentOffset.y + fraction * (targetOffset.y - currentOffset.y);
-					
-					self._container[0].scrollTo(offsetX, offsetY);
-				}
-			}
-		
-		}*/
-		
 		// All cells involved in the animation will be retained for the duration of the animation
 		// And then released at the end
 		var animationCells = [];
@@ -5696,26 +6409,65 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 
 			// Apply the drop shadow animations if needed
-			if (self._droppedShadows) {
-				self._droppedShadows.forEach(shadow => {
-					if (shadow.transform) {
-						BMHook(shadow.node, {rotateZ: shadow.rotation + 'deg', translateX: '0px', translateY: '0px'});
-						let controller = BMAnimationContextGetCurrent().controllerForObject(shadow, {node: shadow.node});
-						controller.registerBuiltInProperty('translateX', {withValue: shadow.transform.origin.x + 'px'});
-						controller.registerBuiltInProperty('translateY', {withValue: shadow.transform.origin.y + 'px'});
-						controller.registerBuiltInProperty('scaleX', {withValue: shadow.transform.size.width});
-						controller.registerBuiltInProperty('scaleY', {withValue: shadow.transform.size.height});
-						controller.registerBuiltInProperty('rotateZ', {withValue: '0deg'});
-						controller.registerBuiltInProperty('opacity', {withValue: 0});
+			if (self._dropPreviews) {
+				for (const cell of insertedCells) {
+					cell._dropPreview.performDropToNode(cell.node);
+
+					const index = self._dropPreviews.indexOf(cell._dropPreview);
+
+					if (index != -1) {
+						self._dropPreviews.splice(index, 1);
 					}
-					else {
-						BMHook(shadow.node, {rotateZ: shadow.rotation + 'deg'});
-						let controller = BMAnimationContextGetCurrent().controllerForObject(shadow, {node: shadow.node});
-						controller.registerBuiltInProperty('scaleX', {withValue: .33});
-						controller.registerBuiltInProperty('scaleY', {withValue: .33});
-						controller.registerBuiltInProperty('opacity', {withValue: 0});
+				}
+
+				if (dropMovingCells.length) {
+					// For the items that move, move them instantly to their final positions start the drop
+					// animations, then move them back for the regular animation to play for them
+					BMAnimationContextBeginStatic();
+					const initialAttributeMap = new Map();
+					for (const cell of dropMovingCells) {
+						// Instantly move each cell to its final attributes
+						initialAttributeMap.set(cell, cell.attributes);
+						cell.attributes = cell.targetAttributes;
 					}
-				});
+					BMAnimationApply();
+
+					// Play all drop animations
+					for (const cell of dropMovingCells) {
+						cell._dropPreview.performDropToNode(cell.node);
+						const index = self._dropPreviews.indexOf(cell._dropPreview);
+
+						if (index != -1) {
+							self._dropPreviews.splice(index, 1);
+						}
+					}
+
+					// Revert each cell to its staging attributes
+					BMAnimationContextBeginStatic();
+					for (const [cell, attributes] of initialAttributeMap) {
+						cell.attributes = attributes;
+					}
+					BMAnimationApply();
+				}
+
+				// For remaining drop previews, play an animation to the target cell if available
+				if (self._cellItemMap) {
+					for (let i = 0; i < self._dropPreviews.length; i++) {
+						const item = self._dropPreviews[i];
+						const cell = self._cellItemMap.get(item);
+
+						if (cell) {
+							self._dropPreviews.performDropToNode(cell.node);
+							self._dropPreviews.splice(i, 1);
+							i--;
+						}
+					}
+				}
+
+				// Play a generic animation for all remaining drop previews without associated cells
+				for (const preview of self._dropPreviews) {
+					preview.performDrop();
+				}
 			}
 
 			// Apply the new scroll offset, if it changed
@@ -5766,7 +6518,15 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				var cell = newCells[i];
 				if (!cell.animatable) continue;
 				
-				cell.attributes = cell.targetAttributes;
+				if (cell._dropPreview) {
+					cell._dropPreview = undefined;
+					cell.node.classList.add('BMCollectionViewCellInserting');
+					sessionDropCells.push(cell);
+				}
+				else {
+					cell.attributes = cell.targetAttributes;
+				}
+				
 				cell.animatable = NO;
 				
 				animationCells.push(cell.retain());
@@ -5803,6 +6563,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		if (BMAnimationContextGetCurrent()) {
 			animationBlock();
 			BMAnimationContextAddCompletionHandler(animationOptions.complete);
+
+			// Clear out all target attributes on all cell after the animation starts
+			for (const cell of this.allCells) {
+				cell.targetAttributes = undefined;
+			}
 		}
 		else {
 			BMAnimateWithBlock(animationBlock, animationOptions);
@@ -5812,7 +6577,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		this.oldBounds = undefined;
 		
 		// If no cells should be changed, immediately run the completion handler
-		if (newCells.length == 0 && oldCells.length == 0) {
+		if (newCells.length == 0 && oldCells.length == 0 && !this._dropPreviews) {
 			animationOptions.complete();
 		}
 
@@ -5997,9 +6762,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// Scroll to the offset point
 		if (options.animated) {
 			var self = this;
-			return BMAnimateWithBlock(_ => {
-				self.scrollOffset = offset;
-			}, {duration: 300});
+			const currentContext = BMAnimationContextGetCurrent();
+			if (!currentContext) {
+				BMAnimationBeginWithDuration(300);
+			}
+			
+			self.scrollOffset = offset;
+
+			if (!currentContext) {
+				BMAnimationApply();
+			}
 		}
 		else {
 			// Scrolling is performed differently based on whether iScroll is used or not
@@ -6282,6 +7054,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		var self = this;
 
 		_BMCollectionViews.delete(this);
+		BMDragSession._dropTargets.delete(this);
 		
 		// Unbind the scroll event listener
 		if (this.initialized && !this.iScroll) {
@@ -6419,8 +7192,8 @@ class BMCollectionViewDataSourceAdapter {
 		return this._dataSet.moveItemsFromIndexPaths(indexPaths, args);
 	}
 
-    collectionViewRemoveItemsAtIndexPaths(collectionView, indexPaths) {
-		return this._dataSet.removeItemsAtIndexPaths(indexPaths);
+    collectionViewRemoveItemsAtIndexPaths(collectionView, indexPaths, args) {
+		return this._dataSet.removeItemsAtIndexPaths(indexPaths, args);
 	}
 
     collectionViewInsertItems(collectionView, items, args) {
@@ -6433,6 +7206,18 @@ class BMCollectionViewDataSourceAdapter {
 		if (dataSet.copyOfItem) {
 			adapter.collectionViewCopyOfItem = function (collectionView, item) {
 				return dataSet.copyOfItem(item);
+			};
+		}
+
+		if (dataSet.dragItemForIndexPath) {
+			adapter.collectionViewDragItemForIndexPath = function (collectionView, indexPath, args) {
+				return dataSet.dragItemForIndexPath(indexPath, args);
+			};
+		}
+
+		if (dataSet.indexPathForDragItem) {
+			adapter.collectionViewIndexPathForDragItem = function (collectionView, item, args) {
+				return dataSet.indexPathForDragItem(item, args);
 			};
 		}
 
@@ -6472,28 +7257,12 @@ class BMCollectionViewDataSetAdapter {
 		return this._dataSource.collectionViewIndexPathForObject(this._collectionView, object);
 	}
 
-	contentsForCellWithReuseIdentifier(identifier) {
-		throw new Error(`contentsForCellWithReuseIdentifier is unsupported when using data source objects`);
-	}
-
 	cellForItemAtIndexPath(indexPath) {
 		return this._dataSource.collectionViewCellForItemAtIndexPath(this._collectionView, indexPath);
 	}
 
-	contentsForSupplementaryViewWithIdentifier(identifier) {
-		throw new Error(`contentsForSupplementaryViewWithIdentifier is unsupported when using data source objects`);
-	}
-
 	cellForSupplementaryViewWithIdentifier(identifier, args) {
 		return this._dataSource.collectionViewCellForSupplementaryViewWithIdentifier(this._collectionView, identifier, args);
-	}
-
-	updateCell(cell, {atIndexPath: indexPath}) {
-		throw new Error(`updateCell is unsupported when using data source objects`);
-	}
-
-	updateSupplementaryView(view, {withIdentifier: identifier, atIndexPath: indexPath}) {
-		throw new Error(`updateSupplementaryView is unsupported when using data source objects`);
 	}
 
 	useOldData(use) {
@@ -6512,8 +7281,8 @@ class BMCollectionViewDataSetAdapter {
 		return this._dataSource.collectionViewMoveItemsFromIndexPaths(this._collectionView, indexPaths, args);
 	}
 
-	removeItemsAtIndexPaths(indexPaths) {
-		return this._dataSource.collectionViewRemoveItemsAtIndexPaths(this._collectionView, indexPaths);
+	removeItemsAtIndexPaths(indexPaths, args) {
+		return this._dataSource.collectionViewRemoveItemsAtIndexPaths(this._collectionView, indexPaths, args);
 	}
 
 	insertItems(items, args) {
@@ -6526,6 +7295,18 @@ class BMCollectionViewDataSetAdapter {
 		if (dataSource.collectionViewCopyOfItem) {
 			adapter.copyOfItem = function (item) {
 				return dataSource.collectionViewCopyOfItem(adapter._collectionView, item);
+			};
+		}
+
+		if (dataSource.collectionViewDragItemForIndexPath) {
+			adapter.dragItemForIndexPath = function (indexPath, args) {
+				return dataSource.collectionViewDragItemForIndexPath(adapter._collectionView, indexPath, args);
+			};
+		}
+
+		if (dataSource.collectionViewIndexPathForDragItem) {
+			adapter.indexPathForDragItem = function (item, args) {
+				return dataSource.collectionViewIndexPathForDragItem(adapter._collectionView, item, args);
 			};
 		}
 

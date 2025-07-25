@@ -1,14 +1,25 @@
 /* MARK: Collection view */
 
-.BMCollectionViewCellDragging {
+.BMCollectionViewCellDragging:not(.BMAnimationNode) {
 	opacity: .5 !important;
+}
+
+.BMCollectionViewCellInserting {
+	visibility: hidden !important;
+	opacity: 0 !important;
+}
+
+.BMAnimationNode {
+	position: fixed !important;
+	z-index: 999998 !important;
+	pointer-events: none;
 }
 
 .BMDragShadow .BMRipple {
 	visibility: hidden !important;
 }
 
-.BMDragShadow {
+.BMDragShadow, .BMAnimationNode {
 	backface-visibility: hidden;
 	-webkit-backface-visibility: hidden;
 }
@@ -52,6 +63,126 @@
 .BMDragIndicatorBlue::after {
 	content: '\00a0\00a0⇩';
 	font-weight: bolder;
+}
+
+/* MARK: Drag Session */
+
+.BMDragSessionIndicatorContainer {
+	position: fixed;
+	pointer-events: none;
+
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	z-index: 999999 !important;
+}
+
+.BMDragSessionIndicator {
+	background-color: rgba(0, 128, 255, 1);
+
+	color: white;
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 18px !important;
+	font-weight: bold !important;
+
+	padding-left: 16px;
+	padding-right: 16px;
+
+	height: 24px;
+	border-radius: 12px;
+
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	box-shadow: 0px 4px 12px rgba(0, 0, 0, .33);
+
+	pointer-events: none;
+	transition: background-color .3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.BMDragSessionIndicatorBlue {
+	background-color: rgba(0, 128, 255, 1);
+}
+
+.BMDragSessionIndicatorRed {
+	background-color: rgba(220, 30, 0, 1);
+}
+
+.BMDragSessionIndicatorYellow {
+	background-color: rgb(255, 183, 0);
+}
+
+.BMDragSessionIndicatorGray {
+	background-color: rgb(108, 119, 124);
+}
+
+.BMDragSessionIndicatorGreen {
+	background-color: rgba(0, 200, 60, 1);
+}
+
+.BMDragSessionIndicatorIcon {
+	width: 16px;
+	height: 16px;
+
+	margin-right: 8px;
+
+	opacity: 1;
+
+	transition:
+		width .3s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+		height .3s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+		margin-right .3s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+		opacity .3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.BMDragSessionIndicatorIcon.BMDragSessionIndicatorIconHidden {
+	width: 0;
+	height: 0;
+	margin-right: 0;
+	opacity: 0;
+}
+
+.BMDragSessionIndicatorItemCount {
+	transition: width .3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.BMDragSessionIndicatorMessage {
+	white-space: nowrap;
+	font-size: 16px !important;
+	font-weight: 500;
+
+	margin-left: 8px;
+
+	opacity: 1;
+
+	transition:
+		width .3s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+		margin-left .3s cubic-bezier(0.455, 0.03, 0.515, 0.955),
+		opacity .3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.BMDragSessionIndicatorMessage.BMDragSessionIndicatorMessageHidden {
+	width: 0px;
+	opacity: 0;
+	margin-left: 0;
+}
+
+.BMDragSessionIndicatorMessage.BMDragSessionIndicatorMessageMeasurement {
+	transition: none;
+	visibility: hidden;
+	
+	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
+	font-size: 16px !important;
+
+	position: absolute;
 }
 
 /* MARK: Layout Guide */
