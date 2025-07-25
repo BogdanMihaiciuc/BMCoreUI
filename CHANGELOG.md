@@ -1,12 +1,26 @@
 # 2.12.0
 
+## BMDragSession
+
+Drag and drop from collection view has been reworked into a mechanism that can be used with any `BMView` and arbitrary content. A new `BMDragSession` class is now used to manage drag and drop interactions. These objects are created by Core UI when such an interaction starts.
+
+A new `BMDropSession` class is provided to potential drop targets to customize the effect of the drop.
+
+Two new `BMDragDelegate` and `BMDropDelegate` interfaces can now be implemented by classes for drag and drop sessions to obtain information about the gesture.
+
+A new `BMDropItem` interface is used to transfer arbitrary data through a drag and drop session.
+
+A new `BMDragPreview` class is now requested by drag and drop sessions to generate previews of the items that are part of the session.
+
 ## BMLayoutConstraint
 
-Resolves an issue where an unsolvable constraint could cause the entire layout process to crash instead of ingnoring that constraint as intended.
+Resolves an issue where an unsolvable constraint could cause the entire layout process to crash instead of ignoring that constraint as intended.
 
 ## BMView
 
-The `keyPressedWithEvent` method can now optionally return `YES` to indicate that it has handled the key press event.
+The `keyPressedWithEvent(_)` method can now optionally return `YES` to indicate that it has handled the key press event.
+
+A new `performDragWithEvent(_, {delegate, touchIdentifier})` method can now be invoked on a view to initiate a drag session.
 
 ## BMWindow
 
@@ -17,7 +31,16 @@ The following methods can now be overridden by subclasses to respond to the wind
  - `dragBeganAtPosition(_, {withEvent})`: invoked at the beginning of a drag operation
  - `dragEndedAtPosition(_, {withEvent})`: invoked at the end of a drag operation
 
+The appropriate movement restrictions on windows are now also set when a toolbar is disabled on a non-modal window. Additionally, toolbars are also
+no longer required for the drag handle to appear on non-modal windows.
+
+A new `resizable` property, with a default value of `YES` can be used to control whether the drag handle appears on non-modal windows.
+
 Resolves an issue where closing a window would cause all tool windows to be dismissed again if they were already dismissed.
+
+Resolves an issue where invoking `layoutIfNeeded` on a subview of a window while in an animation context caused an incorrect animation to play on the window.
+
+Invoking `enterFullScreenAnimated` and `exitFullScreenAnimated` in an active animation context will now play these animations using that context instead of creating a new one.
 
 ## BMToolWindow
 
@@ -38,6 +61,51 @@ The `size`, `edgeInsets`, `indicatorSize`, `borderRadius`, `permittedDirections`
 ## BMCollectionView
 
 Resolves an error where collection view was not properly sending the `withEvent` argument for the `collectionViewCanDoubleClickCell(_, _, {withEvent})` delegate method.
+
+Invoking `scrollToCellAtIndexPath`, `scrollToSupplementaryViewWithIdentifier` and `scrollToSupplementaryViewWithIdentifier` while an animation context is already active will now use that animation context instead of starting a new one.
+
+Resolves an error that was being thrown during data updates when a `dataSource` was used instead of a `dataSet`.
+
+Resolves an issue that caused collection view to measure cells that already had a cached measurement available, decreasing performance.
+
+## BMCollectionViewDelegate
+
+The following delegate methods now also receive the associated drag or drop session as an argument:
+ - `collectionViewCanTransferItemsAtIndexPaths`
+ - `collectionViewCanReorderItemsAtIndexPaths`
+ - `collectionViewTransferPolicyForItemsAtIndexPaths`
+ - `collectionViewCanAcceptItems`
+ - `collectionViewAcceptPolicyForItems`
+ - `collectionViewCanRemoveItemsAtIndexPaths`
+ - `collectionDeleteMessageForIndexPaths`
+ - `collectionViewWillFinishInteractiveMovementForCell`
+ - `collectionViewDidFinishInteractiveMovementForCell`
+
+The following new delegate methods have been added to further customize drag and drop:
+ - `collectionViewPreviewForDropSession`
+ - `collectionViewDropActionForDropSession`
+ - `collectionViewDropSessionDidUpdate`
+ - `collectionViewDropSessionDidEnterIndexPath`
+ - `collectionViewDropSessionDidExitIndexPath`
+ - `collectionViewDropSessionWillFinish`
+
+## BMCollectionViewDataSource
+
+The following methods now also receive the appropriate drag or drop session as an argument:
+ - `collectionViewMoveItemFromIndexPath`
+ - `collectionViewMoveItemsFromIndexPaths`
+ - `collectionViewRemoveItemsAtIndexPaths`
+ - `collectionViewInsertItems`
+
+The `collectionViewCopyOfItem` method has now been deprecated. Instead, if available, a new `collectionViewDragItemForIndexPath` method is invoked to obtain a drag item for a drag session.
+
+A new `collectionViewIndexPathForDragItem` method may now optionally be implemented by data sources when they use a non-default representation of a drag item to insert in the `collectionViewInsertItems` method. This is used to correctly match drag previews to their collection views for the resulting data update animation.
+
+## BMCollectionViewFlowLayout
+
+Resolves an issue where flow layout was not correctly measuring cells when scrollbars were enabled and an expected cell size was set.
+
+Resolves an issue where flow layout measured more cells than needed after data or layout updates when an expected cell size was set.
 
 # 2.11.9
 
