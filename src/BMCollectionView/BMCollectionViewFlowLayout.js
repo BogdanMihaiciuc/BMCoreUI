@@ -1671,6 +1671,11 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 	},
 
 	/**
+	 * Set to `YES` while the current layout is using scrollbar offsets, `NO` otherwise.
+	 */
+	_usingScrollbarOffset: NO, // <Boolean>
+
+	/**
 	 * Prepares the layout, optionally taking the scrollbar size into account.
 	 * @param useOffset <Boolean>			When set to `YES` the layout will take the scrollbar size into account.
 	 */
@@ -1679,6 +1684,8 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			// If the layout is invalidated because of scrolling, it is not required to recalculate the caches, so this request should be ignored.
 			return;
 		}
+
+		this._usingScrollbarOffset = useOffset;
 
 		// When the scrollbar offset is used, invalidate any measurement that exceeds the available space.
 		if (this._expectedCellSize && this._collectionView.scrollBarSize) {
@@ -1794,11 +1801,11 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 			// is measured up to at least the current collection view bounds
 			if (this._expectedCellSize && this._copy) {
 				target = target || {};
-				if (target.targetRect) {
-					target.targetRect = target.targetRect.rectByUnionWithRect(this.collectionView.bounds)
+				if (target.rect) {
+					target.rect = target.rect.rectByUnionWithRect(this.collectionView.bounds)
 				}
 				else {
-					target.targetRect = this.collectionView.bounds;
+					target.rect = this.collectionView.bounds;
 				}
 			}
 
@@ -3087,7 +3094,7 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		return [BMLayoutConstraint.constraintWithView(cell, {
 			attribute: BMLayoutAttribute.Width, 
 			relatedBy: BMLayoutConstraintRelation.LessThanOrEquals, 
-			constant: this.collectionView.frame.size.width - this.sectionInsets.left - this.sectionInsets.right
+			constant: this.collectionView.frame.size.width - this.sectionInsets.left - this.sectionInsets.right - (this._usingScrollbarOffset ? this.collectionView.scrollBarSize : 0)
 		})]
 	},
 	
