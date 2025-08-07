@@ -830,6 +830,7 @@ BMDropPreview.prototype = {
             translateX: `${-transformRect.origin.x + (this.transform.translateX ?? 0)}px`,
             translateY: `${-transformRect.origin.y + (this.transform.translateY ?? 0)}px`,
             rotateZ: `${this.transform.rotateZ ?? 0}deg`,
+            opacity: 0,
         });
         targetController.registerBuiltInPropertiesWithDictionary({
             scaleX: [1, 1 / transformRect.size.width],
@@ -842,6 +843,7 @@ BMDropPreview.prototype = {
 
         BMAnimationContextAddCompletionHandler(() => {
             nodeCopy.remove();
+            this.previewNode.remove();
         });
     },
 
