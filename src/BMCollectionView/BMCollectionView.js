@@ -217,7 +217,7 @@ export var BMCollectionViewScrollingDirection = Object.freeze({ // <enum>
 // @type BMCollectionViewScrollingGravityHorizontal
 
 /**
- * Controls the final horizontal scrolling position of a programatic scroll.
+ * Controls the final horizontal scrolling position of a programmatic scroll.
  */
 export var BMCollectionViewScrollingGravityHorizontal = Object.freeze({ // <enum>
 	/**
@@ -241,7 +241,7 @@ export var BMCollectionViewScrollingGravityHorizontal = Object.freeze({ // <enum
 // @type BMCollectionViewScrollingGravityVertical
 
 /**
- * Controls the final vertical scrolling position of a programatic scroll.
+ * Controls the final vertical scrolling position of a programmatic scroll.
  */
 export var BMCollectionViewScrollingGravityVertical = Object.freeze({ // <enum>
 	/**
@@ -262,7 +262,7 @@ export var BMCollectionViewScrollingGravityVertical = Object.freeze({ // <enum>
 
 // @endtype
 
-// @type BMCollectionView<T = any> extends BMView
+// @type BMCollectionView<T = any> extends BMView implements BMDragDelegate, BMDropDelegate
 
 // Contains all active collection view instances
 var _BMCollectionViews = new Map;
