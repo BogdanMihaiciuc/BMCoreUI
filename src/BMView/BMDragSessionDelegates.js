@@ -231,7 +231,7 @@ BMDropDelegate.prototype = {
      * Delegates implementing this method should return a drop action indicating the outcome of
      * dropping the items at the session's current position.
      * @param session <BMDropSession>           The drop session that updated.
-     * @return <BMDragSessionAction, nullable>  The new action the target view would like to perform if the
+     * @return <BMDropSessionAction, nullable>  The new action the target view would like to perform if the
      *                                          drop session ended at the current position, or `undefined`
      *                                          if the current action should be retained.
      */
@@ -245,7 +245,7 @@ BMDropDelegate.prototype = {
     dropSessionDidExit(session) {},
 
     /**
-     * Invoked to notify the delegate that the specified drop session is about to finish. This is invoked for drop
+     * Invoked to notify the delegate that the specified drop session is about to finish. This is invoked for a drop
      * delegate that has returned `YES` from `dropSessionCanBegin` regardless of whether the drop finished
      * in the target view's frame or not.
      * @param session <BMDropSession>           The drop session that ended.
@@ -253,7 +253,7 @@ BMDropDelegate.prototype = {
     dropSessionWillFinish(session) {},
 
     /**
-     * Invoked to notify the delegate that the specified drop session has finished. This is invoked for drop
+     * Invoked to notify the delegate that the specified drop session has finished. This is invoked for a drop
      * delegate that has returned `YES` from `dropSessionCanBegin` regardless of whether the drop finished
      * in the target view's frame or not.
      * @param session <BMDropSession>           The drop session that ended.
