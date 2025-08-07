@@ -666,6 +666,11 @@ BMDragSession.prototype = {
                 const requiresDropPreviews = this._delegate.dragSessionRequiresCustomDropAnimationForItems?.(this, items.slice());
 
                 if (requiresDropPreviews) {
+                    this._dropPreviews = this._previewSet._dragPreviews.entries().map(([i, dragPreview]) => {
+                        dragPreview._dropHandled = YES;
+                        return new BMDropPreview()._initWithDragPreview(dragPreview, {forItem: i});
+                    });
+
                     this._delegate.dragSessionAnimateDropWithPreviews?.(this, this._dropPreviews);
                 }
             }
