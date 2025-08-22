@@ -1200,6 +1200,12 @@ export function _BMDragPreviewSet() {} // <constructor>
 _BMDragPreviewSet.prototype = {
 
     /**
+     * The offset between the drag pointer and the center the from of the view from which the drag session
+     * started, expressed in percentages relative to the view's frame.
+     */
+    _offsetPercent: BMPointMake(), // <BMPoint>
+
+    /**
      * The offset between the drag pointer and the center of the frames of the preview elements.
      */
     _offset: BMPointMake(), // <BMPoint>
@@ -1239,7 +1245,8 @@ _BMDragPreviewSet.prototype = {
      * @param previews <[BMDragPreview]>            The previews for items in the drag session.
      * {
      *  @param pointerOffset <BMPoint>              The offset between the drag pointer and the
-     *                                              center of the frames of the preview elements.
+     *                                              center of the frames of the view from which the
+     *                                              drag session started.
      * }
      * @return <_BMDragPreviewSet>                  This preview set.
      */
@@ -1254,7 +1261,7 @@ _BMDragPreviewSet.prototype = {
             this._baseDragPreviews.set(preview._dragItem, preview);
         }
 
-        this._offset = pointerOffset.copy();
+        this._offsetPercent = pointerOffset.copy();
 
         this._dragIndicator = new _BMDragIndicator().init();
 
@@ -1365,6 +1372,21 @@ _BMDragPreviewSet.prototype = {
      * @param position <BMPoint>        The position of the drag session.
      */
     beginLiftAtPosition(position) {
+        const firstPreview = this._dragPreviews.entries().next().value?.[1];
+        const measureIterator = firstPreview?._attachAtPosition(BMPointMake());
+        let measureIteratorResult = measureIterator.next();
+        while (!measureIteratorResult.done) {
+            measureIteratorResult = measureIterator.next();
+        }
+
+        this._offset = BMPointMake(
+            this._offsetPercent.x * (firstPreview?._frame.size.width ?? 0),
+            this._offsetPercent.y * (firstPreview?._frame.size.height ?? 0),
+        );
+
+        firstPreview._detach();
+        firstPreview._measured = NO;
+
         this._position = position.copy();
         const previewPosition = position.copy();
         previewPosition.x += this._offset.x;
@@ -1373,16 +1395,11 @@ _BMDragPreviewSet.prototype = {
         // Attach and measure the previews
         let attachIterators = [];
         let previousPreview;
-        let firstPreview;
         for (const [item, preview] of this._dragPreviews.entries()) {
 
             // For each preview other than the first, apply a random rotation between 15 and -15 degrees
             if (previousPreview) {
                 preview._transform.rotateZ = Math.random() * _BMDragPreviewMaxRotation * 2 - _BMDragPreviewMaxRotation;
-            }
-
-            if (!firstPreview) {
-                firstPreview = preview;
             }
 
             const attachIterator = preview._attachAtPosition(previewPosition, {before: previousPreview?._previewNode});

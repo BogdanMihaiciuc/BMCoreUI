@@ -435,7 +435,10 @@ BMDragSession.prototype = {
         if (firstItemPreview._sourceNode) {
             const sourceNodeFrame = BMRectMakeWithNodeFrame(firstItemPreview._sourceNode);
             const center = sourceNodeFrame.center;
-            pointerOffset = BMPointMake(center.x - this._position.x, center.y - this._position.y);
+            pointerOffset = BMPointMake(
+                (center.x - this._position.x) / sourceNodeFrame.size.width,
+                (center.y - this._position.y) / sourceNodeFrame.size.height,
+            );
         }
 
         // Obtain the drag previews for the remaining items
