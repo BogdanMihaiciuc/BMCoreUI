@@ -461,6 +461,12 @@ BMMenu.prototype = {
     },
 
     /**
+     * When set to `YES`, the menu item actions and item selection delegate callbacks will be invoked
+     * with a slight delay to allow time for the menu closing animation to play.
+     */
+    delaysActions: NO, // <Boolean>
+
+    /**
      * Initializes this menu with the specified items.
      * The menu will be hidden by default; the method showAtPoint(_) should be used to make the menu visible.
      * 
@@ -701,20 +707,13 @@ BMMenu.prototype = {
                 // animation to play out
                 this._delaysClosing = YES;
 
-                if (item.action) {
-                    // Invoke the menu's action if configured
-                    item.action(item);
-                }
+                this._selectedMenuItem = item;
 
                 itemNode.classList.add('BMMenuItemActive');
-
-                if (this.delegate && this.delegate.menuDidSelectItem) {
-                    this.delegate.menuDidSelectItem(this, item);
-                }
             });
 
             // When moving the mouse over an item, set the highlight index to it,
-            // allowing further keyboard navigation to continute from this item
+            // allowing further keyboard navigation to continue from this item
             itemNode.addEventListener('mouseover', event => {
                 // Disabled items can't be highlighted and can't open submenus
                 if (!item._enabled) {
@@ -745,6 +744,21 @@ BMMenu.prototype = {
 
             this._itemsContainerNode.appendChild(itemNode);
         });
+    },
+
+    /**
+     * Temporarily set to the menu item that was selected until its action is performed.
+     */
+    _selectedMenuItem: undefined, // <BMMenuItem, nullable>
+
+    /**
+     * Performs the action for the specified menu item and invokes the delegate selection callback for it.
+     * @param item <BMMenuItem>         The menu item whose action should be performed.
+     */
+    _performActionForMenuItem(item) {
+        item.action?.(item);
+
+        this.delegate?.menuDidSelectItem?.(this, item);
     },
 
     /**
@@ -1380,11 +1394,27 @@ BMMenu.prototype = {
         let delay = Math.min(this._itemsContainerNode.childNodes.length * 16, 150);
         delay = (delay < 0 ? 0 : delay);
 
+        let selectedItemCallbackDelay = 0;
+
         // If an item was clicked, further delay closing to allow the selection animation to play
         const delaysClosing = this._delaysClosing;
         this._delaysClosing = NO;
         if (delaysClosing && !this._sourceNodeShadow) {
             delay += 200;
+
+            selectedItemCallbackDelay = 200;
+        }
+
+        const selectedMenuItem = this._selectedMenuItem;
+        this._selectedMenuItem = undefined;
+        
+        if (selectedMenuItem) {
+            if (this.delaysActions && selectedItemCallbackDelay) {
+                setTimeout(() => this._performActionForMenuItem(selectedMenuItem), selectedItemCallbackDelay);
+            }
+            else {
+                this._performActionForMenuItem(selectedMenuItem);
+            }
         }
 
         const sourceNodeShadow = this._sourceNodeShadow;
@@ -1598,11 +1628,7 @@ BMMenu.prototype = {
             // animation to play out
             this._delaysClosing = YES;
 
-            if (item.action) item.action(item);
-
-            if (this.delegate && this.delegate.menuDidSelectItem) {
-                this.delegate.menuDidSelectItem(this, item);
-            }
+            this._selectedMenuItem = item;
 
             const highlightedNode = item._node;
             if (highlightedNode) {
