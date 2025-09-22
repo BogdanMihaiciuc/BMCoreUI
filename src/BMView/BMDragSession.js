@@ -471,15 +471,41 @@ BMDragSession.prototype = {
         if (this._touchIdentifier !== undefined) {
             window.addEventListener('touchcancel', this, {capture: YES, passive: NO});
         }
+
+        // Register a key press event that will cancel the drag when escape is pressed
+        window.addEventListener('keydown', this, {capture: YES, passive: NO});
     },
 
-    handleEvent(/** @type {MouseEvent | TouchEvent} */ event) {
-        if (event.type == 'mousemove' || event.type == 'touchmove') {
+    handleEvent(/** @type {MouseEvent | TouchEvent | KeyboardEvent} */ event) {
+        if (event.type == 'keydown') {
+            this._keyPressedWithEvent(event);
+        }
+        else if (event.type == 'mousemove' || event.type == 'touchmove') {
             this._dragDidMoveWithEvent(event);
         }
         else {
             this._dragDidFinishWithEvent(event);
         }
+    },
+
+    /**
+     * Invoked when a key is pressed while this drag session is in progress.
+     * @param event <KeyboardEvent>         The event.
+     */
+    _keyPressedWithEvent(event) {
+        // Cancel the drag session when pressing escape or command + .
+        if (event.code != 'Escape' && (event.code != 'Period' || !event.metaKey)) {
+            return;
+        }
+
+        // Clear any drop target, set the drop action to ignore and immediately finish the session
+        event.stopPropagation();
+        event.preventDefault();
+        this._setDropTarget(undefined);
+        this._sourceDropAction = BMDragSessionAction.actionWithKind(BMDragSessionActionKind.Ignore);
+        this._updateDropAction();
+
+        this._dragDidFinishWithEvent();
     },
 
     /** 
@@ -554,8 +580,8 @@ BMDragSession.prototype = {
 
     /**
      * Invoked when the pointer is released or cancelled while this drag session is in progress.
-     * @param event <MouseEvent or TouchEvent>      The event.
-     * @return <Promise<void>>                      A promise that resolves when all associated animations finish.
+     * @param event <MouseEvent or TouchEvent or KeyboardEvent> The event.
+     * @return <Promise<void>>                                  A promise that resolves when all associated animations finish.
      */
     async _dragDidFinishWithEvent(event) {
         event.preventDefault();
@@ -578,6 +604,7 @@ BMDragSession.prototype = {
         if (this._touchIdentifier !== undefined) {
             window.removeEventListener('touchcancel', this, {capture: YES, passive: NO});
         }
+        window.removeEventListener('keydown', this, {capture: YES, passive: NO});
         this._releaseDropTargetHandlers();
 
         // If there is a drop target and its action is not ignore, instruct the delegate to perform the action
