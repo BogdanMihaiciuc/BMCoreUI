@@ -107,6 +107,10 @@ Resolves an issue where flow layout was not correctly measuring cells when scrol
 
 Resolves an issue where flow layout measured more cells than needed after data or layout updates when an expected cell size was set.
 
+## BMMenu
+
+Added a new `delaysActions` property on menus with a default value of `NO` that can be used to delay the menu actions until after the animation for clicking the menu item has played.
+
 # 2.11.9
 
 ## BMWindow
