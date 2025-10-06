@@ -913,8 +913,8 @@ BMMenu.prototype = {
         });
 
         if (!this._supermenu) {
-            // Make the container visible
-            __BMVelocityAnimate(menuContainer, {opacity: 1}, {duration, easing}, BMMENU_USE_WEB_ANIMATIONS);
+            // Make the container visible, using a different easing for the opacity so that it doesn't overshoot the 1 limit
+            __BMVelocityAnimate(menuContainer, {opacity: 1}, {duration: duration / 2, easing: 'easeOutQuad'}, BMMENU_USE_WEB_ANIMATIONS);
         }
         else {
             this._supermenu._node.classList.add('BMMenuInactive');
@@ -925,8 +925,9 @@ BMMenu.prototype = {
         itemsContainerNode.style.overflow = 'hidden';
         
         __BMVelocityAnimate(menuNode, {opacity: 1}, {
-            duration,
-            easing
+            duration: duration / 2,
+            // Use a different easing for the opacity so that it doesn't overshoot the 1 limit
+            easing: 'easeOutQuad',
         }, BMMENU_USE_WEB_ANIMATIONS);
 
         __BMVelocityAnimate(menuNode, {scaleX: 1, scaleY: 1, translateZ: 0, translateY: 0, translateX: 0}, {
@@ -935,7 +936,7 @@ BMMenu.prototype = {
             complete: _ => {
                 menuNode.style.pointerEvents = 'all';
                 menuContainer.style.pointerEvents = 'all';
-            }
+            },
         }, BMMENU_USE_WEB_ANIMATIONS);
 
         // Animate each child node in
@@ -1577,6 +1578,7 @@ BMMenu.prototype = {
     },
 
     /**
+     * @protected
      * Invoked when the key sequence for a menu item is pressed.
      * @param event <KeyboardEvent>                         The event that triggered this action.
      * {
