@@ -111,6 +111,10 @@ Resolves an issue where flow layout measured more cells than needed after data o
 
 Added a new `delaysActions` property on menus with a default value of `NO` that can be used to delay the menu actions until after the animation for clicking the menu item has played.
 
+Resolves an issue that caused touch menus to flicker during the opening animation.
+
+Updated the appearance of menu items.
+
 # 2.11.9
 
 ## BMWindow
