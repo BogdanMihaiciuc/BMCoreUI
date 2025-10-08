@@ -1218,9 +1218,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    for (var i = 0; i < retainedCellsLength; i++) {
 		    // The retained cells array resizes itself when cells are removed
 		    this.retainedCells[0]._unmanage();
-	    }*/
+	    }
 	    
 	    this.retainedCells = [];
+		*/
 	    
 	    // Reload the layout
 		this._reloadLayout();
@@ -5526,8 +5527,66 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// regardless of where the new or old positions of cells might be
 		let size = layout.contentSize();
 		this._size = BMSizeMake(Math.max(this._size.width, size.width), Math.max(this._size.height, size.height));
+
+		/**
+		 * Cleans up the changes performed by the current transition.
+		 */
+		function cleanupTransition() {
+			if (self.iScroll) self.iScroll.refresh();
+		    
+		    // Unmanage all outgoing supplementary views
+		    for (var i = 0; i < outgoingSupplementaryViewAttributes.length; i++) {
+			    var attribute = outgoingSupplementaryViewAttributes[i];
+			    var cell = self.supplementaryViewWithIdentifier(attribute.identifier, {atIndexPath: attribute.indexPath});
+			    
+			    if (cell && cell.isManaged) {
+				    cell._unmanage();
+			    }
+			}
+
+			self._applyOverflows();
+
+			// Restore collection and invoke the data completion callbacks unless another animation is in progress
+			if (self._dataUpdatePromise == dataUpdatePromise) {
+				self._collectionEnabled = YES;
+				self.isUpdatingData = NO;
+				
+				self._executeDataCompletionCallbacks();
+			}
+
+			// If the delegate animation options contains a complete handler, invoke it here
+			if (delegateOptions.complete) delegateOptions.complete();
+			
+			// Run the completion handler if it was specified
+			if (options && options.completionHandler) options.completionHandler();
+
+			resolveLayoutUpdate();
+		}
 	    
 	    animationOptions.complete = function () {
+			// If the transition was stopped, don't continue with the remaining changes
+			if (self._layout != transitionLayout) {
+				self._size = size.copy();
+
+				if (self.iScroll) {
+					// Apply the new scroll offset internally to iScroll, if it changed
+					if (oldBounds.origin.x != newBounds.origin.x || oldBounds.origin.y != newBounds.origin.y) {
+						var targetOffset = newBounds.origin.copy();
+						
+						targetOffset.x += self._offscreenBufferSize;
+						targetOffset.y += self._offscreenBufferSize;
+						
+						self.iScroll._translate(-targetOffset.x, -targetOffset.y);
+					}
+				}
+				
+				animationCells.forEach(cell => cell.release());
+				retainedCells.forEach(cell => cell.release());
+
+				cleanupTransition();
+				return;
+			}
+
 			// Request the layout page
 			var attributes = transitionLayout.attributesForElementsInRect();
 			
@@ -5562,35 +5621,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			self._layout = layout;
 			self._transitionLayout = undefined;
 			
-			if (self.iScroll) self.iScroll.refresh();
-		    
-		    // Unmanage all outgoing supplementary views
-		    for (var i = 0; i < outgoingSupplementaryViewAttributes.length; i++) {
-			    var attribute = outgoingSupplementaryViewAttributes[i];
-			    var cell = self.supplementaryViewWithIdentifier(attribute.identifier, {atIndexPath: attribute.indexPath});
-			    
-			    if (cell && cell.isManaged) {
-				    cell._unmanage();
-			    }
-			}
-
-			self._applyOverflows();
-
-			// Restore collection invoke the data completion callbacks unless another animation is in progress
-			if (self._dataUpdatePromise == dataUpdatePromise) {
-				self._collectionEnabled = YES;
-				self.isUpdatingData = NO;
-				
-				self._executeDataCompletionCallbacks();
-			}
-
-			// If the delegate animation options contains a complete handler, invoke it here
-			if (delegateOptions.complete) delegateOptions.complete();
-			
-			// Run the completion handler if it was specified
-			if (options && options.completionHandler) options.completionHandler();
-
-			resolveLayoutUpdate();
+			cleanupTransition();
 	    };
 	    
 		animationOptions.queue = NO;
@@ -5688,9 +5719,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    
     },
     
-    
-	
-	
+	/**
+	 * If a layout transition is currently in progress it is stopped, allowing data updates to
+	 * start without affecting the retained cells.
+	 */
+    _stopLayoutTransition() {
+		if (this._transitionLayout && this._layout == this._transitionLayout) {
+			this._layout._stopTransition();
+			this._layout = this._layout.targetLayout;
+		}
+	},
 	
 	/************************************* DATA SET UPDATE ************************************/
 
@@ -5860,6 +5898,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		let resolveUpdateData;
 		const dataUpdatePromise = new Promise(function (resolve, reject) {resolveUpdateData = resolve});
 		this._dataUpdatePromise = dataUpdatePromise;
+
+		// Stop any in progress layout updates
+		this._stopLayoutTransition();
 		
 		// Update the selection index paths
 		this._updateSelectionIndexPaths();

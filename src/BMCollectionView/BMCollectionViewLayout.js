@@ -910,6 +910,19 @@ export var _BMCollectionViewTransitionLayout = function (attributes, initialSize
 };
 
 _BMCollectionViewTransitionLayout.prototype = BMExtend({}, BMCollectionViewLayout.prototype, {
+
+    /**
+     * When set to `YES` this transition layout will no longer perform updates.
+     */
+    _transitionStopped: NO, // <Boolean>
+
+    /**
+     * Stops the current transition in its tracks, instantly setting the final attributes on all cells.
+     */
+    _stopTransition() {
+		this._applyFinalAttributes();
+        this._transitionStopped = YES;
+    },
 	
 	/**
 	 * Controls how close to completion the transition is.
@@ -917,6 +930,12 @@ _BMCollectionViewTransitionLayout.prototype = BMExtend({}, BMCollectionViewLayou
 	_fraction: 0, // <Number>
 	get fraction() { return this._fraction; },
 	set fraction(fraction) {
+        // If this transition was stopped, don't perform any other changes
+        if (this._transitionStopped) {
+            this._fraction = fraction;
+            return;
+        }
+
 		// If this is no longer attached to a collection view, don't perform any changes
 		if (!this.collectionView) return;
 
