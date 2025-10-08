@@ -68,6 +68,10 @@ Resolves an error that was being thrown during data updates when a `dataSource` 
 
 Resolves an issue that caused collection view to measure cells that already had a cached measurement available, decreasing performance.
 
+Resolves an issue that caused the `allCells` properly to not contain all visible cells as expected.
+
+Resolves a potential crash that could occur when invoking `updateEntireDataAnimated` while an animated layout transition was in progress.
+
 ## BMCollectionViewDelegate
 
 The following delegate methods now also receive the associated drag or drop session as an argument:
