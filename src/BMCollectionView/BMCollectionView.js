@@ -1598,7 +1598,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    // Compute the new bounds
 		var containerNode = this._container[0];
 		
-		// When snapping, retain the previous scoll position so that the scroll direction can be computed
+		// When snapping, retain the previous scroll position so that the scroll direction can be computed
 		var snapsScrollPosition = (!this._isPerformingAnimatedScrolling) && this._layout.snapsScrollPosition;
 		var previousBoundsOffset;
 		previousBoundsOffset = this._bounds.origin.copy();
