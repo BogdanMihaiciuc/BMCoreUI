@@ -505,7 +505,7 @@ BMDragSession.prototype = {
         this._sourceDropAction = BMDragSessionAction.actionWithKind(BMDragSessionActionKind.Ignore);
         this._updateDropAction();
 
-        this._dragDidFinishWithEvent();
+        this._dragDidFinishWithEvent(event);
     },
 
     /** 
