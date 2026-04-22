@@ -2671,8 +2671,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				event.target.classList.contains('BMCollectionViewCellEventHandler') || event.target.parentNode.classList.contains('BMCollectionViewCellEventHandler') ||
 				event.target.classList.contains('widget-foldingpanel-header') ||
                 event.target.hasAttribute('contenteditable') ||
-				// This a specific Thingworx workaround that depends on jQuery
-				(window.$ ? window.$(event.target).parents('.widget-dhxdropdown').length : false)) {
+				// This a specific Thingworx workaround
+				event.target.closest('.widget-dhxdropdown')) {
 			    return;
 			}
 		    
