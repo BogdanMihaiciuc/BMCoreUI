@@ -3625,9 +3625,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 						this._dropPreviews = undefined;
 					}
 
-					for (const preview of dropPreviews) {
-						preview.performDrop();
-					}
+					BMAnimateWithBlock(() => {
+						for (const preview of dropPreviews) {
+							preview.performDrop();
+						}
+					}, {duration: 300, easing: 'easeInQuad'});
+
 				}
 			}, _BMCollectionViewAsynchronousDropDelay);
 		}
@@ -6811,7 +6814,10 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			self.scrollOffset = offset;
 
 			if (!currentContext) {
-				BMAnimationApply();
+				return BMAnimationApply();
+			}
+			else {
+				return new Promise(resolve => BMAnimationContextAddCompletionHandler(resolve));
 			}
 		}
 		else {
