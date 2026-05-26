@@ -1282,7 +1282,9 @@ BMMenu.prototype = {
             // If the mouse pointer enters the submenu's frame, cause it to acquire focus
             // and resume events
             if (submenuFrame.intersectsPoint(currentPosition)) {
-                submenu._node.focus();
+                if (submenu._node) {
+                    submenu._node.focus();
+                }
                 resumeEvents();
                 return;
             }
