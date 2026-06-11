@@ -855,7 +855,7 @@ BMDragSession.prototype = {
                 const session = this._dropSessions.get(target);
                 session._delegate.dropSessionDidEnter?.(session);
 
-                let action = session._delegate.dropSessionDidUpdate?.(this) ?? BMDropSessionAction.actionWithKind(BMDropSessionActionKind.Ignore);
+                let action = session._delegate.dropSessionDidUpdate?.(session) ?? BMDropSessionAction.actionWithKind(BMDropSessionActionKind.Ignore);
 
                 // If the target action is delete, the source delegate must be able to specify
                 // a transfer of kind move
