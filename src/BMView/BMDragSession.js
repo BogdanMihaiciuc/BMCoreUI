@@ -376,6 +376,11 @@ BMDragSession.prototype = {
     },
 
     /**
+     * Set to `YES` after this drag session finishes.
+     */
+    _finished: NO, // <Boolean>
+
+    /**
      * Sets up the drag previews and indicator and appropriate event handlers and starts tracking
      * a drag originating from the event with which this drag session was initialized.
      */
@@ -585,6 +590,8 @@ BMDragSession.prototype = {
      */
     async _dragDidFinishWithEvent(event) {
         event.preventDefault();
+
+        this._finished = YES;
 
         this._action = this._dropAction;
 
@@ -912,6 +919,48 @@ BMDragSession.prototype = {
         }, 16);
     },
 
+
+    /**
+     * Causes this drag session to request a new drop action from its delegate if no
+     * drop session is currently active, then set it as the current drop action.
+     */
+    invalidateDropAction() {
+        if (this._finished || this._dropTarget && this._dropTarget != this._sourceView) {
+            return;
+        }
+
+        // Dispatch an update to the source view then update the drop action accordingly
+        const sourceAction = this._delegate.dragSessionDidUpdate?.(this);
+        if (sourceAction) {
+            this._sourceDropAction = sourceAction;
+            this._updateDropAction();
+        }
+    },
+
+
+    /**
+     * Causes this drag session to request a new drop action from its delegate if the specified drop session
+     * is the currently active one, then set it as the current action for the this session.
+     */
+    _invalidateDropActionForDropSession(session) {
+        if (this._finished || !this._dropTarget || this._dropTarget == this._sourceView) {
+            return;
+        }
+
+        const dropSession = this._dropSessions.get(this._dropTarget);
+        if (dropSession != session) {
+            return;
+        }
+
+        // Dispatch an update to the target view then update the drop action accordingly
+        const targetAction = session._delegate.dropSessionDidUpdate?.(session) ?? BMDropSessionAction.actionWithKind(BMDropSessionActionKind.Ignore);
+        if (targetAction) {
+            session._dropAction = targetAction;
+            this._targetDropAction = targetAction;
+            this._updateDropAction();
+        }
+    },
+
     /**
      * Updates the drop action displayed by this drag session, based on the current
      * source and target drop actions.
@@ -1107,6 +1156,15 @@ BMDropSession.prototype = {
 
     get dropAction() {
         return this._dropAction;
+    },
+
+    /**
+     * Causes this drop session to request a new drop action from its delegate if it
+     * is the current active drop session for the current drag session, then set it as the current action
+     * for the drag session.
+     */
+    invalidateDropAction() {
+        this._dragSession._invalidateDropActionForDropSession(this);
     },
 
     /**
