@@ -3582,13 +3582,20 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// If this collection view was already waiting for the data set to insert some data from a drop,
 		// play the generic drop animation for those previews
 		if (this._dropPreviews) {
-			for (const preview of this._dropPreviews) {
-				preview.performDrop();
-			}
+			BMAnimateWithBlock(() => {
+				for (const preview of this._dropPreviews) {
+					preview.performDrop();
+				}
+			}, {duration: 300, easing: 'easeInQuad'});
 		}
 
 		// If there are no items to accept, don't perform any other changes
 		if (!session.dropItems.length) {
+			BMAnimateWithBlock(() => {
+				for (const preview of session.dropPreviews) {
+					preview.performDrop();
+				}
+			}, {duration: 300, easing: 'easeInQuad'});
 			return;
 		}
 
