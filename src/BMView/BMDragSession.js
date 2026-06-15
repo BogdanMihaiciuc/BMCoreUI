@@ -899,6 +899,11 @@ BMDragSession.prototype = {
         this._itemPreviewsUpdateIdentifier = setTimeout(() => {
             this._itemPreviewsUpdateIdentifier = undefined;
 
+            // If the session finished in the meantime, don't perform any further transition
+            if (this._finished) {
+                return;
+            }
+
             const newPreviews = new Map();
             if (this._dropTarget && this._dropTarget != this._sourceView) {
                 // If there is a valid drop target, request item previews and apply them
