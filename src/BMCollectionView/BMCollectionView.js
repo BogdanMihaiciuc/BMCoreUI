@@ -4783,11 +4783,6 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
-        // Acquire focus if not already owned
-        if (document.activeElement != this.node && this._supportsKeyboardNavigation) {
-            this.node.focus();
-        }
-
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasClicked) {
@@ -4796,6 +4791,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// If the delegate did handle this event, do not invoke the default behavior
 		if (eventHandled) return;
+
+        // Acquire focus if not already owned
+        if (document.activeElement != this.node && this._supportsKeyboardNavigation) {
+            this.node.focus();
+        }
 
         // The default behaviour when clicking cells is to highlight them
         if (this._highlightedIndexPath && !this._highlightedIndexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: this.identityComparator})) {
@@ -4848,16 +4848,16 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	cellWasDoubleClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
 
-        // Acquire focus if not already owned
-        if (document.activeElement != this.node && this._supportsKeyboardNavigation) {
-            this.node.focus();
-        }
-
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasDoubleClicked) {
 			eventHandled = this.delegate.collectionViewCellWasDoubleClicked(this, cell, {withEvent: options.withEvent});
 		}
+
+        // Acquire focus if not already owned
+        if (!eventHandled && document.activeElement != this.node && this._supportsKeyboardNavigation) {
+            this.node.focus();
+        }
 	},
 	
 	/**
@@ -4869,17 +4869,17 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	 */
 	cellWasLongClicked: function (cell, options) {
 		if (options && options.withEvent) options.withEvent._BMOriginalTarget = cell.node;
-
-        // Acquire focus if not already owned
-        if (document.activeElement != this.node && this._supportsKeyboardNavigation) {
-            this.node.focus();
-        }
 		
 		// Forward this event to the delegate, giving it a chance to handle the event
 		var eventHandled = NO;
 		if (this.delegate && this.delegate.collectionViewCellWasLongClicked) {
 			eventHandled = this.delegate.collectionViewCellWasLongClicked(this, cell, {withEvent: options.withEvent});
 		}
+
+        // Acquire focus if not already owned
+        if (!eventHandled && document.activeElement != this.node && this._supportsKeyboardNavigation) {
+            this.node.focus();
+        }
 
 		return eventHandled;
 	},
