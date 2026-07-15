@@ -117,7 +117,13 @@ Added a new `delaysActions` property on menus with a default value of `NO` that 
 
 Resolves an issue that caused touch menus to flicker during the opening animation.
 
+Resolves an issue that menu items that had submenus to not be selectable shortly after opening their submenu.
+
 Updated the appearance of menu items.
+
+## BMMenuItem
+
+Added a new `addOverrideMenuItem` method to set a replacement menu item that is displayed in place of the target menu item when certain keyboard modifiers are pressed, and a `removeOverrideMenuItemForModifiers` method to remove a previously set replacement.
 
 # 2.11.9
 
