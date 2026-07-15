@@ -6,7 +6,7 @@ import {BMHook, __BMVelocityAnimate} from '../Core/BMAnimationContext'
 import 'velocity-animate'
 import { BMRect, BMRectMake, BMRectMakeWithNodeFrame, BMRectMakeWithOrigin } from '../Core/BMRect';
 import { BMView } from './BMView_v2.5';
-import { BMKeyboardShortcut } from '../BMWindow/BMKeyboardShortcut';
+import { BMKeyboardShortcut, BMKeyboardShortcutModifier } from '../BMWindow/BMKeyboardShortcut';
 import { BMSizeMake } from '../Core/BMSize';
 
 /**
@@ -111,21 +111,33 @@ BMMenuItem.prototype = {
         return this._CSSClass;
     },
     set CSSClass(cls) {
+        if (!this._replacementItem) {
+            this._updateCSSClass(this._CSSClass, {toClass: cls});
+        }
+        this._CSSClass = cls || '';
+    },
+
+    /**
+     * Updates the CSS class on this item's node.
+     * @param fromClass <String>        The currently applied CSS classes.
+     * {
+     *  @param toClass <String>         The new classes to apply.
+     * }
+     */
+    _updateCSSClass(fromClass, {toClass}) {
         // If this menu item is rendered, apply the class to its node
         let node = this._node;
         if (node) {
             // First remove the previous classes, if they exist
-            if (this._CSSClass) {
-                this._CSSClass.split(' ').forEach(cls => node.classList.remove(cls));
+            if (fromClass) {
+                fromClass.split(' ').forEach(cls => node.classList.remove(cls));
             }
 
             // Then add the new classes, if they exist
-            if (cls) {
-                cls.split(' ').forEach(cls => node.classList.add(cls));
+            if (toClass) {
+                toClass.split(' ').forEach(cls => node.classList.add(cls));
             }
         }
-
-        this._CSSClass = cls || '';
     },
 
     /**
@@ -149,6 +161,16 @@ BMMenuItem.prototype = {
     },
     set hintHTML(hint) {
         this._hintHTML = hint;
+        if (!this._replacementItem) {
+            this._setHintHTML(hint);
+        }
+    },
+
+    /**
+     * Updates this item's HTML hint node with the specified hint.
+     * @param hint <String>         The hint to use.
+     */
+    _setHintHTML(hint) {
         if (this._node) {
             const hintContainer = this._node.querySelector('.BMMenuItemHint');
             if (hintContainer) {
@@ -162,6 +184,18 @@ BMMenuItem.prototype = {
      * is open.
      */
     _node: undefined, // <DOMNode, nullable>
+
+    /**
+     * The node that represents this menu item's icon, available while its menu
+     * is open.
+     */
+    _iconNode: undefined, // <DOMNode, nullable>
+
+    /**
+     * The node that represents this menu item's title, available while its menu
+     * is open.
+     */
+    _nameNode: undefined, // <DOMNode, nullable>
 
     /**
      * Defaults to `YES`. Controls whether this menu item is enabled. If this menu
@@ -183,6 +217,16 @@ BMMenuItem.prototype = {
 
         this._enabled = enabled;
 
+        if (!this._replacementItem) {
+            this._setEnabled(enabled);
+        }
+    },
+
+    /**
+     * Updates the enabled state of this menu item's node.
+     * @param enabled <Boolean>     Whether the item is enabled.
+     */
+    _setEnabled(enabled) {
         if (this._node) {
             /** @type {HTMLElement} */ const node = this._node;
             if (enabled) {
@@ -195,6 +239,89 @@ BMMenuItem.prototype = {
     },
 
     /**
+     * The currently active replacement menu item, if any.
+     */
+    _replacementItem: undefined, // <BMMenuItem, nullable>
+
+    /**
+     * Causes this menu item to instead display the specified menu item instead.
+     * @param item <BMMenuItem, nullable>   The replacement menu item, or `undefined` to restore
+     *                                      this menu item.
+     * @returns <Boolean>                   `YES` if a replacement occurred, `NO` otherwise.
+     */
+    _setReplacementItem(item) {
+        if (this._replacementItem == item) {
+            return NO;
+        }
+
+        const previousReplacementItem = this._replacementItem || this;
+        this._replacementItem = item;
+        if (!this._node) {
+            return YES;
+        }
+
+        if (!item) {
+            item = this;
+        }
+
+        // Update the display of this menu item to the specified replacement item
+        if (this._iconNode) {
+            this._iconNode.src = item.icon;
+        }
+
+        this._nameNode.innerText = item.name;
+        this._setEnabled(item.enabled);
+        this._setHintHTML(item.hintHTML);
+        this._updateCSSClass(previousReplacementItem.CSSClass, item.CSSClass);
+
+        return YES;
+    },
+
+    /**
+     * Contains the replacement menu items and their modifiers.
+     */
+    _overrideMenuItems: undefined, // <Object<string, {item: BMMenuItem, priority: number}>>
+
+    /**
+     * Registers a menu item that will replace this menu item in an open menu when the
+     * specified keyboard modifiers are held.
+     * @param item <BMMenuItem>                                 The replacement menu item to add.
+     * {
+     *  @param forModifiers <[BMKeyboardShortcutModifier]>      An array of modifiers that must be held for the
+     *                                                          replacement item to be selected.
+     * }
+     */
+    addOverrideMenuItem(item, {forModifiers: modifiers}) {
+        if (!modifiers.length) {
+            return;
+        }
+
+        let bitmap = 0;
+        for (const modifier of modifiers) {
+            bitmap = bitmap | modifier.value;
+        }
+
+        this._overrideMenuItems[bitmap] = {item, priority: modifiers.length};
+    },
+
+    /**
+     * Unregisters the replacement menu item when the specified keyboard modifiers are held.
+     * Has no effect if a replacement menu item was not set for the specified modifiers.
+     * @param modifiers <[BMKeyboardShortcutModifier]>          The keyboard modifiers.
+     */
+    removeOverrideMenuItemForModifiers(modifiers) {
+        let bitmap = 0;
+        for (const modifier of modifiers) {
+            bitmap = bitmap | modifier.value;
+        }
+
+        if (this._overrideMenuItems[bitmap]) {
+            delete this._overrideMenuItems[bitmap];
+        }
+    },
+
+    /**
+     * Designated initializer.
      * Constructs and returns a menu item with the given name.
      * Optionally, the menu item may have an icon associated with it as well as an
      * action that is invoked when the item is selected.
@@ -202,7 +329,7 @@ BMMenuItem.prototype = {
      * {
      *  @param icon <String, nullable>                  If specified, this represents the URL to an icon associated with this menu item.
      *                                                  For most menus, icons will only be displayed if all of its menu items have icons defined.
-     * 
+     *
      *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
      *                                                  This function will receive the selected menu item as a parameter.
      *  @param enabled <Boolean, nullable>              Defaults to `YES`. Controls whether this item is enabled and can be selected.
@@ -212,6 +339,8 @@ BMMenuItem.prototype = {
      * @return <BMMenuItem>                             This menu item.
      */
     initWithName(name, {icon, action, submenu, enabled = true, userInfo} = {}) {
+        this._overrideMenuItems = {};
+
         this._name = name;
         this._icon = icon;
         this._action = action;
@@ -238,7 +367,7 @@ BMMenuItem.prototype = {
  * {
  *  @param icon <String, nullable>                  If specified, this represents the URL to an icon associated with this menu item.
  *                                                  For most menus, icons will only be displayed if all of its menu items have icons defined.
- * 
+ *
  *  @param action <void ^ (BMMenuItem), nullable>   If specified, this is a function that will be invoked when this menu item is selected.
  *                                                  This function will receive the selected menu item as a parameter.
  *  @param enabled <Boolean, nullable>              Defaults to `YES`. Controls whether this item is enabled and can be selected.
@@ -469,15 +598,85 @@ BMMenu.prototype = {
     /**
      * Initializes this menu with the specified items.
      * The menu will be hidden by default; the method showAtPoint(_) should be used to make the menu visible.
-     * 
+     *
      * @param items <[BMMenuItem]>      An array of menu items that will be displayed by this menu.
-     * 
+     *
      * @return <BMMenu>                 A menu.
      */
     initWithItems(items) {
         this._items = [...items];
 
         return this;
+    },
+
+    /**
+     * The current modifier bitmap.
+     */
+    __modifierBitmap: 0, // <Number>
+
+    get _modifierBitmap() {
+        return this._modifierBitmap;
+    },
+
+    set _modifierBitmap(bitmap) {
+        this.__modifierBitmap = bitmap;
+
+        let changeOccurred = NO;
+
+        for (const item of this._items) {
+            if (!item._node) {
+                continue;
+            }
+
+            if (!bitmap) {
+                changeOccurred = item._setReplacementItem(undefined) || changeOccurred;
+            }
+
+            let replacementPriority = 0;
+            let replacementItem;
+            for (const replacementBitmap in item._overrideMenuItems) {
+                const modifierBitmap = parseInt(replacementBitmap);
+                if ((modifierBitmap & bitmap) != modifierBitmap) {
+                    continue;
+                }
+
+                if (item._overrideMenuItems[replacementBitmap].priority > replacementPriority) {
+                    replacementPriority = item._overrideMenuItems[replacementBitmap].priority;
+                    replacementItem = item._overrideMenuItems[replacementBitmap].item;
+                }
+            }
+
+            changeOccurred = item._setReplacementItem(replacementItem) || changeOccurred;
+        }
+
+        if (changeOccurred && this._node && this._rect) {
+            this._setAnchorRect(this._rect);
+        }
+    },
+
+
+
+    /**
+     * Invoked to handle the specified keyboard event.
+     * @param event <KeyboardEvent>     The event that triggered this action.
+     */
+    handleEvent(event) {
+        this._updateModifierBitmapWithEvent(event);
+    },
+
+    /**
+     * Updates the modifier bitmap based on the specified event.
+     * @param event <Event>     The event describing the currently pressed modifier keys.
+     */
+    _updateModifierBitmapWithEvent(event) {
+        let bitmap = 0;
+		for (const modifier in BMKeyboardShortcutModifier) {
+			if (event[BMKeyboardShortcutModifier[modifier].key]) {
+				bitmap = bitmap | BMKeyboardShortcutModifier[modifier].value;
+			}
+		}
+
+		this._modifierBitmap = bitmap;
     },
 
     /**
@@ -555,6 +754,15 @@ BMMenu.prototype = {
                 shortcut._menuItem = item;
                 BMView.registerKeyboardShortcut(shortcut, {forNode: menuNode});
             }
+
+            for (const key in item._overrideMenuItems) {
+                const replacementItem = item._overrideMenuItems[key].item;
+                if (replacementItem.keySequence) {
+                    const shortcut = BMKeyboardShortcut.keyboardShortcutWithKeySequence(replacementItem.keySequence, {target: this, action: '_selectMenuItemWithEvent'});
+                    shortcut._menuItem = item;
+                    BMView.registerKeyboardShortcut(shortcut, {forNode: menuNode});
+                }
+            }
         }
 
         // The overlay which intercepts clicks outside of the menu
@@ -562,6 +770,10 @@ BMMenu.prototype = {
         if (!container) {
             menuContainer.className = 'BMMenuContainer';
         }
+
+        // Register the modifier listener that sets replacement items on each item
+        menuContainer.addEventListener('keydown', this, {passive: true});
+        menuContainer.addEventListener('keyup', this, {passive: true});
 
         if (!('backdropFilter' in document.body.style) && !('webkitBackdropFilter' in document.body.style)) {
             menuNode.style.backgroundColor = 'white';
@@ -634,6 +846,9 @@ BMMenu.prototype = {
                 return;
             }
 
+            // Clear out any previously set replacement item
+            item._setReplacementItem(undefined);
+
             // Create the item node
             let itemNode = document.createElement('div');
             itemNode.className = 'BMMenuItem';
@@ -649,12 +864,18 @@ BMMenu.prototype = {
                     height: iconSize + 'px'
                 });
                 itemNode.appendChild(icon);
+
+                item._iconNode = icon;
+            }
+            else {
+                item._iconNode = undefined;
             }
 
             // Create the label
             const itemText = document.createElement('span');
             itemText.innerText = item.name;
             itemNode.appendChild(itemText);
+            item._nameNode = itemText;
 
             // Create the hint container
             const hint = document.createElement('div');
@@ -674,7 +895,7 @@ BMMenu.prototype = {
             if (!item._enabled) {
                 itemNode.classList.add('BMMenuItemDisabled');
             }
-    
+
             // TWhen clicking an item, trigger its action, if it has one
             itemNode.addEventListener('click', event => {
                 // Disabled items can't be clicked
@@ -694,7 +915,7 @@ BMMenu.prototype = {
                 // Ask the delegate if this menu item should be selected
                 let shouldSelect = YES;
                 if (this.delegate && this.delegate.menuShouldSelectItem) {
-                    shouldSelect = this.delegate.menuShouldSelectItem(this, item);
+                    shouldSelect = this.delegate.menuShouldSelectItem(this, item._replacementItem ?? item);
                 }
 
                 if (!shouldSelect) {
@@ -702,6 +923,9 @@ BMMenu.prototype = {
                     event.stopPropagation();
                     return;
                 }
+
+                // Allow selection to go through when events are suppressed
+                this._delaysEvents = NO;
 
                 // For desktop menus, delay closing slightly to allow the selection
                 // animation to play out
@@ -756,9 +980,14 @@ BMMenu.prototype = {
      * @param item <BMMenuItem>         The menu item whose action should be performed.
      */
     _performActionForMenuItem(item) {
-        item.action?.(item);
+        if (item._replacementItem?.action) {
+            item._replacementItem.action(item._replacementItem);
+        }
+        else {
+            item.action?.(item._replacementItem ?? item);
+        }
 
-        this.delegate?.menuDidSelectItem?.(this, item);
+        this.delegate?.menuDidSelectItem?.(this, item._replacementItem ?? item);
     },
 
     /**
@@ -774,12 +1003,14 @@ BMMenu.prototype = {
      *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
      *                                          If this method is invoked from within an animation context, the value of this parameter is ignored
      *                                          and the values of the current animation context are used.
-     * 
+     *
      *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
      * }
      * @return <Promise<void>>                  A promise that resolves when the operation completes.
      */
     async openFromNode(node, {animated = NO, kind = BMMenuKind.Menu} = {}) {
+        this._rect = undefined;
+
         // Signal the delegate that this menu is about to open
         if (this.delegate && this.delegate.menuWillOpen) {
             this.delegate.menuWillOpen(this);
@@ -897,7 +1128,7 @@ BMMenu.prototype = {
         BMCopyProperties(menuNode.style, {left: point.x + 'px', top: point.y + 'px'});
 
         this._frame = BMRectMakeWithOrigin(point, {size: BMSizeMake(menuWidth, menuHeight)});
-        
+
         // Prepare the initial state of the animation
         if (!this._supermenu) {
             BMHook(menuContainer, {opacity: 0});
@@ -906,8 +1137,8 @@ BMMenu.prototype = {
             BMHook(menuNode, {opacity: 0});
         }
         BMHook(menuNode, {
-            scaleX: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
-            scaleY: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale, 
+            scaleX: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale,
+            scaleY: kind == BMMenuKind.PullDownMenu ? pullDownScale : scale,
             translateY: -displacement + 'px',
             translateX: -horizontalDisplacement + 'px',
         });
@@ -923,7 +1154,7 @@ BMMenu.prototype = {
 
         // Make the menu expand
         itemsContainerNode.style.overflow = 'hidden';
-        
+
         __BMVelocityAnimate(menuNode, {opacity: 1}, {
             duration: duration / 2,
             // Use a different easing for the opacity so that it doesn't overshoot the 1 limit
@@ -942,7 +1173,7 @@ BMMenu.prototype = {
         // Animate each child node in
         let delay = 50;
         let delayIncrement = Math.min(16, 150 / itemsContainerNode.childNodes.length);
-        
+
         for (let i = 0; i < itemsContainerNode.childNodes.length; i++) {
             const child = itemsContainerNode.childNodes[i];
             BMHook(child, {translateY: '16px', translateZ: 0, opacity: 0});
@@ -965,13 +1196,18 @@ BMMenu.prototype = {
 
         // Animate the source node shadow
         await __BMVelocityAnimate(
-            this._sourceNodeShadow, 
-            {translateY: displacement + 'px', translateX: horizontalDisplacement + 'px', scaleX: sourceNodeScale, scaleY: sourceNodeScale}, 
+            this._sourceNodeShadow,
+            {translateY: displacement + 'px', translateX: horizontalDisplacement + 'px', scaleX: sourceNodeScale, scaleY: sourceNodeScale},
             {duration, easing},
             BMMENU_USE_WEB_ANIMATIONS
         );
 
     },
+
+    /**
+     * The rect around which this menu is positioned.
+     */
+    _rect: undefined, // <BMRect, nullable>
 
     /**
      * Animatable. Shows this menu at the specified point. The coordinates of this point are relative to the viewport.
@@ -980,7 +1216,7 @@ BMMenu.prototype = {
      *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
      *                                          If this method is invoked from within an animation context, the value of this parameter is ignored
      *                                          and the values of the current animation context are used.
-     * 
+     *
      *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
      * }
      */
@@ -988,48 +1224,21 @@ BMMenu.prototype = {
         // Create a 0-by-0 rect at the given point and open the menu around it
         const rect = BMRectMakeWithOrigin(point, {size: BMSizeMake()});
 
+        this._rect = rect;
         return this._openAroundRect(rect, arguments[1]);
     },
 
     /**
-     * Shows this menu at an appropriate position around the given rect. The coordinates of this rect
-     * are relative to the viewport.
-     * @param rect <BMRect>                     The rect around which to show this menu.
-     * {
-     *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
-     *                                          If this method is invoked from within an animation context, the value of this parameter is ignored
-     *                                          and the values of the current animation context are used.
-     * 
-     *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
+     * Updates this menu's position around the specified rect.
+     * @param rect <BMRect>         The rect around which to position this menu.
      */
-    _openAroundRect(rect, {animated = NO, kind = BMMenuKind.Menu} = {}) {
-        // If the menu is already open, do nothing
-        if (this._node) return;
-
-        // Signal the delegate that this menu is about to open
-        if (this.delegate && this.delegate.menuWillOpen) {
-            this.delegate.menuWillOpen(this);
-        }
-
-        // Build the DOM structure
-        this._renderMenu();
+    _setAnchorRect(rect) {
+        this._rect = rect;
 
         const menuNode = this._node;
         const itemsContainerNode = this._itemsContainerNode;
-        const menuContainer = this._containerNode;
 
-        this._kind = kind;
-
-        // Prepare the initial state of the animation
-        BMHook(menuNode, {
-            scaleX: kind == BMMenuKind.PullDownMenu ? 1 : .75, 
-            scaleY: kind == BMMenuKind.PullDownMenu ? .5 : .75, 
-            opacity: 0
-        });
-
-        if (!this._supermenu) {
-            document.body.appendChild(menuContainer);
-        }
+        const kind = this._kind;
 
         // Get the menu's metrics to determine where it fits best
         const height = menuNode.offsetHeight;
@@ -1089,6 +1298,58 @@ BMMenu.prototype = {
         this._frame = BMRectMakeWithOrigin(point, {size: BMSizeMake(width, height)});
         menuNode.style.left = point.x + 'px';
         menuNode.style.top = point.y + 'px';
+
+        // If any submenus are open, update their positions as well
+        if (this._submenu) {
+            const itemNode = this._submenu._sourceItem._node;
+            if (itemNode) {
+                const frame = BMRectMakeWithNodeFrame(itemNode);
+                this._submenu._setAnchorRect(frame);
+            }
+        }
+    },
+
+    /**
+     * Shows this menu at an appropriate position around the given rect. The coordinates of this rect
+     * are relative to the viewport.
+     * @param rect <BMRect>                     The rect around which to show this menu.
+     * {
+     *  @param animated <Boolean, nullable>     Defaults to `NO`. If set to `YES`, this change will be animated.
+     *                                          If this method is invoked from within an animation context, the value of this parameter is ignored
+     *                                          and the values of the current animation context are used.
+     *
+     *  @param kind <BMMenuKind, nullable>      Defaults to `Menu`. The kind of menu.
+     */
+    _openAroundRect(rect, {animated = NO, kind = BMMenuKind.Menu} = {}) {
+        // If the menu is already open, do nothing
+        if (this._node) return;
+
+        // Signal the delegate that this menu is about to open
+        if (this.delegate && this.delegate.menuWillOpen) {
+            this.delegate.menuWillOpen(this);
+        }
+
+        // Build the DOM structure
+        this._renderMenu();
+
+        const menuNode = this._node;
+        const itemsContainerNode = this._itemsContainerNode;
+        const menuContainer = this._containerNode;
+
+        this._kind = kind;
+
+        // Prepare the initial state of the animation
+        BMHook(menuNode, {
+            scaleX: kind == BMMenuKind.PullDownMenu ? 1 : .75,
+            scaleY: kind == BMMenuKind.PullDownMenu ? .5 : .75,
+            opacity: 0
+        });
+
+        if (!this._supermenu) {
+            document.body.appendChild(menuContainer);
+        }
+
+        this._setAnchorRect(rect);
 
         // Animate the menu in
         itemsContainerNode.style.overflow = 'hidden';
@@ -1157,6 +1418,7 @@ BMMenu.prototype = {
 
         // Render the submenu and set its delegate to this menu's delegate
         submenu._supermenu = this;
+        submenu._sourceItem = item;
         this._submenu = submenu;
 
         // Open an appropriate menu kind based on this menu's kind
@@ -1242,11 +1504,11 @@ BMMenu.prototype = {
                 // On the first movement initialize the previous position
                 // and top and bottom points relative to the pointer's position
                 lastPosition = currentPosition;
-                topPoint = submenuFrame.origin.x > lastPosition.x ? 
-                                    submenuFrame.origin : 
+                topPoint = submenuFrame.origin.x > lastPosition.x ?
+                                    submenuFrame.origin :
                                     BMPointMake(submenuFrame.right, submenuFrame.origin.y);
-                bottomPoint = submenuFrame.origin.x > lastPosition.x ? 
-                                    BMPointMake(submenuFrame.origin.x, submenuFrame.bottom) : 
+                bottomPoint = submenuFrame.origin.x > lastPosition.x ?
+                                    BMPointMake(submenuFrame.origin.x, submenuFrame.bottom) :
                                     BMPointMake(submenuFrame.right, submenuFrame.bottom);
 
                 if (submenuFrame.origin.x < lastPosition.x) {
@@ -1315,7 +1577,7 @@ BMMenu.prototype = {
             let isOutsideSlopeRange = flipSlopes ?
                 currentSlope > minSlope && currentSlope < maxSlope :
                 currentSlope < minSlope || currentSlope > maxSlope;
-            
+
             if (isOutsideSlopeRange) {
                 resumeEvents();
                 return;
@@ -1341,6 +1603,9 @@ BMMenu.prototype = {
     closeAnimated(animated = YES, {withSupermenu = NO} = {}) {
         // If the menu isn't visible this action has no effect.
         if (!this._node) return;
+
+        this._containerNode.removeEventListener('keydown', this, {passive: true});
+        this._containerNode.removeEventListener('keyup', this, {passive: true});
 
         // If any submenu is displayed, dismiss it as well
         if (this._submenu) {
@@ -1382,7 +1647,7 @@ BMMenu.prototype = {
         }
 
         // Prevent interaction with the menu while its close animation is running
-        this._node.style.pointerEvents = 'none'; 
+        this._node.style.pointerEvents = 'none';
         // this._node.inert = true;
 
         if (!supermenu) {
@@ -1410,7 +1675,7 @@ BMMenu.prototype = {
 
         const selectedMenuItem = this._selectedMenuItem;
         this._selectedMenuItem = undefined;
-        
+
         if (selectedMenuItem) {
             if (this.delaysActions && selectedItemCallbackDelay) {
                 setTimeout(() => this._performActionForMenuItem(selectedMenuItem), selectedItemCallbackDelay);
@@ -1457,9 +1722,9 @@ BMMenu.prototype = {
         itemsContainerNode.style.overflow = 'hidden';
 
         __BMVelocityAnimate(this._node, {
-            scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale, 
-            scaleY: scale, 
-            opacity: (sourceNodeShadow && !supermenu) ? 1 : 0, 
+            scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale,
+            scaleY: scale,
+            opacity: (sourceNodeShadow && !supermenu) ? 1 : 0,
             translateY: sourceNodeShadow ? -this._sourceNodeDisplacement + 'px' : '0px',
             translateX: sourceNodeShadow ? -this._sourceNodeHorizontalDisplacement + 'px' : '0px',
             translateZ: 0
@@ -1659,7 +1924,7 @@ BMMenu.prototype = {
         if (this._node) {
             this.closeAnimated(YES);
         }
-    }
+    },
 
 
 };
@@ -1667,9 +1932,9 @@ BMMenu.prototype = {
 /**
  * Constructs and returns a menu with the specified items.
  * The menu will be hidden by default; the method `openAtPoint(_)` should be used to make the menu visible.
- * 
+ *
  * @param items <[BMMenuItem]>      An array of menu items that will be displayed by this menu.
- * 
+ *
  * @return <BMMenu>                 A menu.
  */
 BMMenu.menuWithItems = function (items) {
