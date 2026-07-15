@@ -30,7 +30,7 @@
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 18px !important;
 	font-weight: bold !important;
-	
+
 	text-align: center !important;
 
 	padding-left: 16px;
@@ -178,7 +178,7 @@
 .BMDragSessionIndicatorMessage.BMDragSessionIndicatorMessageMeasurement {
 	transition: none;
 	visibility: hidden;
-	
+
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 16px !important;
 
@@ -254,15 +254,15 @@
 
 .BMWindowBlocker {
 	position: fixed;
-	
+
 	width: 100vw;
 	height: 100vh;
-	
+
 	left: 0px;
 	top: 0px;
-	
+
 	background: rgba(0, 0, 0, .4);
-	
+
 	z-index: 2008;
 }
 
@@ -273,13 +273,13 @@
 
 .BMWindow {
 	position: fixed;
-	
+
 	border-radius: 8px;
 	overflow: hidden;
-	
+
 	box-shadow: rgba(0, 0, 0, .15) 0px 0px 1px 1px, rgba(0, 0, 0, .33) 0px 12px 64px;
 	outline: none;
-	
+
 	z-index: 2008;
 }
 
@@ -507,14 +507,14 @@
 .BMFullScreenWindow {
 	left: 0px !important;
 	top: 0px !important;
-	
+
 	width: 100vw !important;
 	height: 100vh !important;
 }
 
 .BMWindowContent {
 	position: absolute;
-	
+
 	width: 100%;
 	height: 100%;
 	top: 0px;
@@ -609,7 +609,7 @@
 	.BMWindowLabel, .BMLabel {
 		color: rgba(255, 255, 255, .9);
 	}
-	
+
 	.BMWindowSublabel, .BMSubLabel {
 		color: rgba(255, 255, 255, .5);
 	}
@@ -626,7 +626,7 @@
 	font-family: -apple-system, BlinkMacSystemFont, Roboto, 'Segoe UI', sans-serif !important;
 	font-size: 24px !important;
 	font-weight: bold !important;
-	
+
 	text-align: left !important;
 
 	color: rgba(0, 0, 0, .8);
@@ -634,7 +634,7 @@
 
 .BMWindowTitle {
 	min-height: 64px !important;
-	
+
 	margin-left: 24px !important;
 	margin-right: 8px !important;
 
@@ -654,9 +654,9 @@
 	-webkit-appearance: none !important;
 	border: none !important;
 	box-sizing: border-box !important;
-	
+
 	border-radius: 4px !important;
-	
+
 	transition: box-shadow .2s ease, background-color .2s ease !important;
 	box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0), 0px 0px 20px 20px rgba(0, 160, 255, 0) !important;
 
@@ -666,7 +666,7 @@
 
 .BMWindowInput {
 	margin: 8px !important;
-	
+
 	height: calc(100% - 16px) !important;
 	min-width: 44px !important;
 }
@@ -729,7 +729,7 @@
 	.BMWindowInputInvalid:hover:not(:focus), .BMInputInvalid:hover:not(:focus) {
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .33), 0px 0px 20px 20px rgba(255, 80, 0, 0) !important;
 	}
-	
+
 	.BMWindowInputInvalid:focus, .BMInputInvalid:focus {
 		box-shadow: 0px 0px 0px 1px rgba(255, 255, 255, .05) inset, 0px 0px 1px 1px rgba(0, 0, 0, .5), 0px 0px 15px rgba(255, 80, 0, 1) !important;
 	}
@@ -794,7 +794,7 @@
 .BMWindowToolbarLabel {
 	border: none !important;
 	box-sizing: border-box !important;
-	
+
 	border-radius: 4px !important;
 	margin: 8px !important;
 
@@ -830,17 +830,17 @@
 	display: flex;
 	align-content: center;
 	justify-content: center;
-	
+
 	border-radius: 4px;
 	box-shadow: 0px 2px 4px rgba(0, 0, 0, .1), 0px 0px 1px 1px rgba(0, 0, 0, .1);
-	
+
 	background: rgba(0, 128, 255, 1);
-	
+
 	color: white;
 	font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica', 'Segoe UI', sans-serif;
 	font-size: 14px;
 	font-weight: bold;
-	
+
 	padding: 8px 16px;
 
 	align-self: center;
@@ -851,7 +851,7 @@
 
 .BMWindowButton {
 	min-height: 32px;
-	
+
 	margin: 8px;
 	border: none;
 }
@@ -903,7 +903,7 @@
 	width: 44px;
 	height: 44px;
 	top: 10px;
-	
+
 	border-radius: 50%;
 
 	margin-left: 8px;
@@ -951,18 +951,18 @@
 
 .BMLayoutEditorCloseButton {
 	position: absolute !important;
-	
+
 	left: 8px !important;
 	opacity: 0;
-	
+
 	pointer-events: none;
-	
+
 	transition: opacity .3s ease;
 }
 
 .BMLayoutEditorCloseButton.BMLayoutEditorFullScreen {
 	opacity: 1;
-	
+
 	pointer-events: inherit;
 }
 
@@ -982,22 +982,22 @@
 	width: 128px;
 	padding-top: 8px;
 	padding-bottom: 8px;
-	
+
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	
+
 	color: rgba(0, 0, 0, .25);
-	
+
 	padding-left: 8px;
 	padding-right: 8px;
-	
+
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 	font-size: 10px !important;
-	
+
 	margin-left: 32px;
 	margin-right: 32px;
-	
+
 	cursor: pointer;
 }
 
@@ -1012,16 +1012,16 @@
 
 .BMWindowSwitchGutter {
 	border-radius: 5px;
-	
+
 	border: 1px solid rgba(0, 0, 0, .1);
 	background-color: rgba(0, 0, 0, .1);
-	
+
 	margin-left: 8px;
 	margin-right: 8px;
-	
+
 	flex-grow: 1;
 	height: 20px;
-	
+
 	box-sizing: border-box !important; /* Important needed for Thingworx new composer */
 	overflow: hidden;
 }
@@ -1030,12 +1030,12 @@
 	width: 50%;
 	height: 100%;
 	background-color: #FFF;
-	
+
 	box-shadow: 0px 2px 8px rgba(0, 0, 0, .3), 0px -4px 8px rgba(0, 0, 0, .05) inset;
 	border-radius: 5px;
 
 	transform: translateX(100%);
-	
+
 	transition: transform .2s ease, width .2s ease, opacity .2s ease;
 }
 
@@ -1199,7 +1199,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		transform: translateZ(0);
 		-webkit-transform: translateZ(0);
 	}
-	
+
 }
 
 .BMWindowToolbarDark .BMLayoutEditorSizeClassPopupOption:active > .BMLayoutEditorSizeClassImage {
@@ -1346,12 +1346,6 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	z-index: 9999999;
 }
 
-/* A class that is temporarily added to the menu container to allow the user
-   to move over menu items without triggering them while moving torwards the submenu */
-.BMMenuContainer.BMMenuContainerSubmenuActive > * {
-	pointer-events: none !important;
-}
-
 .BMMenuContainerFullScreen {
 	background-color: rgba(0, 0, 0, .33);
 }
@@ -1364,7 +1358,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	}
 }
 
-.BMLayoutEditorConstraintPopup, 
+.BMLayoutEditorConstraintPopup,
 .BMMenu {
 	position: absolute;
 
@@ -1540,7 +1534,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 /* The menu's text element should expand to fill all available space */
 .BMMenuItem > span {
 	flex-grow: 1;
-	
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1561,7 +1555,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 .BMMenuItemDisclosure {
 	width: 24px;
 	height: 24px;
-	
+
 	font-weight: 600;
 
 	font-size: 18px;
@@ -1733,15 +1727,15 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		from {
 			color: rgba(255, 255, 255, .9);
 		}
-	
+
 		49% {
 			color: rgba(255, 255, 255, .9);
 		}
-	
+
 		50% {
 			color: white;
 		}
-	
+
 		to {
 			color: white;
 		}
@@ -1802,7 +1796,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 }
 
 .BMLayoutEditorDetailsBackButton {
-	pointer-events: all;	
+	pointer-events: all;
 	padding-left: 8px !important; /* TWX-Important */
 	padding-right: 8px !important; /* TWX-Important */
 
@@ -1941,7 +1935,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		transform: translateZ(0);
 		-webkit-transform: translateZ(0);
 	}
-	
+
 	.BMLayoutEditorDetailsItemBadge {
 		border-color: rgba(255, 255, 255, .1);
 		color: rgba(255, 255, 255, .33) !important;
@@ -2108,7 +2102,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	.BMLayoutEditorDetailsItemReadonlyValueClickable:hover {
 		background-color: rgba(255, 255, 255, .1);
 	}
-	
+
 	.BMLayoutEditorDetailsItemReadonlyValueClickable:active {
 		background-color: rgba(255, 255, 255, .2);
 	}
@@ -2177,11 +2171,11 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	.BMLayoutEditorDetailsConstraintItem:hover {
 		background-color: rgba(255, 255, 255, .1);
 	}
-	
+
 	.BMLayoutEditorDetailsConstraintItem:active {
 		background-color: rgba(255, 255, 255, .2);
 	}
-	
+
 	.BMLayoutEditorDetailsConstraintItemReadonly {
 		border-color: rgba(255, 255, 255, .1);
 	}
@@ -2357,8 +2351,8 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 		border-left: 1px dashed rgba(255, 255, 255, .33);
 		border-top: 1px dashed rgba(255, 255, 255, .33);
 	}
-	
-	
+
+
 	.BMLayoutEditorDetailsInsetBottomRightIndicator {
 		border-right: 1px dashed rgba(255, 255, 255, .33);
 		border-bottom: 1px dashed rgba(255, 255, 255, .33);
@@ -2524,7 +2518,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	left: 0px;
 	width: 100%;
 	height: 100%;
-	background: 
+	background:
   /* On "top" */
   repeating-linear-gradient(
     45deg,
@@ -2822,13 +2816,13 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 .BMPopoverOverlay {
 	position: absolute;
-	
+
 	width: 100%;
 	height: 100%;
-	
+
 	left: 0px;
 	top: 0px;
-	
+
 	z-index: 9999999; /* :( */
 
 	backdrop-filter: none !important;
@@ -2877,7 +2871,7 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 
 .BMPopoverContainerLayer {
 	position: absolute;
-	
+
 	z-index: 9999999; /* :( */
 	pointer-events: none;
 }
@@ -2886,9 +2880,9 @@ The drop shadow layer contains the drop shadow effect only.
 */
 .BMPopoverDropShadowContainer {
 
-	/* 
-	Filter drop-shadow is extremely expensive, but in practice, 
-	no page should have more than one popover open at any time, which should mitigate this 
+	/*
+	Filter drop-shadow is extremely expensive, but in practice,
+	no page should have more than one popover open at any time, which should mitigate this
 	*/
 	filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, .25)) drop-shadow(0px 12px 64px rgba(0, 0, 0, .33));
 	mix-blend-mode: multiply;
@@ -2918,9 +2912,9 @@ The background layer contains the background.
 */
 .BMPopoverBackground {
 	position: absolute;
-	
+
 	z-index: 9999999; /* TWX-Z-Index */
-	
+
 	background: rgba(245, 245, 245, .8);
 	-webkit-backdrop-filter: blur(25px);
 	backdrop-filter: blur(25px);
