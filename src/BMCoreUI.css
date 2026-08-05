@@ -1346,6 +1346,13 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	z-index: 9999999;
 }
 
+/* A class that is temporarily added to the menu container to allow the user
+   to move over menu items without triggering them while moving torwards the submenu;
+   additionally, this causes the `mouseenter` event to trigger when this class is removed */
+.BMMenuContainer.BMMenuContainerSubmenuActive > * {
+	pointer-events: none !important;
+}
+
 .BMMenuContainerFullScreen {
 	background-color: rgba(0, 0, 0, .33);
 }

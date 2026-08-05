@@ -1458,9 +1458,6 @@ BMMenu.prototype = {
         let topPoint;
         let bottomPoint;
 
-        // Determines whether the slope needs to be between the min and max slopes or outside their range
-        let flipSlopes = false;
-
         const eventTarget = this._containerNode;
         // Immediately block interactions with menu elements
         this._delaysEvents = YES;
@@ -1478,7 +1475,7 @@ BMMenu.prototype = {
             this._delaysEvents = NO;
 
             // Remove the mousemove event handler
-            eventTarget.removeEventListener(mouseMoveEvent, handler, {capture: YES});
+            window.removeEventListener(mouseMoveEvent, handler, {capture: YES});
 
             // Allow pointer interaction with the menu nodes
             eventTarget.classList.remove('BMMenuContainerSubmenuActive');
@@ -1510,14 +1507,6 @@ BMMenu.prototype = {
                 bottomPoint = submenuFrame.origin.x > lastPosition.x ?
                                     BMPointMake(submenuFrame.origin.x, submenuFrame.bottom) :
                                     BMPointMake(submenuFrame.right, submenuFrame.bottom);
-
-                if (submenuFrame.origin.x < lastPosition.x) {
-                    // When the menu appears to the left, the min and max slopes need to be
-                    // flipped, because the "interior" of the slopes is counted clockwise
-                    // from the bottom slope to the top one, but on the left side
-                    // the interior needs to be counted counter-clockwise
-                    flipSlopes = true;
-                }
 
                 return;
             }
@@ -1563,20 +1552,39 @@ BMMenu.prototype = {
             const topSlope = currentPosition.slopeAngleToPoint(topPoint);
             const bottomSlope = currentPosition.slopeAngleToPoint(bottomPoint);
 
+            // Normalizes the specified angle so that it's within the [0, 2Pi] range
+            function normalizeAngle(angle) {
+                // Coerce angle into [-2Pi, 2Pi]
+                angle %= 2 * Math.PI;
+
+                // Coerce the result into a positive angle
+                return angle < 0 ? angle + 2 * Math.PI : angle;
+            }
+
             // Get the slope angle for the current movement, which indicates the direction
             // in which the pointer moves
-            const currentSlope = lastPosition.slopeAngleToPoint(currentPosition);
+            const currentSlope = normalizeAngle(lastPosition.slopeAngleToPoint(currentPosition));
 
-            const minSlope = Math.min(topSlope, bottomSlope);
-            const maxSlope = Math.max(topSlope, bottomSlope);
+            const minSlope = normalizeAngle(bottomSlope - topSlope);
+            const maxSlope = normalizeAngle(topSlope - bottomSlope);
 
+            // Determine which is the starting and ending slopes and normalize them
+            let startSlope, endSlope;
+            if (minSlope <= maxSlope) {
+                startSlope = normalizeAngle(topSlope);
+                endSlope = normalizeAngle(bottomSlope);
+            }
+            else {
+                startSlope = normalizeAngle(bottomSlope);
+                endSlope = normalizeAngle(topSlope);
+            }
+            
             // If the mouse moves away from the submenu, resume events
             // The pointer is considered to be moving towards the menu if the slope angle
             // of the line formed between the current and previous mouse positions
             // is between these two slope angles
-            let isOutsideSlopeRange = flipSlopes ?
-                currentSlope > minSlope && currentSlope < maxSlope :
-                currentSlope < minSlope || currentSlope > maxSlope;
+            // This is done by rotating the end and current slope by the start slope and checking which is larger
+            const isOutsideSlopeRange = normalizeAngle(currentSlope - startSlope) >= normalizeAngle(endSlope - startSlope);
 
             if (isOutsideSlopeRange) {
                 resumeEvents();
@@ -1587,7 +1595,7 @@ BMMenu.prototype = {
             lastPosition = currentPosition;
         };
 
-        eventTarget.addEventListener(mouseMoveEvent, handler, {capture: YES});
+        window.addEventListener(mouseMoveEvent, handler, {capture: YES});
     },
 
     /**
