@@ -121,6 +121,8 @@ Resolves an issue that menu items that had submenus to not be selectable shortly
 
 Updated the appearance of menu items.
 
+Improved the movement direction detection when opening a submenu so that events are more accurately enabled/disabled on the main menu as the mouse pointer moves towards or away the newly opened submenu.
+
 ## BMMenuItem
 
 Added a new `addOverrideMenuItem` method to set a replacement menu item that is displayed in place of the target menu item when certain keyboard modifiers are pressed, and a `removeOverrideMenuItemForModifiers` method to remove a previously set replacement.
