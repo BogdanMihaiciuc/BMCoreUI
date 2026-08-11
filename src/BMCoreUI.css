@@ -1353,6 +1353,12 @@ input:not(:checked) + .BMWindowSwitchGutter > .BMWindowSwitchKnob, .BMWindowSwit
 	pointer-events: none !important;
 }
 
+/* This allows clicking on an item with a submenu during the event delaying period
+after a submenu has just been opened */
+.BMMenuContainer.BMMenuContainerSubmenuActive .BMMenuItemHighlighted {
+    pointer-events: all !important;
+}
+
 .BMMenuContainerFullScreen {
 	background-color: rgba(0, 0, 0, .33);
 }
