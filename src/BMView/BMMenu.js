@@ -406,6 +406,42 @@ BMMenu.prototype = {
     get items() {
         return this._items.slice();
     },
+    set items(items) {
+        this._items = items.slice();
+
+        // If this menu was already open when items are updated, destroy
+        // and re-render it
+        if (this._node) {
+            if (this._supermenu) {
+                this._node.remove();
+            }
+            else {
+                this._containerNode.remove();
+            }
+            
+            this._renderMenu();
+
+            if (!this._supermenu) {
+                document.body.appendChild(this._containerNode);
+            }
+            
+            this._setAnchorRect(this._rect);
+
+            // Restore the highlighted menu item
+            if (this._highlightedIndex != -1) {
+                const item = this._items[this._highlightedIndex];
+                if (item && !item._isSeparator && item._enabled) {
+                    const index = this._highlightedIndex;
+                    this._highlightedIndex = -1;
+                    this.highlightedIndex = index;
+                }
+            }
+
+            for (const node of this._itemsContainerNode.children) {
+                BMHook(node, {opacity: 1, translateY: '0px'});
+            }
+        }
+    },
 
     /**
      * An optional delegate object that will receive callbacks events from this menu.
@@ -519,6 +555,9 @@ BMMenu.prototype = {
      * The menu that opened this menu, if any.
      */
     _supermenu: undefined, // <BMMenu, nullable>
+    get supermenu() {
+        return this._supermenu;
+    },
 
     /**
      * The menu's frame, relative to the viewport, available while this menu is visible.
@@ -1611,6 +1650,14 @@ BMMenu.prototype = {
     closeAnimated(animated = YES, {withSupermenu = NO} = {}) {
         // If the menu isn't visible this action has no effect.
         if (!this._node) return;
+        
+        const sourceNodeShadow = this._sourceNodeShadow;
+        const containerNode = this._containerNode;
+        const node = this._node;
+        const itemsContainerNode = this._itemsContainerNode;
+        const sourceNode = this._sourceNode;
+
+        this._node = undefined;
 
         this._containerNode.removeEventListener('keydown', this, {passive: true});
         this._containerNode.removeEventListener('keyup', this, {passive: true});
@@ -1655,8 +1702,8 @@ BMMenu.prototype = {
         }
 
         // Prevent interaction with the menu while its close animation is running
-        this._node.style.pointerEvents = 'none';
-        // this._node.inert = true;
+        node.style.pointerEvents = 'none';
+        // node.inert = true;
 
         if (!supermenu) {
             this._containerNode.style.pointerEvents = 'none';
@@ -1693,12 +1740,6 @@ BMMenu.prototype = {
             }
         }
 
-        const sourceNodeShadow = this._sourceNodeShadow;
-        const containerNode = this._containerNode;
-        const node = this._node;
-        const itemsContainerNode = this._itemsContainerNode;
-        const sourceNode = this._sourceNode;
-
         this._sourceNode = undefined;
         this._sourceNodeShadow = undefined;
 
@@ -1729,7 +1770,7 @@ BMMenu.prototype = {
 
         itemsContainerNode.style.overflow = 'hidden';
 
-        __BMVelocityAnimate(this._node, {
+        __BMVelocityAnimate(node, {
             scaleX: this._kind == BMMenuKind.PullDownMenu ? 1 : scale,
             scaleY: scale,
             opacity: (sourceNodeShadow && !supermenu) ? 1 : 0,
