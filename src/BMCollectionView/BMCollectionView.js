@@ -6059,14 +6059,18 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		
 		// If this update occurs because of a drag & drop operation, try to obtain the associated index paths from the data set
 		let dropPreviewMap;
+		/** @type {Map} */
+		let dropPreviewReverseMap;
 		if (this._dropPreviews && this.dataSet.indexPathForDragItem) {
 			dropPreviewMap = new Map();
+			dropPreviewReverseMap = new Map();
 
 			for (const preview of this._dropPreviews) {
 				const indexPath = this.dataSet.indexPathForDragItem(preview.item);
 
 				if (indexPath) {
 					dropPreviewMap.set(indexPath, preview);
+					dropPreviewReverseMap.set(preview, indexPath);
 				}
 			}
 		}
@@ -6464,6 +6468,18 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 				for (const cell of insertedCells) {
 					cell._dropPreview.performDropToNode(cell.node);
 
+					// Handle the cases where multiple drop previews target this cell
+					for (const [preview, indexPath] of dropPreviewReverseMap.entries()) {
+					    if (indexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: self.identityComparator}) && preview != cell._dropPreview) {
+							preview.performDropToNode(cell.node);
+           					const index = self._dropPreviews.indexOf(cell._dropPreview);
+
+           					if (index != -1) {
+          						self._dropPreviews.splice(index, 1);
+           					}
+						}
+					}
+
 					const index = self._dropPreviews.indexOf(cell._dropPreview);
 
 					if (index != -1) {
@@ -6486,6 +6502,19 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 					// Play all drop animations
 					for (const cell of dropMovingCells) {
 						cell._dropPreview.performDropToNode(cell.node);
+
+    					// Handle the cases where multiple drop previews target this cell
+    					for (const [preview, indexPath] of dropPreviewReverseMap.entries()) {
+    					    if (indexPath.isLooselyEqualToIndexPath(cell.indexPath, {usingComparator: self.identityComparator}) && preview != cell._dropPreview) {
+    							preview.performDropToNode(cell.node);
+               					const index = self._dropPreviews.indexOf(cell._dropPreview);
+    
+               					if (index != -1) {
+              						self._dropPreviews.splice(index, 1);
+               					}
+    						}
+    					}
+						
 						const index = self._dropPreviews.indexOf(cell._dropPreview);
 
 						if (index != -1) {
