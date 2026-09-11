@@ -113,6 +113,8 @@ Resolves an issue where flow layout measured more cells than needed after data o
 
 ## BMMenu
 
+The `items` property can now also be set on menus. If updated while the menu is visible, this change will cause the menu to re-render.
+
 Added a new `delaysActions` property on menus with a default value of `NO` that can be used to delay the menu actions until after the animation for clicking the menu item has played.
 
 Resolves an issue that caused touch menus to flicker during the opening animation.
@@ -122,6 +124,8 @@ Resolves an issue that menu items that had submenus to not be selectable shortly
 Updated the appearance of menu items.
 
 Improved the movement direction detection when opening a submenu so that events are more accurately enabled/disabled on the main menu as the mouse pointer moves towards or away the newly opened submenu.
+
+Resolved an issue that caused an error to appear in the browser console when selecting a menu item using the keyboard.
 
 ## BMMenuItem
 
