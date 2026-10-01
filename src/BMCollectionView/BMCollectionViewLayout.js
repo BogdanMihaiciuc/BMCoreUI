@@ -978,6 +978,11 @@ _BMCollectionViewTransitionLayout.prototype = BMExtend({}, BMCollectionViewLayou
 		return this.targetLayout.attributesForSupplementaryViewWithIdentifier(identifier, args);
 	}, 
 
+	// @override - BMCollectionViewLayout
+	constraintsForMeasuringCell(cell, args) {
+		return this.targetLayout.constraintsForMeasuringCell(cell, args);
+	},
+
 	/**
 	 * Invoked by the collection view at the end of a layout transition.
 	 * Causes the transition layout to apply the final attributes to all animated cells.
