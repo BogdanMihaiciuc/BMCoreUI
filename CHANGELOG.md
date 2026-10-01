@@ -72,6 +72,10 @@ Resolves an issue that caused the `allCells` properly to not contain all visible
 
 Resolves a potential crash that could occur when invoking `updateEntireDataAnimated` while an animated layout transition was in progress.
 
+Resolves an issue where the proper constaints were not used to measure cells when performing an animated layout update via `setLayout`.
+
+Resolves an issue where measuring a cell would sometimes not properly perform a layout pass, causing the older measurements to be used instead.
+
 ## BMCollectionViewDelegate
 
 The following delegate methods now also receive the associated drag or drop session as an argument:
