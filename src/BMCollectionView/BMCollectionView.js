@@ -2424,6 +2424,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			constraints.push(constraint);
 		}
 
+		cell._registerLayout();
+
 		yield;
 
 		// Run a layout pass to measure the cell's subview
@@ -5343,9 +5345,12 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			this._bounds.size.width = this._frame.size.width + 2 * this._offscreenBufferSize;
 			this._bounds.size.height = this._frame.size.height + 2 * this._offscreenBufferSize;
 		}
+		
+		const oldLayout = this._layout;
 	    
 	    // Ask the new layout to prepare its layout
 	    layout.collectionView = this;
+		this._layout = layout;
 	    layout.prepareLayout();
 	    
 		var newSize = layout.contentSize();
@@ -5360,7 +5365,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// }
 	    
 	    // Check to see if an offset is required
-	    var newOffset = layout.preferredScrollOffsetForTransitionFromLayout(this._layout, {withOffset: this.scrollOffset.copy()});
+	    var newOffset = layout.preferredScrollOffsetForTransitionFromLayout(oldLayout, {withOffset: this.scrollOffset.copy()});
 	    
 	    // Then ensure that the new offset is constrained to the visible area
 	    newOffset.x = Math.max(0, Math.min(newOffset.x, newSize.width - this.frame.size.width));
@@ -5465,7 +5470,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		    var attribute = newAttributes[newAttributes.length - 1];
 		    
 		    if (attribute.itemType === BMCollectionViewLayoutAttributesType.Cell) {
-			    var oldAttribute = this._layout.attributesForCellAtIndexPath(attribute.indexPath);
+			    var oldAttribute = oldLayout.attributesForCellAtIndexPath(attribute.indexPath);
 			    
 			    // Create the transition attributes for this cell
 			    var transitionAttribute = _BMCollectionViewTransitionLayoutAttributesMakeWithSourceAttributes(oldAttribute, {targetAttributes: attribute});
@@ -5493,10 +5498,8 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 	    var transitionLayout = new _BMCollectionViewTransitionLayout(transitionAttributes, this._size, newSize, layout);
 		transitionLayout.collectionView = this;
 	    
-	    var oldLayout = this._layout;
-	    
 	    // Unbind the old layout
-	    this._layout.collectionView = undefined;
+	    oldLayout.collectionView = undefined;
 	    
 	    // Temporarily make the transition layout the current layout
 	    this._layout = transitionLayout;
