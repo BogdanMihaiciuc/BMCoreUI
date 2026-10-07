@@ -489,6 +489,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		// If this frame is assigned as part of a layout animation, don't perform any changes
 		if (this._layoutAnimator) {
 			Object.getOwnPropertyDescriptor(BMView.prototype, 'frame').set.call(this, frame);
+			
 			return;
 		}
 
@@ -1954,7 +1955,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			}
 			
 			if (cell._exclusivelyRendered) {
-				// If the cell was exclusively rendered, it should left alone
+				// If the cell was exclusively rendered, it should be left alone
 				cell._exclusivelyRendered = undefined;
 				continue;
 			}
@@ -2160,7 +2161,9 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		const iterators = indexPaths.map(p => this._measuredSizeOfCellAtIndexPathGenerator(p, {layoutQueue: queue, dequeue: NO}));
 
 		iterators.forEach(i => i.next());
+		BMAnimationContextBeginStatic();
 		queue.dequeue();
+		BMAnimationApply();
 		iterators.forEach(i => i.next());
 	},
 
@@ -2429,7 +2432,11 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		yield;
 
 		// Run a layout pass to measure the cell's subview
-		if (dequeue) cell.layoutIfNeeded();
+		if (dequeue) {
+		    BMAnimationContextBeginStatic();
+		    cell.layoutQueue.dequeue();
+			BMAnimationApply();
+		}
 
 		cell.layoutQueue = layoutQueue;
 
@@ -2462,6 +2469,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 		}
 
 		// If the cell is still retained, reapply the previous attibutes
+		BMAnimationContextBeginStatic();
 		if (cell.retainCount > 0 && previousAttributes) {
 			cell.attributes = previousAttributes;
 		}
@@ -2469,6 +2477,7 @@ BMCollectionView.prototype = BMExtend(BM_COLLECTION_VIEW_USE_BMVIEW_SUBCLASS ? O
 			cell._attributes = undefined;
 			attributes._cell = undefined;
 		}
+		BMAnimationApply();
 
 		// Invalidate the cell's constraints to allow the next layout pass to correctly update the cells
 		cell._invalidatedConstraints = YES;
