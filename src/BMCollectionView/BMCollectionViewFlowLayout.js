@@ -3365,9 +3365,10 @@ BMCollectionViewFlowLayout.prototype = BMExtend(Object.create(BMCollectionViewLa
 		}
 		else {
 			// Because the measured size of the cells can depend upon the size of collection view's frame, in addition
-			// to invalidating the layout, flow layout also invalidates the size of cells that are as wide as collection view's previous frame.
+			// to invalidating the layout, flow layout also invalidates the size of cells that are as wide as collection view's previous frame
+			// or wider than the new frame
 			this.collectionView.invalidateMeasuredSizeOfCellsWithBlock(size => {
-				return size.width >= this.cachedLayout.availableWidth;
+				return size.width >= this.cachedLayout.availableWidth || size.width >= frame.width;
 			});
 		}
 
@@ -4976,4 +4977,3 @@ BMCollectionViewFlowLayout.flowLayout = function () {
 }
 
 // @endtype
-
