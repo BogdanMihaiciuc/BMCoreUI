@@ -76,6 +76,8 @@ Resolves an issue where the proper constaints were not used to measure cells whe
 
 Resolves an issue where measuring a cell would sometimes not properly perform a layout pass, causing the older measurements to be used instead.
 
+Resolve an issue where measuring a cell while an animation block was active produced incorrect results.
+
 ## BMCollectionViewDelegate
 
 The following delegate methods now also receive the associated drag or drop session as an argument:
