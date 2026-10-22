@@ -42,6 +42,11 @@ Resolves an issue where invoking `layoutIfNeeded` on a subview of a window while
 
 Invoking `enterFullScreenAnimated` and `exitFullScreenAnimated` in an active animation context will now play these animations using that context instead of creating a new one.
 
+Added the following methods and properties to support docking into and out of a view:
+ - `dockIntoView(_, {animated})` is used to dock a window into a view
+ - `undockAnimated()` is used to restore a window that was previously docked into a view
+ - `dockView` is set to the view a window is docked into, if any
+
 ## BMToolWindow
 
 Resolves an issue where tool windows references were not properly removed from their parent window when released.
