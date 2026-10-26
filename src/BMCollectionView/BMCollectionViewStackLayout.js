@@ -321,18 +321,19 @@ BMCollectionViewStackLayout.prototype = BMExtend({}, BMCollectionViewLayout.prot
 		// Create the attributes for the next cell
 		var nextIndexPath = this.nextIndexPathWithIndexPath(indexPath);
 		if (nextIndexPath) {
-			let baseY = currentOffset - this.insets.bottom + this.insets.top / 3;
-			let expectedY = currentOffset + this.insets.top;
-
 			// Adjust the Y so the next cell is visible when the current cell is on screen
 			var nextCellAttributes = BMCollectionViewLayoutAttributesMakeForCellAtIndexPath(nextIndexPath);
 			nextCellAttributes.frame = BMRectMakeWithX(this.insets.left, {
-				y: BMNumberByInterpolatingNumbersWithFraction(baseY, expectedY, displacementPercentage),
+			    y: topVisibleMargin + this.insets.top - displacementPixels + this._spread,
 				width: cellWidth,
 				height: cellHeight
 			});
 
 			nextCellAttributes.style.zIndex = this._numberOfBackgroundCells * 2 + 6;
+			nextCellAttributes.style.scaleX = 1 - scalePerCell * displacementPercentage + scalePerCell;
+			nextCellAttributes.style.scaleY = 1 - scalePerCell * displacementPercentage + scalePerCell;
+			nextCellAttributes.style.opacity = 1 - opacityPerCell * (1 - displacementPercentage) * (this._numberOfBackgroundCells + 1);
+			if (this._blursBackgroundCells) nextCellAttributes.style.blur = ((1 - displacementPercentage) * blurPerCell * (this._numberOfBackgroundCells + 1)) + 'px';
 
 			if (this._rotatesCells) {
 				nextCellAttributes.style.rotateX = BMNumberByInterpolatingNumbersWithFraction(this._rotation, 0, displacementPercentage) + 'deg';
@@ -342,36 +343,6 @@ BMCollectionViewStackLayout.prototype = BMExtend({}, BMCollectionViewLayout.prot
 			}
 
 			attributes.push(nextCellAttributes);
-
-
-			// Create the attributes for the upcoming cell
-			let upcomingIndexPath = this.nextIndexPathWithIndexPath(nextIndexPath);
-			if (upcomingIndexPath) {
-				//let upcomingDisplacement = displacementPercentage >= 1 ? displacementPercentage - 1 : displacementPercentage;
-				let upcomingOffset = currentOffset + this.collectionView.frame.size.height;
-
-				let baseY = upcomingOffset - this.insets.bottom + this.insets.top / 3;
-				let expectedY = upcomingOffset + this.insets.top;
-
-				// Adjust the Y so the next cell is visible when the current cell is on screen
-				var nextCellAttributes = BMCollectionViewLayoutAttributesMakeForCellAtIndexPath(upcomingIndexPath);
-				nextCellAttributes.frame = BMRectMakeWithX(this.insets.left, {
-					y: baseY, //BMNumberByInterpolatingNumbersWithFraction(baseY, expectedY, 1 - displacementPercentage),
-					width: cellWidth,
-					height: cellHeight
-				});
-
-				nextCellAttributes.style.zIndex = this._numberOfBackgroundCells * 2 + 8;
-
-				if (this._rotatesCells) {
-					nextCellAttributes.style.rotateX = this._rotation + 'deg';
-					nextCellAttributes.style.transformOriginX = '50%';
-					nextCellAttributes.style.transformOriginY = '100%';
-					nextCellAttributes.style.translateZ = this._numberOfBackgroundCells * 2 + 8 + 'px';
-				}
-
-				attributes.push(nextCellAttributes);
-			}
 		}
 
 		// Create the attributes for the previous cells
@@ -493,12 +464,16 @@ BMCollectionViewStackLayout.prototype = BMExtend({}, BMCollectionViewLayout.prot
 		if (nextIndexPath && indexPath.isEqualToIndexPath(nextIndexPath, {usingComparator: this.collectionView.identityComparator})) {
 			var nextCellAttributes = BMCollectionViewLayoutAttributesMakeForCellAtIndexPath(nextIndexPath);
 			nextCellAttributes.frame = BMRectMakeWithX(this.insets.left, {
-				y: currentOffset + this.insets.top,
+			    y: topVisibleMargin + this.insets.top - displacementPixels + this._spread,
 				width: cellWidth,
 				height: cellHeight
 			});
 
-			nextCellAttributes.style.zIndex = this._numberOfBackgroundCells + 3;
+			nextCellAttributes.style.zIndex = this._numberOfBackgroundCells * 2 + 6;
+			nextCellAttributes.style.scaleX = 1 - scalePerCell * displacementPercentage + scalePerCell;
+			nextCellAttributes.style.scaleY = 1 - scalePerCell * displacementPercentage + scalePerCell;
+			nextCellAttributes.style.opacity = 1 - opacityPerCell * (1 - displacementPercentage) * (this._numberOfBackgroundCells + 1);
+			if (this._blursBackgroundCells) nextCellAttributes.style.blur = ((1 - displacementPercentage) * blurPerCell * (this._numberOfBackgroundCells + 1)) + 'px';
 
 			return nextCellAttributes;
 		}
