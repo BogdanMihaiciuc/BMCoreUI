@@ -122,6 +122,10 @@ Resolves an issue where flow layout was not correctly measuring cells when scrol
 
 Resolves an issue where flow layout measured more cells than needed after data or layout updates when an expected cell size was set.
 
+## BMCollectionViewStackLayout
+
+Improved the appearance of foreground cells. These will now also scale, blur and fade like the background cells instead of scrolling.
+
 ## BMMenu
 
 The `items` property can now also be set on menus. If updated while the menu is visible, this change will cause the menu to re-render.
