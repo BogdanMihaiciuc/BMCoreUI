@@ -2764,16 +2764,30 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
         else {
             // If the change is animated, animate the window from its current position (restoring its previous 
             // docked position if it was docked) to the position it will occupy while docked.
+            let sourceVisibleFrame;
             if (sourceView) {
-                const sourceVisibleFrame = BMRectMakeWithNodeFrame(sourceView.node);
+                sourceVisibleFrame = BMRectMakeWithNodeFrame(sourceView.node);
                 
                 BMAnimationContextBeginStatic();
                 this.frame = sourceVisibleFrame;
                 BMAnimationApply();
             }
+            else {
+                sourceVisibleFrame = this.frame.copy();
+            }
 
             const targetVisibleFrame = BMRectMakeWithNodeFrame(view.node);
+            BMAnimationContextBeginStatic();
             this.frame = targetVisibleFrame;
+            BMAnimationApply();
+            
+            this.layoutIfNeeded();
+            
+            BMAnimationContextBeginStatic();
+            this.frame = sourceVisibleFrame;
+            BMAnimationApply();
+            this.frame = targetVisibleFrame;
+            this._cancelLayout();
             
             this._dockView = view;
             BMAnimationContextAddCompletionHandler(() => {
@@ -2819,9 +2833,22 @@ BMWindow.prototype = BMExtend(Object.create(BMView.prototype), {
 
         const completionPromise = context ? new Promise(r => BMAnimationContextAddCompletionHandler(r)) : undefined;
 
+        const sourceFrame = BMRectMakeWithNodeFrame(this.node);
+
+        BMAnimationContextBeginStatic();
         this._dockView = undefined;
         this._detachFromView();
         this.frame = this._dockFrame.copy();
+        BMAnimationApply();
+        
+        this.layoutIfNeeded();
+        
+        BMAnimationContextBeginStatic();
+        this.frame = sourceFrame;
+        BMAnimationApply();
+        this.frame = this._dockFrame.copy();
+        this._cancelLayout();
+
         this._dockFrame = undefined;
 
         this._overlay.node.classList.remove('BMWindowBlockerDocked');
